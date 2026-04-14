@@ -27,36 +27,61 @@ function loadFromStorage<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 
+function saveToStorage<T>(key: string, data: T) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* quota exceeded */ }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [birds, setBirdsState] = useState<Bird[]>(() => loadFromStorage('avf_birds', sampleBirds));
   const [tournaments, setTournamentsState] = useState<Tournament[]>(() => loadFromStorage('avf_tournaments', sampleTournaments));
   const [treatments, setTreatmentsState] = useState<Treatment[]>(() => loadFromStorage('avf_treatments', sampleTreatments));
   const [cages, setCagesState] = useState<Cage[]>(() => loadFromStorage('avf_cages', sampleCages));
 
-  const setBirds = useCallback((b: Bird[]) => { setBirdsState(b); localStorage.setItem('avf_birds', JSON.stringify(b)); }, []);
-  const setTournaments = useCallback((t: Tournament[]) => { setTournamentsState(t); localStorage.setItem('avf_tournaments', JSON.stringify(t)); }, []);
-  const setTreatments = useCallback((t: Treatment[]) => { setTreatmentsState(t); localStorage.setItem('avf_treatments', JSON.stringify(t)); }, []);
-  const setCages = useCallback((c: Cage[]) => { setCagesState(c); localStorage.setItem('avf_cages', JSON.stringify(c)); }, []);
+  const setBirds = useCallback((b: Bird[]) => { setBirdsState(b); saveToStorage('avf_birds', b); }, []);
+  const setTournaments = useCallback((t: Tournament[]) => { setTournamentsState(t); saveToStorage('avf_tournaments', t); }, []);
+  const setTreatments = useCallback((t: Treatment[]) => { setTreatmentsState(t); saveToStorage('avf_treatments', t); }, []);
+  const setCages = useCallback((c: Cage[]) => { setCagesState(c); saveToStorage('avf_cages', c); }, []);
 
+  // Fixed: use functional updates to avoid stale closure bugs
   const addBird = useCallback((bird: Bird) => {
-    setBirds([...birds, bird]);
-  }, [birds, setBirds]);
+    setBirdsState(prev => {
+      const next = [...prev, bird];
+      saveToStorage('avf_birds', next);
+      return next;
+    });
+  }, []);
 
   const updateBird = useCallback((id: string, data: Partial<Bird>) => {
-    setBirds(birds.map(b => b.id === id ? { ...b, ...data } : b));
-  }, [birds, setBirds]);
+    setBirdsState(prev => {
+      const next = prev.map(b => b.id === id ? { ...b, ...data } : b);
+      saveToStorage('avf_birds', next);
+      return next;
+    });
+  }, []);
 
   const deleteBird = useCallback((id: string) => {
-    setBirds(birds.filter(b => b.id !== id));
-  }, [birds, setBirds]);
+    setBirdsState(prev => {
+      const next = prev.filter(b => b.id !== id);
+      saveToStorage('avf_birds', next);
+      return next;
+    });
+  }, []);
 
   const addTournament = useCallback((t: Tournament) => {
-    setTournaments([...tournaments, t]);
-  }, [tournaments, setTournaments]);
+    setTournamentsState(prev => {
+      const next = [...prev, t];
+      saveToStorage('avf_tournaments', next);
+      return next;
+    });
+  }, []);
 
   const updateTournament = useCallback((id: string, data: Partial<Tournament>) => {
-    setTournaments(tournaments.map(t => t.id === id ? { ...t, ...data } : t));
-  }, [tournaments, setTournaments]);
+    setTournamentsState(prev => {
+      const next = prev.map(t => t.id === id ? { ...t, ...data } : t);
+      saveToStorage('avf_tournaments', next);
+      return next;
+    });
+  }, []);
 
   return (
     <AppContext.Provider value={{
