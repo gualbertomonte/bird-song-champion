@@ -3,51 +3,60 @@ import { Bird, Tournament, Treatment, Cage } from '@/types/bird';
 export const sampleBirds: Bird[] = [
   {
     id: '1', anilha: 'CF-2024-001', nome: 'Trovão', especie: 'Curió',
+    nomeCientifico: 'Sporophila angolensis',
     sexo: 'macho', dataNascimento: '2023-03-15', cor: 'Preto',
-    peso: 28, status: 'ativo', foto: '', notas: 'Excelente cantador, fibra forte.',
+    status: 'ativo', sispass: 'SIS-2024-00123', estado: 'SP',
+    notas: 'Excelente cantador, fibra forte.',
   },
   {
     id: '2', anilha: 'CF-2024-002', nome: 'Serena', especie: 'Curió',
+    nomeCientifico: 'Sporophila angolensis',
     sexo: 'fêmea', dataNascimento: '2023-05-20', cor: 'Parda',
-    peso: 25, status: 'ativo', foto: '',
+    status: 'ativo', sispass: 'SIS-2024-00124', estado: 'SP',
   },
   {
     id: '3', anilha: 'CF-2024-003', nome: 'Pavarotti', especie: 'Canário',
+    nomeCientifico: 'Serinus canaria',
     sexo: 'macho', dataNascimento: '2022-11-10', cor: 'Amarelo',
-    peso: 22, status: 'ativo', paiId: undefined, maeId: undefined,
-    foto: '', notas: 'Canto melodioso, vencedor de 3 torneios.',
+    status: 'ativo', sispass: 'SIS-2022-00567', estado: 'MG',
+    notas: 'Canto melodioso, vencedor de 3 torneios.',
   },
   {
     id: '4', anilha: 'CF-2023-010', nome: 'Relâmpago', especie: 'Bicudo',
+    nomeCientifico: 'Sporophila maximiliani',
     sexo: 'macho', dataNascimento: '2022-01-08', cor: 'Preto',
-    peso: 35, status: 'ativo', foto: '',
+    status: 'ativo', sispass: 'SIS-2022-00890', estado: 'RJ',
   },
   {
     id: '5', anilha: 'CF-2023-011', nome: 'Aurora', especie: 'Canário',
+    nomeCientifico: 'Serinus canaria',
     sexo: 'fêmea', dataNascimento: '2023-07-12', cor: 'Amarelo Intenso',
-    peso: 20, status: 'ativo', foto: '',
+    status: 'ativo', sispass: 'SIS-2023-00345', estado: 'MG',
   },
   {
-    id: '6', anilha: 'CF-2022-005', nome: 'Maestro', especie: 'Curió',
-    sexo: 'macho', dataNascimento: '2021-09-01', cor: 'Preto',
-    peso: 30, status: 'vendido', foto: '',
+    id: '6', anilha: 'CF-2022-005', nome: 'Maestro', especie: 'Coleiro',
+    nomeCientifico: 'Sporophila caerulescens',
+    sexo: 'macho', dataNascimento: '2021-09-01', cor: 'Verde/Preto',
+    status: 'vendido', sispass: 'SIS-2021-00112', estado: 'PR',
   },
   {
     id: '7', anilha: 'CF-2024-007', nome: 'Tempestade', especie: 'Curió',
+    nomeCientifico: 'Sporophila angolensis',
     sexo: 'macho', dataNascimento: '2024-01-20', cor: 'Preto',
-    peso: 26, status: 'ativo', paiId: '1', maeId: '2', foto: '',
+    status: 'ativo', paiId: '1', maeId: '2', sispass: 'SIS-2024-00789', estado: 'SP',
     notas: 'Filhote do casal Trovão x Serena.',
   },
   {
-    id: '8', anilha: 'CF-2022-008', nome: 'Solitário', especie: 'Bicudo',
-    sexo: 'macho', dataNascimento: '2020-06-15', cor: 'Preto',
-    peso: 38, status: 'falecido', foto: '',
+    id: '8', anilha: 'CF-2022-008', nome: 'Imperador', especie: 'Trinca-Ferro',
+    nomeCientifico: 'Saltator similis',
+    sexo: 'macho', dataNascimento: '2020-06-15', cor: 'Verde Oliva',
+    status: 'ativo', sispass: 'SIS-2020-00055', estado: 'BA',
   },
 ];
 
 export const sampleTournaments: Tournament[] = [
   {
-    id: 't1', nome: 'Canto do Curió 2025', data: '2025-06-15',
+    id: 't1', nome: 'Grande Torneio Primavera 2025', data: '2025-06-15',
     especiePermitida: 'Curió', numJuizes: 3, status: 'finalizado',
     criterios: ['Ritmo', 'Potência', 'Variedade', 'Melodia'],
     inscricoes: [
@@ -81,7 +90,7 @@ export const sampleTournaments: Tournament[] = [
     ],
   },
   {
-    id: 't2', nome: 'Festival Canário de Ouro', data: '2025-08-20',
+    id: 't2', nome: 'Copa Aves de Fibra', data: '2025-08-20',
     especiePermitida: 'Canário', numJuizes: 2, status: 'aberto',
     criterios: ['Ritmo', 'Potência', 'Variedade'],
     inscricoes: [],

@@ -1,7 +1,6 @@
 import { useAppState } from '@/context/AppContext';
 import { Bird, Trophy, Stethoscope, Activity, TrendingUp, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import heroBird from '@/assets/hero-bird.jpg';
 
 export default function Dashboard() {
   const { birds, tournaments, treatments } = useAppState();
@@ -26,12 +25,15 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden h-48 md:h-56">
-        <img src={heroBird} alt="Aves de Fibra" className="w-full h-full object-cover" width={1920} height={640} />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/70 to-foreground/20 flex items-center px-6 md:px-10">
+      <div className="relative rounded-2xl overflow-hidden h-48 md:h-56 bg-gradient-to-br from-primary/20 via-card to-secondary/20">
+        <div className="absolute inset-0 flex items-center px-6 md:px-10">
           <div>
-            <h1 className="text-3xl md:text-4xl font-heading font-bold text-card">Aves de Fibra</h1>
-            <p className="text-card/80 mt-1 text-sm md:text-base font-body">Gestão completa do seu plantel de pássaros</p>
+            <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground">Aves de Fibra</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base font-body">Gestão completa do seu plantel de pássaros</p>
+            <div className="flex gap-3 mt-4">
+              <Link to="/plantel" className="btn-primary text-xs"><Bird className="w-3.5 h-3.5" /> Meu Plantel</Link>
+              <Link to="/torneios" className="btn-secondary text-xs"><Trophy className="w-3.5 h-3.5" /> Torneios</Link>
+            </div>
           </div>
         </div>
       </div>
@@ -49,7 +51,6 @@ export default function Dashboard() {
 
       {/* Quick sections */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Recent birds */}
         <div className="bg-card rounded-xl border p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-heading font-semibold text-lg">Aves Recentes</h2>
@@ -58,20 +59,19 @@ export default function Dashboard() {
           <div className="space-y-3">
             {recentBirds.map(bird => (
               <div key={bird.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bird className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                  {bird.fotos?.[0] ? <img src={bird.fotos[0]} className="w-full h-full object-cover" /> : <Bird className="w-5 h-5 text-primary" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{bird.nome}</p>
                   <p className="text-xs text-muted-foreground">{bird.especie} · {bird.anilha}</p>
                 </div>
-                <span className="badge-active">{bird.sexo}</span>
+                <span className="badge-active">{bird.sexo === 'macho' ? '♂' : '♀'}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Tournaments */}
         <div className="bg-card rounded-xl border p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-heading font-semibold text-lg">Torneios</h2>
