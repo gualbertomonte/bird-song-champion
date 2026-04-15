@@ -1,5 +1,5 @@
-export type BirdStatus = 'ativo' | 'vendido' | 'falecido';
-export type BirdSex = 'macho' | 'fêmea';
+export type BirdStatus = 'Ativo' | 'Berçário' | 'Vendido' | 'Falecido';
+export type BirdSex = 'M' | 'F';
 
 export const ESTADOS_BR = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG',
@@ -10,64 +10,65 @@ export type EstadoUF = typeof ESTADOS_BR[number];
 
 export interface Bird {
   id: string;
-  anilha: string;
-  nome: string;
-  especie: string;
-  nomeCientifico?: string;
+  nome_comum: string;
+  nome_cientifico: string;
   sexo: BirdSex;
-  dataNascimento: string;
-  cor: string;
-  fotos?: string[]; // Base64 array, first is main
-  foto?: string; // legacy single photo
+  data_nascimento?: string;
+  tipo_anilha?: 'Fechada' | 'Aberta';
+  diametro_anilha?: string;
+  codigo_anilha: string; // SISPASS format
   status: BirdStatus;
-  sispass?: string;
+  gaiola?: string;
+  observacoes?: string;
+  pai_id?: string;
+  mae_id?: string;
+  foto_url?: string; // main photo (base64)
+  fotos?: string[]; // additional photos
   estado?: EstadoUF;
-  paiId?: string;
-  maeId?: string;
-  gaiolaId?: string;
-  notas?: string;
+  cor?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Nest {
+  id: string;
+  femea_id: string;
+  macho_id: string;
+  data_postura: string;
+  data_eclosao?: string;
+  quantidade_ovos: number;
+  quantidade_filhotes?: number;
+  status: 'Incubando' | 'Eclodida' | 'Perdida';
+  observacoes?: string;
+  created_at?: string;
 }
 
 export interface Tournament {
   id: string;
-  nome: string;
+  bird_id: string;
   data: string;
-  especiePermitida: string;
-  numJuizes: number;
-  status: 'aberto' | 'em_andamento' | 'finalizado';
-  criterios: string[];
-  inscricoes: TournamentEntry[];
+  nome_torneio: string;
+  clube?: string;
+  pontuacao: number; // 1-1000
+  classificacao?: string;
+  created_at?: string;
 }
 
-export interface TournamentEntry {
+export interface HealthRecord {
   id: string;
-  aveId: string;
-  aveNome: string;
-  aveAnilha: string;
-  avaliacoes: Evaluation[];
-  mediaFinal?: number;
+  bird_id: string;
+  data: string;
+  tipo: string; // Vermifugação, Vacina, Exame, etc.
+  descricao?: string;
+  proxima_dose?: string;
 }
 
-export interface Evaluation {
-  juizNome: string;
-  notas: Record<string, number>;
-  media: number;
-}
-
-export interface Treatment {
-  id: string;
-  aveId: string;
-  medicamento: string;
-  dataInicio: string;
-  dataFim: string;
-  dosagem: string;
-  notas?: string;
-}
-
-export interface Cage {
-  id: string;
-  codigo: string;
-  tipo: string;
-  localizacao: string;
-  aveId?: string;
+export interface CriadorProfile {
+  nome_criadouro: string;
+  cpf?: string;
+  registro_ctf?: string;
+  validade_ctf?: string;
+  endereco?: string;
+  telefone?: string;
+  logo_url?: string;
 }
