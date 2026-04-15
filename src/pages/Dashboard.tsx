@@ -1,99 +1,204 @@
 import { useAppState } from '@/context/AppContext';
-import { Bird, Trophy, Stethoscope, Activity, TrendingUp, Calendar } from 'lucide-react';
+import { Bird, Trophy, Heart, Egg, TrendingUp, Calendar, Plus, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useState } from 'react';
 
 export default function Dashboard() {
-  const { birds, tournaments, treatments } = useAppState();
+  const { birds, tournaments, healthRecords, nests, profile } = useAppState();
+  const [showFab, setShowFab] = useState(false);
 
-  const ativas = birds.filter(b => b.status === 'ativo').length;
-  const machos = birds.filter(b => b.sexo === 'macho' && b.status === 'ativo').length;
-  const femeas = birds.filter(b => b.sexo === 'fêmea' && b.status === 'ativo').length;
-  const torneiosAbertos = tournaments.filter(t => t.status === 'aberto').length;
-  const tratAtivos = treatments.filter(t => new Date(t.dataFim) >= new Date()).length;
+  const ativas = birds.filter(b => b.status === 'Ativo').length;
+  const bercario = birds.filter(b => b.status === 'Berçário').length;
+  const machos = birds.filter(b => b.sexo === 'M' && (b.status === 'Ativo' || b.status === 'Berçário')).length;
+  const femeas = birds.filter(b => b.sexo === 'F' && (b.status === 'Ativo' || b.status === 'Berçário')).length;
+  const ovosIncubando = nests.filter(n => n.status === 'Incubando').reduce((s, n) => s + n.quantidade_ovos, 0);
+  const torneiosMes = tournaments.filter(t => {
+    const d = new Date(t.data);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  const proximasVermifugacoes = healthRecords
+    .filter(h => h.proxima_dose && new Date(h.proxima_dose) > new Date())
+    .sort((a, b) => new Date(a.proxima_dose!).getTime() - new Date(b.proxima_dose!).getTime())
+    .slice(0, 3);
 
   const stats = [
-    { label: 'Aves Ativas', value: ativas, icon: Bird, color: 'text-primary' },
-    { label: 'Machos', value: machos, icon: TrendingUp, color: 'text-info' },
-    { label: 'Fêmeas', value: femeas, icon: Activity, color: 'text-secondary' },
-    { label: 'Torneios Abertos', value: torneiosAbertos, icon: Trophy, color: 'text-warning' },
-    { label: 'Tratamentos Ativos', value: tratAtivos, icon: Stethoscope, color: 'text-destructive' },
-    { label: 'Total no Plantel', value: birds.length, icon: Calendar, color: 'text-success' },
+    { label: 'Aves Ativas', value: ativas, icon: Bird, color: 'text-success' },
+    { label: 'No Berçário', value: bercario, icon: Egg, color: 'text-info' },
+    { label: 'Ovos Incubando', value: ovosIncubando, icon: Egg, color: 'text-secondary' },
+    { label: 'Torneios (mês)', value: torneiosMes, icon: Trophy, color: 'text-secondary' },
   ];
 
-  const recentBirds = birds.filter(b => b.status === 'ativo').slice(0, 4);
+  const pieData = [
+    { name: 'Machos', value: machos, color: 'hsl(155, 50%, 22%)' },
+    { name: 'Fêmeas', value: femeas, color: 'hsl(43, 74%, 52%)' },
+    { name: 'Berçário', value: bercario, color: 'hsl(200, 80%, 50%)' },
+  ].filter(d => d.value > 0);
+
+  const topBirds = [...tournaments]
+    .reduce((acc, t) => {
+      const existing = acc.find(a => a.bird_id === t.bird_id);
+      if (existing) {
+        existing.total += t.pontuacao;
+        existing.count++;
+      } else {
+        acc.push({ bird_id: t.bird_id, total: t.pontuacao, count: 1 });
+      }
+      return acc;
+    }, [] as { bird_id: string; total: number; count: number }[])
+    .map(a => ({ ...a, avg: Math.round(a.total / a.count), bird: birds.find(b => b.id === a.bird_id) }))
+    .filter(a => a.bird)
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 5);
 
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden h-48 md:h-56 bg-gradient-to-br from-primary/20 via-card to-secondary/20">
-        <div className="absolute inset-0 flex items-center px-6 md:px-10">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground">Aves de Fibra</h1>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base font-body">Gestão completa do seu plantel de pássaros</p>
-            <div className="flex gap-3 mt-4">
-              <Link to="/plantel" className="btn-primary text-xs"><Bird className="w-3.5 h-3.5" /> Meu Plantel</Link>
-              <Link to="/torneios" className="btn-secondary text-xs"><Trophy className="w-3.5 h-3.5" /> Torneios</Link>
-            </div>
-          </div>
+    <div className="space-y-6 pb-20 md:pb-0">
+      {/* Welcome */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="page-title">Olá, {profile.nome_criadouro}! 👋</h1>
+          <p className="page-subtitle">Aqui está o resumo do seu plantel</p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {stats.map(s => (
-          <div key={s.label} className="stat-card">
-            <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
-            <p className="text-2xl font-bold font-heading">{s.value}</p>
-            <p className="text-xs text-muted-foreground">{s.label}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s, i) => (
+          <div key={s.label} className="stat-card animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
+            <div className="flex items-center justify-between mb-3">
+              <s.icon className={`w-5 h-5 ${s.color}`} />
+              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <p className="text-3xl font-bold tracking-tight">{s.value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Quick sections */}
+      {/* Charts + upcoming */}
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-card rounded-xl border p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-heading font-semibold text-lg">Aves Recentes</h2>
-            <Link to="/plantel" className="text-sm text-primary hover:underline">Ver todas</Link>
-          </div>
-          <div className="space-y-3">
-            {recentBirds.map(bird => (
-              <div key={bird.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                  {bird.fotos?.[0] ? <img src={bird.fotos[0]} className="w-full h-full object-cover" /> : <Bird className="w-5 h-5 text-primary" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{bird.nome}</p>
-                  <p className="text-xs text-muted-foreground">{bird.especie} · {bird.anilha}</p>
-                </div>
-                <span className="badge-active">{bird.sexo === 'macho' ? '♂' : '♀'}</span>
+        {/* Distribution chart */}
+        <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <h2 className="font-semibold text-lg mb-4">Distribuição do Plantel</h2>
+          {pieData.length > 0 ? (
+            <div className="flex items-center gap-6">
+              <ResponsiveContainer width={160} height={160}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: 'hsl(150, 15%, 10%)', border: '1px solid hsl(150, 10%, 16%)', borderRadius: '8px', color: 'hsl(120, 5%, 92%)' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2">
+                {pieData.map(d => (
+                  <div key={d.name} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ background: d.color }} />
+                    <span className="text-sm">{d.name}: <span className="font-semibold">{d.value}</span></span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Cadastre aves para ver a distribuição.</p>
+          )}
         </div>
 
-        <div className="bg-card rounded-xl border p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-heading font-semibold text-lg">Torneios</h2>
-            <Link to="/torneios" className="text-sm text-primary hover:underline">Ver todos</Link>
-          </div>
+        {/* Próximos compromissos */}
+        <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '300ms' }}>
+          <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-secondary" /> Próximos Compromissos
+          </h2>
           <div className="space-y-3">
-            {tournaments.map(t => (
-              <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-secondary" />
+            {proximasVermifugacoes.length > 0 ? proximasVermifugacoes.map(h => {
+              const bird = birds.find(b => b.id === h.bird_id);
+              return (
+                <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                  <Heart className="w-4 h-4 text-destructive flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{bird?.nome_comum} — {h.tipo}</p>
+                    <p className="text-xs text-muted-foreground">{h.descricao}</p>
+                  </div>
+                  <span className="text-xs text-secondary font-medium whitespace-nowrap">
+                    {new Date(h.proxima_dose!).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+              );
+            }) : (
+              <p className="text-sm text-muted-foreground">Nenhum compromisso pendente.</p>
+            )}
+            {nests.filter(n => n.status === 'Incubando').map(n => {
+              const femea = birds.find(b => b.id === n.femea_id);
+              return (
+                <div key={n.id} className="flex items-center gap-3 p-3 rounded-lg bg-info/5 border border-info/10">
+                  <Egg className="w-4 h-4 text-info flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">Ninhada de {femea?.nome_comum}</p>
+                    <p className="text-xs text-muted-foreground">{n.quantidade_ovos} ovos incubando</p>
+                  </div>
+                  <span className="text-xs text-info font-medium whitespace-nowrap">
+                    {new Date(n.data_postura).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Top birds */}
+      <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '400ms' }}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-semibold text-lg flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-secondary" /> Ranking Interno
+          </h2>
+          <Link to="/torneios" className="text-sm text-secondary hover:underline flex items-center gap-1">
+            Ver todos <ChevronRight className="w-3 h-3" />
+          </Link>
+        </div>
+        {topBirds.length > 0 ? (
+          <div className="space-y-2">
+            {topBirds.map((item, i) => (
+              <div key={item.bird_id} className={`flex items-center gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
+                <span className={`text-lg font-bold w-8 text-center ${i === 0 ? 'text-secondary' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                  {i + 1}º
+                </span>
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                  {item.bird?.foto_url ? <img src={item.bird.foto_url} className="w-full h-full object-cover" /> : <Bird className="w-4 h-4 text-primary-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{t.nome}</p>
-                  <p className="text-xs text-muted-foreground">{t.especiePermitida} · {new Date(t.data).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium text-sm truncate">{item.bird?.nome_comum}</p>
+                  <p className="text-xs text-muted-foreground">{item.count} torneios · Média {item.avg} pts</p>
                 </div>
-                <span className={`badge-status ${t.status === 'aberto' ? 'bg-success/10 text-success' : t.status === 'finalizado' ? 'bg-muted text-muted-foreground' : 'bg-warning/10 text-warning'}`}>
-                  {t.status === 'aberto' ? 'Aberto' : t.status === 'finalizado' ? 'Finalizado' : 'Em andamento'}
-                </span>
+                <span className="font-bold text-lg text-secondary">{item.avg}</span>
               </div>
             ))}
           </div>
-        </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Registre torneios para ver o ranking.</p>
+        )}
+      </div>
+
+      {/* FAB */}
+      <div className="fixed bottom-20 md:bottom-6 right-6 z-40">
+        {showFab && (
+          <div className="absolute bottom-16 right-0 bg-card border rounded-xl shadow-xl p-2 space-y-1 w-48 animate-scale-in">
+            <Link to="/plantel?new=1" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted/50 transition-colors" onClick={() => setShowFab(false)}>
+              <Bird className="w-4 h-4 text-success" /> Nova Ave
+            </Link>
+            <Link to="/torneios?new=1" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted/50 transition-colors" onClick={() => setShowFab(false)}>
+              <Trophy className="w-4 h-4 text-secondary" /> Registrar Torneio
+            </Link>
+            <Link to="/bercario?new=1" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted/50 transition-colors" onClick={() => setShowFab(false)}>
+              <Egg className="w-4 h-4 text-info" /> Nova Ninhada
+            </Link>
+          </div>
+        )}
+        <button onClick={() => setShowFab(!showFab)} className="fab">
+          <Plus className={`w-6 h-6 transition-transform duration-200 ${showFab ? 'rotate-45' : ''}`} />
+        </button>
       </div>
     </div>
   );

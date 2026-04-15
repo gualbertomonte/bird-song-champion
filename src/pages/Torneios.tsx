@@ -1,232 +1,186 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { Tournament, TournamentEntry, Evaluation } from '@/types/bird';
-import { Trophy, Plus, Medal, Star, X, Check, Users } from 'lucide-react';
+import { Tournament } from '@/types/bird';
+import { Trophy, Plus, X, Check, Medal, Calendar, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export default function Torneios() {
-  const { tournaments, birds, addTournament, updateTournament } = useAppState();
+  const { tournaments, birds, addTournament, deleteTournament } = useAppState();
+  const [searchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
-  const [showJudge, setShowJudge] = useState<string | null>(null);
-  const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
-  const [judgeForm, setJudgeForm] = useState<{ juizNome: string; notas: Record<string, number> }>({ juizNome: '', notas: {} });
-  const [newTournament, setNewTournament] = useState({ nome: '', data: '', especiePermitida: '', numJuizes: 3, criterios: 'Ritmo,Potência,Variedade,Melodia' });
+  const [filterBird, setFilterBird] = useState('');
+  const [form, setForm] = useState({ bird_id: '', data: '', nome_torneio: '', clube: '', pontuacao: 500, classificacao: '' });
 
-  const createTournament = () => {
-    if (!newTournament.nome || !newTournament.data) {
-      toast.error('Preencha nome e data do torneio');
+  useEffect(() => { if (searchParams.get('new') === '1') setShowForm(true); }, [searchParams]);
+
+  const activeBirds = birds.filter(b => b.status === 'Ativo' || b.status === 'Berçário');
+
+  const filtered = useMemo(() => {
+    let result = [...tournaments];
+    if (filterBird) result = result.filter(t => t.bird_id === filterBird);
+    return result.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  }, [tournaments, filterBird]);
+
+  const ranking = useMemo(() => {
+    const map = new Map<string, { total: number; count: number }>();
+    tournaments.forEach(t => {
+      const existing = map.get(t.bird_id) || { total: 0, count: 0 };
+      map.set(t.bird_id, { total: existing.total + t.pontuacao, count: existing.count + 1 });
+    });
+    return Array.from(map.entries())
+      .map(([id, data]) => ({ bird: birds.find(b => b.id === id), avg: Math.round(data.total / data.count), count: data.count }))
+      .filter(r => r.bird)
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 10);
+  }, [tournaments, birds]);
+
+  const save = () => {
+    if (!form.bird_id || !form.data || !form.nome_torneio) {
+      toast.error('Preencha ave, data e nome do torneio');
       return;
     }
-    const t: Tournament = {
-      id: Date.now().toString(), nome: newTournament.nome, data: newTournament.data,
-      especiePermitida: newTournament.especiePermitida, numJuizes: newTournament.numJuizes,
-      status: 'aberto', criterios: newTournament.criterios.split(',').map(c => c.trim()), inscricoes: [],
-    };
-    addTournament(t);
+    if (form.pontuacao < 1 || form.pontuacao > 1000) {
+      toast.error('Pontuação deve ser entre 1 e 1000');
+      return;
+    }
+    addTournament({ ...form, id: Date.now().toString(), created_at: new Date().toISOString() });
+    setForm({ bird_id: '', data: '', nome_torneio: '', clube: '', pontuacao: 500, classificacao: '' });
     setShowForm(false);
-    setNewTournament({ nome: '', data: '', especiePermitida: '', numJuizes: 3, criterios: 'Ritmo,Potência,Variedade,Melodia' });
-    toast.success('Torneio criado!');
+    toast.success('Torneio registrado!');
   };
 
-  const enrollBird = (tournamentId: string, birdId: string) => {
-    const t = tournaments.find(t => t.id === tournamentId);
-    const b = birds.find(b => b.id === birdId);
-    if (!t || !b || t.inscricoes.some(e => e.aveId === birdId)) return;
-    const entry: TournamentEntry = { id: Date.now().toString(), aveId: birdId, aveNome: b.nome, aveAnilha: b.anilha, avaliacoes: [] };
-    updateTournament(tournamentId, { inscricoes: [...t.inscricoes, entry] });
-    toast.success(`${b.nome} inscrito no torneio!`);
-  };
-
-  const addEvaluation = (tournamentId: string, entryId: string) => {
-    const t = tournaments.find(t => t.id === tournamentId);
-    if (!t || !judgeForm.juizNome) { toast.error('Informe o nome do juiz'); return; }
-    const notas = judgeForm.notas;
-    const values = Object.values(notas);
-    const media = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-    const evaluation: Evaluation = { juizNome: judgeForm.juizNome, notas, media };
-    const inscricoes = t.inscricoes.map(e => {
-      if (e.id !== entryId) return e;
-      const avaliacoes = [...e.avaliacoes, evaluation];
-      const mediaFinal = avaliacoes.reduce((s, a) => s + a.media, 0) / avaliacoes.length;
-      return { ...e, avaliacoes, mediaFinal: Math.round(mediaFinal * 100) / 100 };
-    });
-    updateTournament(tournamentId, { inscricoes });
-    setJudgeForm({ juizNome: '', notas: {} });
-    setSelectedEntry(null);
-    setShowJudge(null);
-    toast.success('Avaliação registrada!');
-  };
-
-  const getRanking = (t: Tournament) =>
-    [...t.inscricoes].filter(e => e.mediaFinal !== undefined).sort((a, b) => (b.mediaFinal || 0) - (a.mediaFinal || 0));
-
-  const medalColors = ['text-secondary', 'text-muted-foreground', 'text-orange-400'];
+  const medalColor = (i: number) => i === 0 ? 'text-secondary' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-orange-400' : 'text-muted-foreground';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
           <h1 className="page-title">Torneios</h1>
-          <p className="page-subtitle">{tournaments.length} torneios cadastrados</p>
+          <p className="page-subtitle">{tournaments.length} participações registradas</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary self-start">
-          <Plus className="w-4 h-4" /> Novo Torneio
+          <Plus className="w-4 h-4" /> Registrar Torneio
         </button>
       </div>
 
-      <div className="space-y-6">
-        {tournaments.map(t => {
-          const ranking = getRanking(t);
-          const availableBirds = birds.filter(b => b.status === 'ativo' && (!t.especiePermitida || b.especie === t.especiePermitida) && !t.inscricoes.some(e => e.aveId === b.id));
-
-          return (
-            <div key={t.id} className="card-hover animate-fade-in">
-              <div className="p-5 border-b border-border/50 bg-gradient-to-r from-primary/5 to-secondary/5">
-                <div className="flex flex-col sm:flex-row justify-between gap-2">
-                  <div>
-                    <h2 className="font-heading font-bold text-xl flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-secondary" /> {t.nome}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t.especiePermitida || 'Todas as espécies'} · {new Date(t.data).toLocaleDateString('pt-BR')} · {t.numJuizes} juízes · {t.criterios.join(', ')}
-                    </p>
-                  </div>
-                  <span className={`badge-status self-start ${t.status === 'aberto' ? 'bg-success/10 text-success' : t.status === 'finalizado' ? 'bg-muted text-muted-foreground' : 'bg-warning/10 text-warning'}`}>
-                    {t.status === 'aberto' ? 'Aberto' : t.status === 'finalizado' ? 'Finalizado' : 'Em andamento'}
-                  </span>
+      {/* Ranking */}
+      {ranking.length > 0 && (
+        <div className="bg-card rounded-xl border p-5 animate-fade-in">
+          <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+            <Medal className="w-4 h-4 text-secondary" /> Ranking Interno (Top 10)
+          </h2>
+          <div className="space-y-2">
+            {ranking.map((item, i) => (
+              <div key={item.bird!.id} className={`flex items-center gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
+                <span className={`text-lg font-bold w-8 text-center ${medalColor(i)}`}>{i + 1}º</span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-sm">{item.bird!.nome_comum}</span>
+                  <span className="text-xs text-muted-foreground ml-2">{item.bird!.codigo_anilha}</span>
                 </div>
+                <span className="text-xs text-muted-foreground">{item.count} torneios</span>
+                <span className="font-bold text-lg text-secondary">{item.avg}</span>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-              <div className="p-5 space-y-4">
-                {ranking.length > 0 && (
-                  <div>
-                    <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><Medal className="w-4 h-4" /> Ranking</h3>
-                    <div className="space-y-2">
-                      {ranking.map((entry, i) => (
-                        <div key={entry.id} className={`flex items-center gap-3 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/20' : 'bg-muted/30'}`}>
-                          <span className={`text-lg font-bold font-heading ${medalColors[i] || 'text-muted-foreground'}`}>
-                            {i < 3 ? <Star className="w-5 h-5 fill-current" /> : `${i + 1}º`}
-                          </span>
-                          <div className="flex-1">
-                            <span className="font-medium text-sm">{entry.aveNome}</span>
-                            <span className="text-xs text-muted-foreground ml-2">{entry.aveAnilha}</span>
-                          </div>
-                          <span className="font-heading font-bold text-lg">{entry.mediaFinal?.toFixed(2)}</span>
-                          <button
-                            onClick={() => { setShowJudge(t.id); setSelectedEntry(entry.id); setJudgeForm({ juizNome: '', notas: Object.fromEntries(t.criterios.map(c => [c, 5])) }); }}
-                            className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                          >Avaliar</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {t.inscricoes.filter(e => !e.mediaFinal).length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Aguardando avaliação</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {t.inscricoes.filter(e => !e.mediaFinal).map(entry => (
-                        <div key={entry.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 text-sm">
-                          <span>{entry.aveNome} ({entry.aveAnilha})</span>
-                          <button
-                            onClick={() => { setShowJudge(t.id); setSelectedEntry(entry.id); setJudgeForm({ juizNome: '', notas: Object.fromEntries(t.criterios.map(c => [c, 5])) }); }}
-                            className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20"
-                          >Avaliar</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {t.status === 'aberto' && availableBirds.length > 0 && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <select
-                      onChange={e => { if (e.target.value) { enrollBird(t.id, e.target.value); e.target.value = ''; } }}
-                      className="flex-1 input-field"
-                    >
-                      <option value="">Inscrever ave...</option>
-                      {availableBirds.map(b => <option key={b.id} value={b.id}>{b.anilha} – {b.nome}</option>)}
-                    </select>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      {/* Filter */}
+      <div className="flex items-center gap-2">
+        <Filter className="w-4 h-4 text-muted-foreground" />
+        <select value={filterBird} onChange={e => setFilterBird(e.target.value)} className="input-field w-auto min-w-[200px]">
+          <option value="">Todas as aves</option>
+          {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome_comum} ({b.codigo_anilha})</option>)}
+        </select>
       </div>
 
-      {/* Judge modal */}
-      {showJudge && selectedEntry && (() => {
-        const t = tournaments.find(t => t.id === showJudge);
-        if (!t) return null;
-        return (
-          <div className="fixed inset-0 bg-background/80 z-50 flex items-center justify-center p-4" onClick={() => { setShowJudge(null); setSelectedEntry(null); }}>
-            <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-              <div className="flex justify-between items-center">
-                <h2 className="font-heading font-bold text-xl">Avaliação</h2>
-                <button onClick={() => { setShowJudge(null); setSelectedEntry(null); }}><X className="w-5 h-5 text-muted-foreground" /></button>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome do Juiz</label>
-                <input value={judgeForm.juizNome} onChange={e => setJudgeForm({ ...judgeForm, juizNome: e.target.value })} className="mt-1 input-field" />
-              </div>
-              {t.criterios.map(c => (
-                <div key={c}>
-                  <div className="flex justify-between">
-                    <label className="text-xs font-medium text-muted-foreground">{c}</label>
-                    <span className="text-sm font-bold text-secondary">{judgeForm.notas[c] || 5}</span>
-                  </div>
-                  <input type="range" min={0} max={10} step={0.5} value={judgeForm.notas[c] || 5}
-                    onChange={e => setJudgeForm({ ...judgeForm, notas: { ...judgeForm.notas, [c]: Number(e.target.value) } })}
-                    className="w-full mt-1 accent-primary" />
-                </div>
-              ))}
-              <button onClick={() => addEvaluation(showJudge, selectedEntry)} className="w-full btn-primary justify-center">
-                <Check className="w-4 h-4" /> Enviar Avaliação
-              </button>
-            </div>
-          </div>
-        );
-      })()}
+      {/* History table */}
+      <div className="bg-card rounded-xl border overflow-hidden animate-fade-in">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/20">
+              <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Torneio</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Ave</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Clube</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Pontuação</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Classificação</th>
+              <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(t => {
+              const bird = birds.find(b => b.id === t.bird_id);
+              return (
+                <tr key={t.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
+                  <td className="p-3 text-muted-foreground">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
+                  <td className="p-3 font-medium">{t.nome_torneio}</td>
+                  <td className="p-3">{bird?.nome_comum || '—'}</td>
+                  <td className="p-3 text-muted-foreground">{t.clube || '—'}</td>
+                  <td className="p-3 font-bold text-secondary">{t.pontuacao}</td>
+                  <td className="p-3">{t.classificacao || '—'}</td>
+                  <td className="p-3 text-right">
+                    <button onClick={() => { deleteTournament(t.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">Nenhum torneio registrado</p>}
+      </div>
 
-      {/* New tournament modal */}
+      {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-background/80 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-lg p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
-              <h2 className="font-heading font-bold text-xl">Novo Torneio</h2>
+              <h2 className="font-bold text-xl">Registrar Torneio</h2>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
             <div className="space-y-3">
               <div>
+                <label className="text-xs font-medium text-muted-foreground">Ave *</label>
+                <select value={form.bird_id} onChange={e => setForm({ ...form, bird_id: e.target.value })} className="mt-1 input-field">
+                  <option value="">Selecionar ave...</option>
+                  {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome_comum} ({b.codigo_anilha})</option>)}
+                </select>
+              </div>
+              <div>
                 <label className="text-xs font-medium text-muted-foreground">Nome do Torneio *</label>
-                <input value={newTournament.nome} onChange={e => setNewTournament({ ...newTournament, nome: e.target.value })} className="mt-1 input-field" />
+                <input value={form.nome_torneio} onChange={e => setForm({ ...form, nome_torneio: e.target.value })} className="mt-1 input-field" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Data *</label>
+                  <input type="date" value={form.data} onChange={e => setForm({ ...form, data: e.target.value })} className="mt-1 input-field" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Clube</label>
+                  <input value={form.clube} onChange={e => setForm({ ...form, clube: e.target.value })} className="mt-1 input-field" />
+                </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Data *</label>
-                <input type="date" value={newTournament.data} onChange={e => setNewTournament({ ...newTournament, data: e.target.value })} className="mt-1 input-field" />
+                <div className="flex justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">Pontuação (1-1000)</label>
+                  <span className="text-sm font-bold text-secondary">{form.pontuacao}</span>
+                </div>
+                <input type="range" min={1} max={1000} step={1} value={form.pontuacao}
+                  onChange={e => setForm({ ...form, pontuacao: Number(e.target.value) })}
+                  className="w-full mt-1 accent-secondary" />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Espécie Permitida</label>
-                <input value={newTournament.especiePermitida} onChange={e => setNewTournament({ ...newTournament, especiePermitida: e.target.value })}
-                  placeholder="Deixe vazio para todas" className="mt-1 input-field" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Número de Juízes</label>
-                <input type="number" value={newTournament.numJuizes} onChange={e => setNewTournament({ ...newTournament, numJuizes: Number(e.target.value) })} className="mt-1 input-field" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Critérios (separados por vírgula)</label>
-                <input value={newTournament.criterios} onChange={e => setNewTournament({ ...newTournament, criterios: e.target.value })} className="mt-1 input-field" />
+                <label className="text-xs font-medium text-muted-foreground">Classificação</label>
+                <input value={form.classificacao} onChange={e => setForm({ ...form, classificacao: e.target.value })} className="mt-1 input-field" placeholder="1º Lugar, Finalista..." />
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={createTournament} className="btn-primary">
-                <Check className="w-4 h-4" /> Criar Torneio
-              </button>
+              <button onClick={save} className="btn-primary"><Check className="w-4 h-4" /> Registrar</button>
             </div>
           </div>
         </div>
