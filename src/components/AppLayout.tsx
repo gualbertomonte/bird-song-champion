@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Bird, LayoutDashboard, Trophy, Stethoscope, Search,
+  Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
   ChevronLeft, ChevronRight, Menu, X
 } from 'lucide-react';
-import logo from '@/assets/logo.png';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/plantel', icon: Bird, label: 'Plantel' },
+  { to: '/bercario', icon: Egg, label: 'Berçário' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
-  { to: '/saude', icon: Stethoscope, label: 'Saúde' },
+  { to: '/saude', icon: Heart, label: 'Saúde' },
+  { to: '/perfil', icon: User, label: 'Perfil' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -20,26 +21,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-foreground/30 z-40 md:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:sticky top-0 h-screen z-50 flex flex-col bg-sidebar text-sidebar-foreground
+        fixed md:sticky top-0 h-screen z-50 flex flex-col bg-sidebar border-r border-sidebar-border
         transition-all duration-300
-        ${collapsed ? 'w-16' : 'w-60'}
+        ${collapsed ? 'w-16' : 'w-56'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 p-4 border-b border-sidebar-border">
-          <img src={logo} alt="Aves de Fibra" className="w-8 h-8 object-contain" />
-          {!collapsed && <span className="font-heading font-bold text-lg text-sidebar-primary">Aves de Fibra</span>}
+        <div className="flex items-center gap-3 px-4 h-14 border-b border-sidebar-border">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary to-secondary/60 flex items-center justify-center">
+            <Bird className="w-4 h-4 text-secondary-foreground" />
+          </div>
+          {!collapsed && <span className="font-bold text-sm text-sidebar-primary tracking-tight">Plantel Pro+</span>}
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 py-4 space-y-1 px-2">
+        <nav className="flex-1 py-3 px-2 space-y-0.5">
           {navItems.map(item => {
             const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
             return (
@@ -48,21 +48,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 to={item.to}
                 onClick={() => setMobileOpen(false)}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                  flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
                   ${active
                     ? 'bg-sidebar-accent text-sidebar-primary'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                   }
                 `}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <item.icon className={`w-4.5 h-4.5 flex-shrink-0 ${active ? 'text-sidebar-primary' : ''}`} />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             );
           })}
         </nav>
 
-        {/* Collapse button (desktop) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="hidden md:flex items-center justify-center p-3 border-t border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
@@ -73,29 +72,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-md border-b px-4 md:px-6 h-14 flex items-center gap-4">
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b px-4 md:px-6 h-14 flex items-center gap-4">
           <button onClick={() => setMobileOpen(true)} className="md:hidden text-foreground">
             <Menu className="w-5 h-5" />
           </button>
-
           <div className="flex-1 max-w-md">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar por anilha, nome..."
-                className="w-full pl-9 pr-4 py-2 rounded-lg bg-muted/50 border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                placeholder="Buscar por anilha, nome, espécie..."
+                className="w-full pl-9 pr-4 py-2 rounded-lg bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/30"
               />
             </div>
           </div>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 p-4 md:p-6 animate-fade-in">
+        <main className="flex-1 p-4 md:p-6">
           {children}
         </main>
       </div>
+
+      {/* Mobile bottom nav */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-sidebar border-t border-sidebar-border">
+        <div className="flex justify-around py-1.5">
+          {navItems.slice(0, 5).map(item => {
+            const active = location.pathname === item.to;
+            return (
+              <Link key={item.to} to={item.to} className={`flex flex-col items-center gap-0.5 py-1 px-2 ${active ? 'text-sidebar-primary' : 'text-sidebar-foreground'}`}>
+                <item.icon className="w-4.5 h-4.5" />
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
