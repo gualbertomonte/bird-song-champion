@@ -90,7 +90,7 @@ export default function Perfil() {
           {fields.map(f => (
             <div key={f.key} className={f.key === 'endereco' ? 'sm:col-span-2' : ''}>
               <label className="text-xs font-medium text-muted-foreground">
-                {f.label} {f.required && '*'}
+                {f.label} {'required' in f && f.required && '*'}
               </label>
               <input
                 type={('type' in f && f.type) || 'text'}
