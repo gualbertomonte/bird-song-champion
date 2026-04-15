@@ -7,8 +7,11 @@ import { AppProvider } from "@/context/AppContext";
 import AppLayout from "@/components/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Plantel from "@/pages/Plantel";
+import BirdDetail from "@/pages/BirdDetail";
 import Torneios from "@/pages/Torneios";
 import Saude from "@/pages/Saude";
+import Bercario from "@/pages/Bercario";
+import Perfil from "@/pages/Perfil";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -24,8 +27,11 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/plantel" element={<Plantel />} />
+              <Route path="/ave/:id" element={<BirdDetail />} />
               <Route path="/torneios" element={<Torneios />} />
               <Route path="/saude" element={<Saude />} />
+              <Route path="/bercario" element={<Bercario />} />
+              <Route path="/perfil" element={<Perfil />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>
