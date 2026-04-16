@@ -29,6 +29,11 @@ export interface Bird {
   updated_at?: string;
   transferido_por_email?: string;
   transferido_em?: string;
+  loan_status?: 'proprio' | 'emprestada_saida' | 'emprestada_entrada';
+  loan_id?: string;
+  original_owner_user_id?: string;
+  original_owner_email?: string;
+  original_bird_id?: string;
 }
 
 export interface Nest {
@@ -72,4 +77,5 @@ export interface CriadorProfile {
   endereco?: string;
   telefone?: string;
   logo_url?: string;
+  codigo_criadouro?: string;
 }
