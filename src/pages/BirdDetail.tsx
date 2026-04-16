@@ -69,12 +69,17 @@ export default function BirdDetail() {
       const { error: dbError } = await supabase.from('pending_transfers').insert({
         recipient_email: transferTo.trim().toLowerCase(),
         bird_data: bird as any,
-        sender_email: user?.email || '',
+        sender_email: (user?.email || '').toLowerCase(),
       });
-      if (dbError) console.error('DB transfer error:', dbError);
+      if (dbError) {
+        console.error('DB transfer error:', dbError);
+        toast.error('Erro ao registrar transferência no banco de dados. Tente novamente.');
+        setSending(false);
+        return;
+      }
 
-      // Send email notification
-      const { error } = await supabase.functions.invoke('send-transfer-email', {
+      // Send email notification (non-blocking — transfer is already saved)
+      supabase.functions.invoke('send-transfer-email', {
         body: {
           recipientEmail: transferTo.trim(),
           birdName: bird.nome,
@@ -82,8 +87,7 @@ export default function BirdDetail() {
           birdCode: bird.codigo_anilha,
           senderName: user?.email || 'Usuário Plantel Pro+',
         },
-      });
-      if (error) console.error('Email error:', error);
+      }).catch(err => console.error('Email error:', err));
 
       // Remove bird from current user's plantel
       deleteBird(bird.id);
