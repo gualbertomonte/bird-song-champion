@@ -2,16 +2,25 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, X
+  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/plantel', icon: Bird, label: 'Plantel' },
+  { to: '/arvore', icon: GitBranch, label: 'Árvore Genealógica' },
   { to: '/bercario', icon: Egg, label: 'Berçário' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
   { to: '/saude', icon: Heart, label: 'Saúde' },
   { to: '/perfil', icon: User, label: 'Perfil' },
+];
+
+const mobileNavItems = [
+  { to: '/', icon: LayoutDashboard, label: 'Home' },
+  { to: '/plantel', icon: Bird, label: 'Plantel' },
+  { to: '/arvore', icon: GitBranch, label: 'Árvore' },
+  { to: '/bercario', icon: Egg, label: 'Berçário' },
+  { to: '/torneios', icon: Trophy, label: 'Torneios' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -39,7 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {!collapsed && <span className="font-bold text-sm text-sidebar-primary tracking-tight">Plantel Pro+</span>}
         </div>
 
-        <nav className="flex-1 py-3 px-2 space-y-0.5">
+        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
           {navItems.map(item => {
             const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
             return (
@@ -56,11 +65,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 `}
               >
                 <item.icon className={`w-4.5 h-4.5 flex-shrink-0 ${active ? 'text-sidebar-primary' : ''}`} />
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );
           })}
         </nav>
+
+        {/* Instagram link */}
+        <div className="px-2 pb-2">
+          <a
+            href="https://www.instagram.com/plantelproplus"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all duration-200"
+          >
+            <Instagram className="w-4.5 h-4.5 flex-shrink-0" />
+            {!collapsed && <span>Seguir no Instagram</span>}
+          </a>
+        </div>
 
         <button
           onClick={() => setCollapsed(!collapsed)}
@@ -88,20 +110,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-3 sm:p-4 md:p-6">
           {children}
         </main>
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-sidebar border-t border-sidebar-border">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-sidebar border-t border-sidebar-border safe-area-bottom">
         <div className="flex justify-around py-1.5">
-          {navItems.slice(0, 5).map(item => {
+          {mobileNavItems.map(item => {
             const active = location.pathname === item.to;
             return (
-              <Link key={item.to} to={item.to} className={`flex flex-col items-center gap-0.5 py-1 px-2 ${active ? 'text-sidebar-primary' : 'text-sidebar-foreground'}`}>
+              <Link key={item.to} to={item.to} className={`flex flex-col items-center gap-0.5 py-1 px-1.5 min-w-0 ${active ? 'text-sidebar-primary' : 'text-sidebar-foreground'}`}>
                 <item.icon className="w-4.5 h-4.5" />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <span className="text-[9px] sm:text-[10px] font-medium truncate">{item.label}</span>
               </Link>
             );
           })}

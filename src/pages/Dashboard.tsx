@@ -40,12 +40,8 @@ export default function Dashboard() {
   const topBirds = [...tournaments]
     .reduce((acc, t) => {
       const existing = acc.find(a => a.bird_id === t.bird_id);
-      if (existing) {
-        existing.total += t.pontuacao;
-        existing.count++;
-      } else {
-        acc.push({ bird_id: t.bird_id, total: t.pontuacao, count: 1 });
-      }
+      if (existing) { existing.total += t.pontuacao; existing.count++; }
+      else acc.push({ bird_id: t.bird_id, total: t.pontuacao, count: 1 });
       return acc;
     }, [] as { bird_id: string; total: number; count: number }[])
     .map(a => ({ ...a, avg: Math.round(a.total / a.count), bird: birds.find(b => b.id === a.bird_id) }))
@@ -55,7 +51,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
-      {/* Welcome */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="page-title">Olá, {profile.nome_criadouro}! 👋</h1>
@@ -63,27 +58,24 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((s, i) => (
           <div key={s.label} className="stat-card animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
             <div className="flex items-center justify-between mb-3">
               <s.icon className={`w-5 h-5 ${s.color}`} />
               <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
-            <p className="text-3xl font-bold tracking-tight">{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+            <p className="text-2xl sm:text-3xl font-bold tracking-tight">{s.value}</p>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts + upcoming */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Distribution chart */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '200ms' }}>
           <h2 className="font-semibold text-lg mb-4">Distribuição do Plantel</h2>
           {pieData.length > 0 ? (
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
               <ResponsiveContainer width={160} height={160}>
                 <PieChart>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value" strokeWidth={0}>
@@ -106,7 +98,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Próximos compromissos */}
         <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '300ms' }}>
           <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-secondary" /> Próximos Compromissos
@@ -118,8 +109,8 @@ export default function Dashboard() {
                 <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                   <Heart className="w-4 h-4 text-destructive flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{bird?.nome_comum} — {h.tipo}</p>
-                    <p className="text-xs text-muted-foreground">{h.descricao}</p>
+                    <p className="text-sm font-medium truncate">{bird?.nome} — {h.tipo}</p>
+                    <p className="text-xs text-muted-foreground truncate">{h.descricao}</p>
                   </div>
                   <span className="text-xs text-secondary font-medium whitespace-nowrap">
                     {new Date(h.proxima_dose!).toLocaleDateString('pt-BR')}
@@ -135,7 +126,7 @@ export default function Dashboard() {
                 <div key={n.id} className="flex items-center gap-3 p-3 rounded-lg bg-info/5 border border-info/10">
                   <Egg className="w-4 h-4 text-info flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">Ninhada de {femea?.nome_comum}</p>
+                    <p className="text-sm font-medium truncate">Ninhada de {femea?.nome}</p>
                     <p className="text-xs text-muted-foreground">{n.quantidade_ovos} ovos incubando</p>
                   </div>
                   <span className="text-xs text-info font-medium whitespace-nowrap">
@@ -148,7 +139,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Top birds */}
       <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '400ms' }}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-semibold text-lg flex items-center gap-2">
@@ -161,15 +151,15 @@ export default function Dashboard() {
         {topBirds.length > 0 ? (
           <div className="space-y-2">
             {topBirds.map((item, i) => (
-              <div key={item.bird_id} className={`flex items-center gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
+              <div key={item.bird_id} className={`flex items-center gap-3 sm:gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
                 <span className={`text-lg font-bold w-8 text-center ${i === 0 ? 'text-secondary' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-orange-400' : 'text-muted-foreground'}`}>
                   {i + 1}º
                 </span>
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {item.bird?.foto_url ? <img src={item.bird.foto_url} className="w-full h-full object-cover" /> : <Bird className="w-4 h-4 text-primary-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{item.bird?.nome_comum}</p>
+                  <p className="font-medium text-sm truncate">{item.bird?.nome}</p>
                   <p className="text-xs text-muted-foreground">{item.count} torneios · Média {item.avg} pts</p>
                 </div>
                 <span className="font-bold text-lg text-secondary">{item.avg}</span>
@@ -182,7 +172,7 @@ export default function Dashboard() {
       </div>
 
       {/* FAB */}
-      <div className="fixed bottom-20 md:bottom-6 right-6 z-40">
+      <div className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40">
         {showFab && (
           <div className="absolute bottom-16 right-0 bg-card border rounded-xl shadow-xl p-2 space-y-1 w-48 animate-scale-in">
             <Link to="/plantel?new=1" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted/50 transition-colors" onClick={() => setShowFab(false)}>

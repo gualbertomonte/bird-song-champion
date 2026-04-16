@@ -12,6 +12,7 @@ import Torneios from "@/pages/Torneios";
 import Saude from "@/pages/Saude";
 import Bercario from "@/pages/Bercario";
 import Perfil from "@/pages/Perfil";
+import ArvoreGenealogica from "@/pages/ArvoreGenealogica";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/plantel" element={<Plantel />} />
               <Route path="/ave/:id" element={<BirdDetail />} />
+              <Route path="/arvore" element={<ArvoreGenealogica />} />
               <Route path="/torneios" element={<Torneios />} />
               <Route path="/saude" element={<Saude />} />
               <Route path="/bercario" element={<Bercario />} />

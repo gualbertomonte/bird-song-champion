@@ -1,13 +1,9 @@
 import { useAppState } from '@/context/AppContext';
-import { Heart, Plus, Pill, Calendar, AlertCircle, X, Check, Stethoscope, Syringe, FlaskConical } from 'lucide-react';
+import { Heart, Plus, Pill, Calendar, AlertCircle, X, Check, Syringe, FlaskConical } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { HealthRecord } from '@/types/bird';
 
 const tiposOptions = ['Vermifugação', 'Vacina', 'Exame', 'Vitamina', 'Tratamento', 'Cirurgia', 'Outro'];
-const tipoIcons: Record<string, any> = {
-  Vermifugação: Pill, Vacina: Syringe, Exame: FlaskConical,
-};
 
 export default function Saude() {
   const { healthRecords, birds, addHealthRecord, deleteHealthRecord } = useAppState();
@@ -55,7 +51,6 @@ export default function Saude() {
         </button>
       </div>
 
-      {/* Alerts */}
       {upcoming.length > 0 && (
         <div className="bg-card rounded-xl border p-5 animate-fade-in">
           <h2 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -69,10 +64,10 @@ export default function Saude() {
                 <div key={h.id} className={`flex items-center gap-3 p-3 rounded-lg ${days <= 7 ? 'bg-destructive/5 border border-destructive/15' : 'bg-secondary/5 border border-secondary/10'}`}>
                   <Pill className={`w-4 h-4 ${days <= 7 ? 'text-destructive' : 'text-secondary'} flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{bird?.nome_comum} — {h.tipo}</p>
-                    <p className="text-xs text-muted-foreground">{h.descricao}</p>
+                    <p className="text-sm font-medium truncate">{bird?.nome} — {h.tipo}</p>
+                    <p className="text-xs text-muted-foreground truncate">{h.descricao}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <p className="text-xs font-medium">{new Date(h.proxima_dose!).toLocaleDateString('pt-BR')}</p>
                     <p className={`text-xs ${days <= 7 ? 'text-destructive' : 'text-secondary'}`}>em {days} dias</p>
                   </div>
@@ -83,49 +78,49 @@ export default function Saude() {
         </div>
       )}
 
-      {/* History */}
       <div className="bg-card rounded-xl border overflow-hidden animate-fade-in">
         <div className="p-4 border-b bg-muted/10">
           <h2 className="font-semibold flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> Histórico Completo</h2>
         </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/10">
-              <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Ave</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Tipo</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Descrição</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Próx. Dose</th>
-              <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recent.map(h => {
-              const bird = getBird(h.bird_id);
-              return (
-                <tr key={h.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
-                  <td className="p-3 text-muted-foreground">{new Date(h.data).toLocaleDateString('pt-BR')}</td>
-                  <td className="p-3 font-medium">{bird?.nome_comum || '—'}</td>
-                  <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">{h.tipo}</span></td>
-                  <td className="p-3 text-muted-foreground text-xs">{h.descricao || '—'}</td>
-                  <td className="p-3 text-xs">{h.proxima_dose ? new Date(h.proxima_dose).toLocaleDateString('pt-BR') : '—'}</td>
-                  <td className="p-3 text-right">
-                    <button onClick={() => { deleteHealthRecord(h.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/10">
+                <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Ave</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Tipo</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Descrição</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Próx. Dose</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.map(h => {
+                const bird = getBird(h.bird_id);
+                return (
+                  <tr key={h.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
+                    <td className="p-3 text-muted-foreground text-xs sm:text-sm">{new Date(h.data).toLocaleDateString('pt-BR')}</td>
+                    <td className="p-3 font-medium text-xs sm:text-sm">{bird?.nome || '—'}</td>
+                    <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">{h.tipo}</span></td>
+                    <td className="p-3 text-muted-foreground text-xs hidden sm:table-cell">{h.descricao || '—'}</td>
+                    <td className="p-3 text-xs hidden sm:table-cell">{h.proxima_dose ? new Date(h.proxima_dose).toLocaleDateString('pt-BR') : '—'}</td>
+                    <td className="p-3 text-right">
+                      <button onClick={() => { deleteHealthRecord(h.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         {recent.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">Nenhum registro de saúde</p>}
       </div>
 
-      {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-xl">Novo Registro de Saúde</h2>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
@@ -135,7 +130,7 @@ export default function Saude() {
                 <label className="text-xs font-medium text-muted-foreground">Ave *</label>
                 <select value={form.bird_id} onChange={e => setForm({ ...form, bird_id: e.target.value })} className="mt-1 input-field">
                   <option value="">Selecionar ave...</option>
-                  {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome_comum} ({b.codigo_anilha})</option>)}
+                  {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">

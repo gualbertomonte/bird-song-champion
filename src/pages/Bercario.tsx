@@ -1,8 +1,7 @@
 import { useAppState } from '@/context/AppContext';
-import { Egg, Bird, Plus, X, Check, ArrowRight } from 'lucide-react';
+import { Egg, Bird, Plus, X, Check } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Nest } from '@/types/bird';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 
@@ -53,16 +52,15 @@ export default function Bercario() {
     const mae = getBird(nest.femea_id);
     const pai = getBird(nest.macho_id);
 
-    // Create chicks
     const newBirds = [];
     for (let i = 0; i < numFilhotes; i++) {
       const id = `${Date.now()}-${i}`;
       newBirds.push({
         id,
         codigo_anilha: `PEND-${id.slice(-6)}`,
-        nome_comum: mae?.nome_comum || 'Filhote',
+        nome: mae?.nome || 'Filhote',
         nome_cientifico: mae?.nome_cientifico || pai?.nome_cientifico || '',
-        sexo: 'M' as const, // default, to be updated
+        sexo: 'M' as const,
         data_nascimento: new Date().toISOString().split('T')[0],
         status: 'Berçário' as const,
         pai_id: nest.macho_id,
@@ -96,9 +94,7 @@ export default function Bercario() {
         </button>
       </div>
 
-      {/* 3-column layout */}
-      <div className="grid md:grid-cols-3 gap-4">
-        {/* Column 1: Fêmeas no Berçário */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card rounded-xl border p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <Bird className="w-4 h-4 text-info" /> Fêmeas no Berçário ({femeasBercario.length})
@@ -106,7 +102,7 @@ export default function Bercario() {
           <div className="space-y-2">
             {femeasBercario.map(b => (
               <div key={b.id} className="p-3 rounded-lg bg-muted/20 border border-border/50">
-                <p className="font-medium text-sm">{b.nome_comum}</p>
+                <p className="font-medium text-sm">{b.nome}</p>
                 <p className="text-xs text-muted-foreground">{b.codigo_anilha}</p>
               </div>
             ))}
@@ -114,7 +110,6 @@ export default function Bercario() {
           </div>
         </div>
 
-        {/* Column 2: Ninhadas Incubando */}
         <div className="bg-card rounded-xl border p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <Egg className="w-4 h-4 text-secondary" /> Incubando ({ninhadasIncubando.length})
@@ -126,7 +121,7 @@ export default function Bercario() {
               return (
                 <div key={n.id} className="p-3 rounded-lg bg-secondary/5 border border-secondary/15 space-y-2">
                   <div>
-                    <p className="text-sm font-medium">{mae?.nome_comum} × {pai?.nome_comum}</p>
+                    <p className="text-sm font-medium">{mae?.nome} × {pai?.nome}</p>
                     <p className="text-xs text-muted-foreground">{n.quantidade_ovos} ovos · {new Date(n.data_postura).toLocaleDateString('pt-BR')}</p>
                   </div>
                   <button
@@ -142,7 +137,6 @@ export default function Bercario() {
           </div>
         </div>
 
-        {/* Column 3: Filhotes Recentes */}
         <div className="bg-card rounded-xl border p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <Bird className="w-4 h-4 text-success" /> Filhotes Recentes ({filhotesRecentes.length})
@@ -150,7 +144,7 @@ export default function Bercario() {
           <div className="space-y-2">
             {filhotesRecentes.map(b => (
               <div key={b.id} className="p-3 rounded-lg bg-muted/20 border border-border/50">
-                <p className="font-medium text-sm">{b.nome_comum}</p>
+                <p className="font-medium text-sm">{b.nome}</p>
                 <p className="text-xs text-muted-foreground font-mono">{b.codigo_anilha}</p>
                 <p className="text-xs text-muted-foreground">{b.data_nascimento ? new Date(b.data_nascimento).toLocaleDateString('pt-BR') : ''}</p>
               </div>
@@ -160,10 +154,9 @@ export default function Bercario() {
         </div>
       </div>
 
-      {/* New nest modal */}
       {showForm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-xl">Nova Ninhada</h2>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
@@ -173,14 +166,14 @@ export default function Bercario() {
                 <label className="text-xs font-medium text-muted-foreground">Fêmea *</label>
                 <select value={form.femea_id} onChange={e => setForm({ ...form, femea_id: e.target.value })} className="mt-1 input-field">
                   <option value="">Selecionar...</option>
-                  {birds.filter(b => b.sexo === 'F').map(b => <option key={b.id} value={b.id}>{b.nome_comum} ({b.codigo_anilha})</option>)}
+                  {birds.filter(b => b.sexo === 'F').map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Macho *</label>
                 <select value={form.macho_id} onChange={e => setForm({ ...form, macho_id: e.target.value })} className="mt-1 input-field">
                   <option value="">Selecionar...</option>
-                  {machos.map(b => <option key={b.id} value={b.id}>{b.nome_comum} ({b.codigo_anilha})</option>)}
+                  {machos.map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -206,7 +199,6 @@ export default function Bercario() {
         </div>
       )}
 
-      {/* Eclosão modal */}
       {eclosaoModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setEclosaoModal(null)}>
           <div className="bg-card rounded-2xl border shadow-xl w-full max-w-sm p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
