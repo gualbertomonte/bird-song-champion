@@ -1,6 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { Bird as BirdIcon, Search, Mars, Venus, HelpCircle, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+
+const Mars = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="10" cy="14" r="5"/><path d="M19 5l-5.4 5.4"/><path d="M19 5h-5"/><path d="M19 5v5"/></svg>
+);
+const Venus = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="9" r="5"/><path d="M12 14v8"/><path d="M9 19h6"/></svg>
+);
 import { Bird } from '@/types/bird';
 
 interface NodeProps {
