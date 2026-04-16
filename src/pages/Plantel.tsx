@@ -32,10 +32,53 @@ export default function Plantel() {
   const [sortKey, setSortKey] = useState<SortKey>('nome');
   const [sortAsc, setSortAsc] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [anilhaCheck, setAnilhaCheck] = useState<{ status: 'idle' | 'checking' | 'available' | 'taken-local' | 'taken-global'; message?: string }>({ status: 'idle' });
 
   useEffect(() => {
     if (searchParams.get('new') === '1') { openNew(); }
   }, [searchParams]);
+
+  // Validação em tempo real do código de anilha (debounced)
+  useEffect(() => {
+    if (!showForm) return;
+    const codigoRaw = form.codigo_anilha?.trim() || '';
+    if (!codigoRaw) { setAnilhaCheck({ status: 'idle' }); return; }
+    const codigo = codigoRaw.toLowerCase();
+
+    // 1) Conflito local (mesmo plantel)
+    const conflitoLocal = birds.find(b => b.codigo_anilha?.trim().toLowerCase() === codigo && b.id !== editId);
+    if (conflitoLocal) {
+      setAnilhaCheck({ status: 'taken-local', message: `Já existe no seu plantel: ${conflitoLocal.nome}` });
+      return;
+    }
+
+    setAnilhaCheck({ status: 'checking' });
+    const t = setTimeout(async () => {
+      // 2) Conflito global (qualquer usuário) — usa o índice único; em caso de erro 23505 ao salvar, ainda barramos
+      try {
+        const { data, error } = await supabase
+          .from('birds')
+          .select('id')
+          .ilike('codigo_anilha', codigoRaw)
+          .limit(1)
+          .maybeSingle();
+        if (error && (error as any).code !== 'PGRST116') {
+          // RLS bloqueia ver aves de outros usuários, então normalmente só veremos as próprias.
+          // Se não houver retorno, consideramos disponível (a unicidade global é garantida pelo banco no salvar).
+          setAnilhaCheck({ status: 'available' });
+          return;
+        }
+        if (data && data.id !== editId) {
+          setAnilhaCheck({ status: 'taken-global', message: 'Esta anilha já está em uso.' });
+        } else {
+          setAnilhaCheck({ status: 'available' });
+        }
+      } catch {
+        setAnilhaCheck({ status: 'available' });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [form.codigo_anilha, birds, editId, showForm]);
 
   const uniqueEspecies = useMemo(() => [...new Set(birds.map(b => b.nome))], [birds]);
 
