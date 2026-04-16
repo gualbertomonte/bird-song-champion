@@ -1,7 +1,7 @@
 import { useAppState } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Save, Upload, Check, Loader2 } from 'lucide-react';
+import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +12,31 @@ export default function Perfil() {
   const [form, setForm] = useState({ ...profile });
   const [saved, setSaved] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [changingPw, setChangingPw] = useState(false);
+
+  const handlePasswordChange = async () => {
+    if (newPw.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setChangingPw(false);
+    if (error) {
+      toast.error(error.message || 'Erro ao alterar senha');
+    } else {
+      toast.success('Senha alterada com sucesso!');
+      setNewPw('');
+      setConfirmPw('');
+    }
+  };
 
   const fields = [
     { key: 'nome_criadouro', label: 'Nome do Criadouro', required: true },
@@ -118,6 +143,58 @@ export default function Perfil() {
           <button onClick={save} className="btn-primary">
             {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             {saved ? 'Salvo!' : 'Salvar Perfil'}
+          </button>
+        </div>
+      </div>
+
+      {/* Alterar Senha */}
+      <div className="bg-card rounded-xl border p-5 space-y-4 animate-fade-in" style={{ animationDelay: '300ms' }}>
+        <div className="flex items-center gap-2">
+          <Lock className="w-4 h-4 text-secondary" />
+          <h3 className="font-semibold">Alterar Senha</h3>
+        </div>
+        {user?.email && (
+          <p className="text-xs text-muted-foreground">Conta: {user.email}</p>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Nova Senha</label>
+            <div className="relative mt-1">
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={newPw}
+                onChange={e => setNewPw(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="input-field pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Confirmar Nova Senha</label>
+            <input
+              type={showPw ? 'text' : 'password'}
+              value={confirmPw}
+              onChange={e => setConfirmPw(e.target.value)}
+              placeholder="Repita a senha"
+              className="input-field mt-1"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={handlePasswordChange}
+            disabled={changingPw || !newPw || !confirmPw}
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {changingPw ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+            {changingPw ? 'Alterando...' : 'Alterar Senha'}
           </button>
         </div>
       </div>
