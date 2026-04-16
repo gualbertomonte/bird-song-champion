@@ -30,7 +30,20 @@ const AppContext = createContext<AppState | null>(null);
 function load<T>(key: string, fallback: T): T {
   try {
     const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
+    if (!stored) return fallback;
+    const parsed = JSON.parse(stored);
+    // Migration: rename nome_comum -> nome if needed
+    if (key === 'ppp_birds' && Array.isArray(parsed)) {
+      return parsed.map((b: any) => {
+        if (b.nome_comum && !b.nome) {
+          const { nome_comum, gaiola, ...rest } = b;
+          return { ...rest, nome: nome_comum };
+        }
+        const { gaiola, ...rest } = b;
+        return rest;
+      }) as T;
+    }
+    return parsed;
   } catch { return fallback; }
 }
 
