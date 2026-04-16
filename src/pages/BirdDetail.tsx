@@ -362,7 +362,7 @@ export default function BirdDetail() {
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowTransfer(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={handleTransfer} className="btn-primary text-sm"><Send className="w-3.5 h-3.5" /> Transferir</button>
+              <button onClick={handleTransfer} disabled={sending} className="btn-primary text-sm disabled:opacity-50"><Send className="w-3.5 h-3.5" /> {sending ? 'Enviando...' : 'Transferir'}</button>
             </div>
           </div>
         </div>
