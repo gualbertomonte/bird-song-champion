@@ -131,10 +131,36 @@ export default function BirdDetail() {
             <button onClick={() => setShowCracha(true)} className="btn-primary text-xs">
               <QrCode className="w-3.5 h-3.5" /> Crachá Digital
             </button>
-            <button onClick={() => setShowTransfer(true)} className="btn-secondary text-xs">
+            <button
+              onClick={() => setShowTransfer(true)}
+              disabled={bird.loan_status === 'emprestada_entrada'}
+              title={bird.loan_status === 'emprestada_entrada' ? 'Aves recebidas em empréstimo não podem ser transferidas' : ''}
+              className="btn-secondary text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               <Send className="w-3.5 h-3.5" /> Transferir Ave
             </button>
           </div>
+          {bird.loan_status === 'emprestada_entrada' && (
+            <div className="mt-3 p-3 rounded-lg bg-info/10 border border-info/30 text-xs text-info flex items-start gap-2">
+              <BirdIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Ave recebida em empréstimo para reprodução</p>
+                <p className="text-info/80 mt-0.5">
+                  Esta ave pertence a <span className="font-medium">{bird.original_owner_email || 'outro criador'}</span> e está sob seus cuidados temporariamente.
+                  Você não pode editar, excluir ou transferir o cadastro. Filhotes gerados pertencem a você.
+                </p>
+              </div>
+            </div>
+          )}
+          {bird.loan_status === 'emprestada_saida' && (
+            <div className="mt-3 p-3 rounded-lg bg-warning/10 border border-warning/30 text-xs text-warning flex items-start gap-2">
+              <Send className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Ave emprestada para outro criador</p>
+                <p className="text-warning/80 mt-0.5">Acompanhe o empréstimo em <Link to="/emprestimos" className="underline">Empréstimos</Link>.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
