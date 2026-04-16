@@ -35,12 +35,11 @@ function load<T>(key: string, fallback: T): T {
     // Migration: rename nome_comum -> nome if needed
     if (key === 'ppp_birds' && Array.isArray(parsed)) {
       return parsed.map((b: any) => {
-        if (b.nome_comum && !b.nome) {
-          const { nome_comum, gaiola, ...rest } = b;
-          return { ...rest, nome: nome_comum };
-        }
-        const { gaiola, ...rest } = b;
-        return rest;
+        const { nome_comum, gaiola, cor, ...rest } = b;
+        return {
+          ...rest,
+          nome: b.nome || nome_comum || '',
+        };
       }) as T;
     }
     return parsed;

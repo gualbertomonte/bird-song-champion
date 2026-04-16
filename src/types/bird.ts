@@ -1,5 +1,5 @@
 export type BirdStatus = 'Ativo' | 'Berçário' | 'Vendido' | 'Falecido';
-export type BirdSex = 'M' | 'F';
+export type BirdSex = 'M' | 'F' | 'I';
 
 export const ESTADOS_BR = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG',
@@ -24,7 +24,7 @@ export interface Bird {
   foto_url?: string;
   fotos?: string[];
   estado?: EstadoUF;
-  cor?: string;
+  nome_comum_especie?: string;
   created_at?: string;
   updated_at?: string;
 }
