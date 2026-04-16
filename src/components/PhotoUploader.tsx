@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, ImagePlus, X, Star } from 'lucide-react';
+import { Camera, ImagePlus, X, Star, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface Props {
   photos: string[];
@@ -7,28 +10,40 @@ interface Props {
   maxPhotos?: number;
 }
 
-function resizeImage(dataUrl: string, maxSize = 300): Promise<string> {
-  return new Promise((resolve) => {
+function resizeImageToBlob(dataUrl: string, maxSize = 800): Promise<Blob> {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
       let w = img.width, h = img.height;
       if (w > h) { h = (maxSize * h) / w; w = maxSize; }
       else { w = (maxSize * w) / h; h = maxSize; }
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.8));
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob fail')), 'image/jpeg', 0.85);
     };
+    img.onerror = reject;
     img.src = dataUrl;
   });
 }
 
+async function uploadToCloud(dataUrl: string, userId: string): Promise<string> {
+  const blob = await resizeImageToBlob(dataUrl);
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from('bird-photos').upload(path, blob, {
+    contentType: 'image/jpeg', upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('bird-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props) {
+  const { user } = useAuth();
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -58,23 +73,33 @@ export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props
   }, [cameraStream]);
 
   const confirmPhoto = useCallback(async () => {
-    if (!preview) return;
-    const resized = await resizeImage(preview);
-    onChange([...photos, resized]);
-    closeCamera();
-  }, [preview, photos, onChange, closeCamera]);
+    if (!preview || !user) return;
+    setUploading(true);
+    try {
+      const url = await uploadToCloud(preview, user.id);
+      onChange([...photos, url]);
+      closeCamera();
+    } catch (e) {
+      console.error(e); toast.error('Erro ao enviar foto.');
+    } finally { setUploading(false); }
+  }, [preview, photos, onChange, closeCamera, user]);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
+    setUploading(true);
     const reader = new FileReader();
     reader.onload = async () => {
-      const resized = await resizeImage(reader.result as string);
-      onChange([...photos, resized]);
+      try {
+        const url = await uploadToCloud(reader.result as string, user.id);
+        onChange([...photos, url]);
+      } catch (err) {
+        console.error(err); toast.error('Erro ao enviar foto.');
+      } finally { setUploading(false); }
     };
     reader.readAsDataURL(file);
     e.target.value = '';
-  }, [photos, onChange]);
+  }, [photos, onChange, user]);
 
   const removePhoto = (idx: number) => onChange(photos.filter((_, i) => i !== idx));
   const setMain = (idx: number) => {
@@ -87,8 +112,7 @@ export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props
   return (
     <div className="space-y-3">
       <label className="text-xs font-medium text-muted-foreground">Fotos ({photos.length}/{maxPhotos})</label>
-      
-      {/* Thumbnails */}
+
       <div className="flex flex-wrap gap-2">
         {photos.map((photo, i) => (
           <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-border group">
@@ -108,22 +132,21 @@ export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props
         ))}
       </div>
 
-      {/* Add buttons */}
       {photos.length < maxPhotos && (
-        <div className="flex gap-2">
-          <button type="button" onClick={openCamera}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs hover:bg-primary/20 transition-colors">
+        <div className="flex gap-2 items-center">
+          <button type="button" disabled={uploading} onClick={openCamera}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs hover:bg-primary/20 transition-colors disabled:opacity-50">
             <Camera className="w-3.5 h-3.5" /> Câmera
           </button>
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary text-xs hover:bg-secondary/20 transition-colors">
+          <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary text-xs hover:bg-secondary/20 transition-colors disabled:opacity-50">
             <ImagePlus className="w-3.5 h-3.5" /> Galeria
           </button>
+          {uploading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
         </div>
       )}
 
-      {/* Camera modal */}
       {showCamera && (
         <div className="fixed inset-0 bg-background/80 z-[60] flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl border shadow-xl w-full max-w-sm p-4 space-y-3 animate-scale-in">
@@ -142,10 +165,12 @@ export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props
               <>
                 <img src={preview} alt="Preview" className="w-full rounded-lg aspect-square object-cover" />
                 <div className="flex gap-2">
-                  <button onClick={() => setPreview(null)} className="flex-1 px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">
+                  <button disabled={uploading} onClick={() => setPreview(null)} className="flex-1 px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors disabled:opacity-50">
                     Tirar outra
                   </button>
-                  <button onClick={confirmPhoto} className="flex-1 btn-primary justify-center">Usar foto</button>
+                  <button disabled={uploading} onClick={confirmPhoto} className="flex-1 btn-primary justify-center disabled:opacity-50">
+                    {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Usar foto'}
+                  </button>
                 </div>
               </>
             )}
