@@ -1,13 +1,17 @@
 import { useAppState } from '@/context/AppContext';
-import { User, Save, Upload, Check } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Save, Upload, Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
 export default function Perfil() {
   const { profile, setProfile } = useAppState();
+  const { user } = useAuth();
   const [form, setForm] = useState({ ...profile });
   const [saved, setSaved] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const fields = [
     { key: 'nome_criadouro', label: 'Nome do Criadouro', required: true },
@@ -32,15 +36,22 @@ export default function Perfil() {
     toast.success('Perfil atualizado!');
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setForm({ ...form, logo_url: result });
-    };
-    reader.readAsDataURL(file);
+    if (!file || !user) return;
+    setUploadingLogo(true);
+    try {
+      const path = `${user.id}/logo-${Date.now()}.${file.name.split('.').pop() || 'png'}`;
+      const { error } = await supabase.storage.from('bird-photos').upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('bird-photos').getPublicUrl(path);
+      setForm({ ...form, logo_url: data.publicUrl });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enviar logo');
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   return (
@@ -75,10 +86,11 @@ export default function Perfil() {
           </div>
           <div>
             <label className="btn-secondary cursor-pointer text-xs">
-              <Upload className="w-3.5 h-3.5" /> Enviar Logo
-              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+              {uploadingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              {uploadingLogo ? 'Enviando...' : 'Enviar Logo'}
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
             </label>
-            <p className="text-xs text-muted-foreground mt-1">PNG ou JPG, até 500KB</p>
+            <p className="text-xs text-muted-foreground mt-1">PNG ou JPG</p>
           </div>
         </div>
       </div>

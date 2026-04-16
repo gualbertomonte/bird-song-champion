@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useRef } from 'react';
 import { Bird, Tournament, HealthRecord, Nest, CriadorProfile } from '@/types/bird';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ interface AppState {
   healthRecords: HealthRecord[];
   nests: Nest[];
   profile: CriadorProfile;
+  loading: boolean;
   setBirds: (birds: Bird[]) => void;
   setTournaments: (t: Tournament[]) => void;
   setHealthRecords: (h: HealthRecord[]) => void;
@@ -29,144 +30,384 @@ interface AppState {
 
 const AppContext = createContext<AppState | null>(null);
 
-function userKey(uid: string, key: string) {
-  return `ppp_${uid}_${key}`;
+const defaultProfile: CriadorProfile = { nome_criadouro: '' };
+
+const MIGRATION_FLAG = 'ppp_migrated_to_cloud_v1';
+
+// Map DB row -> Bird
+function rowToBird(r: any): Bird {
+  return {
+    id: r.id,
+    nome: r.nome ?? '',
+    nome_cientifico: r.nome_cientifico ?? '',
+    nome_comum_especie: r.nome_comum_especie ?? undefined,
+    sexo: r.sexo,
+    data_nascimento: r.data_nascimento ?? undefined,
+    tipo_anilha: r.tipo_anilha ?? undefined,
+    diametro_anilha: r.diametro_anilha ?? undefined,
+    codigo_anilha: r.codigo_anilha ?? '',
+    status: r.status,
+    observacoes: r.observacoes ?? undefined,
+    pai_id: r.pai_id ?? undefined,
+    mae_id: r.mae_id ?? undefined,
+    foto_url: r.foto_url ?? undefined,
+    fotos: Array.isArray(r.fotos) ? r.fotos : [],
+    estado: r.estado ?? undefined,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+  };
 }
 
-function load<T>(uid: string, key: string, fallback: T): T {
-  try {
-    const stored = localStorage.getItem(userKey(uid, key));
-    if (!stored) return fallback;
-    const parsed = JSON.parse(stored);
-    if (key === 'birds' && Array.isArray(parsed)) {
-      return parsed.map((b: any) => {
-        const { nome_comum, gaiola, cor, ...rest } = b;
-        return { ...rest, nome: b.nome || nome_comum || '' };
-      }) as T;
-    }
-    return parsed;
-  } catch { return fallback; }
+function birdToRow(b: Partial<Bird>, userId: string) {
+  return {
+    user_id: userId,
+    nome: b.nome ?? '',
+    nome_cientifico: b.nome_cientifico ?? '',
+    nome_comum_especie: b.nome_comum_especie ?? null,
+    sexo: b.sexo ?? 'I',
+    data_nascimento: b.data_nascimento || null,
+    tipo_anilha: b.tipo_anilha ?? null,
+    diametro_anilha: b.diametro_anilha ?? null,
+    codigo_anilha: b.codigo_anilha ?? '',
+    status: b.status ?? 'Ativo',
+    observacoes: b.observacoes ?? null,
+    pai_id: b.pai_id || null,
+    mae_id: b.mae_id || null,
+    foto_url: b.foto_url ?? null,
+    fotos: b.fotos ?? [],
+    estado: b.estado ?? null,
+  };
 }
 
-function save<T>(uid: string, key: string, data: T) {
-  try { localStorage.setItem(userKey(uid, key), JSON.stringify(data)); } catch { /* quota */ }
+function rowToTournament(r: any): Tournament {
+  return {
+    id: r.id, bird_id: r.bird_id, data: r.data, nome_torneio: r.nome_torneio,
+    clube: r.clube ?? undefined, pontuacao: Number(r.pontuacao),
+    classificacao: r.classificacao ?? undefined, created_at: r.created_at,
+  };
 }
-
-const defaultProfile: CriadorProfile = {
-  nome_criadouro: '',
-};
+function rowToHealth(r: any): HealthRecord {
+  return {
+    id: r.id, bird_id: r.bird_id, data: r.data, tipo: r.tipo,
+    descricao: r.descricao ?? undefined, proxima_dose: r.proxima_dose ?? undefined,
+  };
+}
+function rowToNest(r: any): Nest {
+  return {
+    id: r.id, femea_id: r.femea_id, macho_id: r.macho_id,
+    data_postura: r.data_postura, data_eclosao: r.data_eclosao ?? undefined,
+    quantidade_ovos: r.quantidade_ovos, quantidade_filhotes: r.quantidade_filhotes ?? undefined,
+    status: r.status, observacoes: r.observacoes ?? undefined, created_at: r.created_at,
+  };
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const uid = user?.id || 'anon';
+  const [birds, setBirdsState] = useState<Bird[]>([]);
+  const [tournaments, setTournamentsState] = useState<Tournament[]>([]);
+  const [healthRecords, setHealthRecordsState] = useState<HealthRecord[]>([]);
+  const [nests, setNestsState] = useState<Nest[]>([]);
+  const [profile, setProfileState] = useState<CriadorProfile>(defaultProfile);
+  const [loading, setLoading] = useState(true);
+  const idMapRef = useRef<Map<string, string>>(new Map()); // localId -> cloudId during migration
 
-  const [birds, setBirdsState] = useState<Bird[]>(() => load(uid, 'birds', []));
-  const [tournaments, setTournamentsState] = useState<Tournament[]>(() => load(uid, 'tournaments', []));
-  const [healthRecords, setHealthRecordsState] = useState<HealthRecord[]>(() => load(uid, 'health', []));
-  const [nests, setNestsState] = useState<Nest[]>(() => load(uid, 'nests', []));
-  const [profile, setProfileState] = useState<CriadorProfile>(() => load(uid, 'profile', defaultProfile));
-
-  // Reload data when user changes
-  useEffect(() => {
-    setBirdsState(load(uid, 'birds', []));
-    setTournamentsState(load(uid, 'tournaments', []));
-    setHealthRecordsState(load(uid, 'health', []));
-    setNestsState(load(uid, 'nests', []));
-    setProfileState(load(uid, 'profile', defaultProfile));
-  }, [uid]);
-
-  // Claim pending transfers on login
-  useEffect(() => {
-    if (!user?.email) return;
-    
-    const claimTransfers = async () => {
-      try {
-        const { data: transfers, error } = await supabase
-          .from('pending_transfers')
-          .select('*')
-          .eq('claimed', false)
-          .ilike('recipient_email', user.email!);
-        
-        if (error || !transfers?.length) return;
-
-        const newBirds: Bird[] = [];
-        for (const t of transfers) {
-          const birdData = t.bird_data as any;
-          if (birdData) {
-            newBirds.push({
-              ...birdData,
-              id: birdData.id || `transfer-${t.id}`,
-            });
-          }
-          // Mark as claimed
-          await supabase
-            .from('pending_transfers')
-            .update({ claimed: true })
-            .eq('id', t.id);
-        }
-
-        if (newBirds.length > 0) {
-          setBirdsState(prev => {
-            const existingIds = new Set(prev.map(b => b.id));
-            const unique = newBirds.filter(b => !existingIds.has(b.id));
-            if (unique.length === 0) return prev;
-            const next = [...prev, ...unique];
-            save(uid, 'birds', next);
-            return next;
-          });
-          toast.success(`${newBirds.length} ave(s) transferida(s) foram adicionadas ao seu plantel!`);
-        }
-      } catch (err) {
-        console.error('Error claiming transfers:', err);
+  // Load all data from Supabase
+  const loadAll = useCallback(async (uid: string) => {
+    setLoading(true);
+    try {
+      const [b, t, h, n, p] = await Promise.all([
+        supabase.from('birds').select('*').order('created_at', { ascending: true }),
+        supabase.from('tournaments').select('*').order('data', { ascending: false }),
+        supabase.from('health_records').select('*').order('data', { ascending: false }),
+        supabase.from('nests').select('*').order('created_at', { ascending: false }),
+        supabase.from('criador_profile').select('*').eq('user_id', uid).maybeSingle(),
+      ]);
+      setBirdsState((b.data || []).map(rowToBird));
+      setTournamentsState((t.data || []).map(rowToTournament));
+      setHealthRecordsState((h.data || []).map(rowToHealth));
+      setNestsState((n.data || []).map(rowToNest));
+      if (p.data) {
+        setProfileState({
+          nome_criadouro: p.data.nome_criadouro ?? '',
+          cpf: p.data.cpf ?? undefined,
+          registro_ctf: p.data.registro_ctf ?? undefined,
+          validade_ctf: p.data.validade_ctf ?? undefined,
+          endereco: p.data.endereco ?? undefined,
+          telefone: p.data.telefone ?? undefined,
+          logo_url: p.data.logo_url ?? undefined,
+        });
+      } else {
+        setProfileState(defaultProfile);
       }
+    } catch (err) {
+      console.error('Load error', err);
+      toast.error('Erro ao carregar dados da nuvem');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // One-shot migration of localStorage -> cloud
+  const migrateLocalToCloud = useCallback(async (uid: string) => {
+    const flagKey = `${MIGRATION_FLAG}_${uid}`;
+    if (localStorage.getItem(flagKey)) return false;
+
+    const read = (k: string) => {
+      try { return JSON.parse(localStorage.getItem(`ppp_${uid}_${k}`) || 'null'); } catch { return null; }
     };
+    const localBirds: any[] = read('birds') || [];
+    const localTournaments: any[] = read('tournaments') || [];
+    const localHealth: any[] = read('health') || [];
+    const localNests: any[] = read('nests') || [];
+    const localProfile: any = read('profile');
 
-    claimTransfers();
-  }, [user?.email, uid]);
+    const hasAny = localBirds.length || localTournaments.length || localHealth.length || localNests.length || localProfile;
+    if (!hasAny) {
+      localStorage.setItem(flagKey, '1');
+      return false;
+    }
 
-  const setBirds = useCallback((b: Bird[]) => { setBirdsState(b); save(uid, 'birds', b); }, [uid]);
-  const setTournaments = useCallback((t: Tournament[]) => { setTournamentsState(t); save(uid, 'tournaments', t); }, [uid]);
-  const setHealthRecords = useCallback((h: HealthRecord[]) => { setHealthRecordsState(h); save(uid, 'health', h); }, [uid]);
-  const setNests = useCallback((n: Nest[]) => { setNestsState(n); save(uid, 'nests', n); }, [uid]);
-  const setProfile = useCallback((p: CriadorProfile) => { setProfileState(p); save(uid, 'profile', p); }, [uid]);
+    try {
+      // Insert birds first (without parent refs), build id map
+      const idMap = new Map<string, string>();
+      if (localBirds.length) {
+        const rows = localBirds.map((b: any) => {
+          const normalized = { ...b, nome: b.nome || b.nome_comum || '' };
+          return birdToRow(normalized, uid);
+        });
+        const { data, error } = await supabase.from('birds').insert(rows).select('id');
+        if (error) throw error;
+        (data || []).forEach((r: any, i: number) => {
+          if (localBirds[i]?.id) idMap.set(localBirds[i].id, r.id);
+        });
+        // Second pass: update parent refs
+        const updates = localBirds.map((b: any, i: number) => {
+          const cloudId = data?.[i]?.id;
+          if (!cloudId) return null;
+          const pai = b.pai_id ? idMap.get(b.pai_id) : null;
+          const mae = b.mae_id ? idMap.get(b.mae_id) : null;
+          if (!pai && !mae) return null;
+          return supabase.from('birds').update({ pai_id: pai, mae_id: mae }).eq('id', cloudId);
+        }).filter(Boolean);
+        await Promise.all(updates as any);
+      }
 
-  const addBird = useCallback((bird: Bird) => {
-    setBirdsState(prev => { const next = [...prev, bird]; save(uid, 'birds', next); return next; });
-  }, [uid]);
-  const updateBird = useCallback((id: string, data: Partial<Bird>) => {
-    setBirdsState(prev => { const next = prev.map(b => b.id === id ? { ...b, ...data, updated_at: new Date().toISOString() } : b); save(uid, 'birds', next); return next; });
-  }, [uid]);
-  const deleteBird = useCallback((id: string) => {
-    setBirdsState(prev => { const next = prev.filter(b => b.id !== id); save(uid, 'birds', next); return next; });
-  }, [uid]);
+      if (localTournaments.length) {
+        const rows = localTournaments.map((t: any) => ({
+          user_id: uid,
+          bird_id: idMap.get(t.bird_id) || null,
+          data: t.data, nome_torneio: t.nome_torneio,
+          clube: t.clube ?? null, pontuacao: t.pontuacao ?? 0,
+          classificacao: t.classificacao ?? null,
+        })).filter(r => r.bird_id);
+        if (rows.length) await supabase.from('tournaments').insert(rows);
+      }
 
-  const addTournament = useCallback((t: Tournament) => {
-    setTournamentsState(prev => { const next = [...prev, t]; save(uid, 'tournaments', next); return next; });
-  }, [uid]);
-  const updateTournament = useCallback((id: string, data: Partial<Tournament>) => {
-    setTournamentsState(prev => { const next = prev.map(t => t.id === id ? { ...t, ...data } : t); save(uid, 'tournaments', next); return next; });
-  }, [uid]);
-  const deleteTournament = useCallback((id: string) => {
-    setTournamentsState(prev => { const next = prev.filter(t => t.id !== id); save(uid, 'tournaments', next); return next; });
-  }, [uid]);
+      if (localHealth.length) {
+        const rows = localHealth.map((h: any) => ({
+          user_id: uid,
+          bird_id: idMap.get(h.bird_id) || null,
+          data: h.data, tipo: h.tipo,
+          descricao: h.descricao ?? null, proxima_dose: h.proxima_dose ?? null,
+        })).filter(r => r.bird_id);
+        if (rows.length) await supabase.from('health_records').insert(rows);
+      }
 
-  const addHealthRecord = useCallback((h: HealthRecord) => {
-    setHealthRecordsState(prev => { const next = [...prev, h]; save(uid, 'health', next); return next; });
-  }, [uid]);
-  const deleteHealthRecord = useCallback((id: string) => {
-    setHealthRecordsState(prev => { const next = prev.filter(h => h.id !== id); save(uid, 'health', next); return next; });
-  }, [uid]);
+      if (localNests.length) {
+        const rows = localNests.map((n: any) => ({
+          user_id: uid,
+          femea_id: idMap.get(n.femea_id) || null,
+          macho_id: idMap.get(n.macho_id) || null,
+          data_postura: n.data_postura, data_eclosao: n.data_eclosao ?? null,
+          quantidade_ovos: n.quantidade_ovos ?? 0,
+          quantidade_filhotes: n.quantidade_filhotes ?? null,
+          status: n.status ?? 'Incubando', observacoes: n.observacoes ?? null,
+        })).filter(r => r.femea_id && r.macho_id);
+        if (rows.length) await supabase.from('nests').insert(rows);
+      }
 
-  const addNest = useCallback((n: Nest) => {
-    setNestsState(prev => { const next = [...prev, n]; save(uid, 'nests', next); return next; });
-  }, [uid]);
-  const updateNest = useCallback((id: string, data: Partial<Nest>) => {
-    setNestsState(prev => { const next = prev.map(n => n.id === id ? { ...n, ...data } : n); save(uid, 'nests', next); return next; });
-  }, [uid]);
+      if (localProfile) {
+        await supabase.from('criador_profile').upsert({
+          user_id: uid,
+          nome_criadouro: localProfile.nome_criadouro ?? '',
+          cpf: localProfile.cpf ?? null,
+          registro_ctf: localProfile.registro_ctf ?? null,
+          validade_ctf: localProfile.validade_ctf || null,
+          endereco: localProfile.endereco ?? null,
+          telefone: localProfile.telefone ?? null,
+          logo_url: localProfile.logo_url ?? null,
+        });
+      }
+
+      localStorage.setItem(flagKey, '1');
+      idMapRef.current = idMap;
+      toast.success('Dados locais sincronizados com a nuvem!');
+      return true;
+    } catch (err) {
+      console.error('Migration error', err);
+      toast.error('Erro ao migrar dados locais para a nuvem.');
+      return false;
+    }
+  }, []);
+
+  // Boot: migrate then load
+  useEffect(() => {
+    if (!user) {
+      setBirdsState([]); setTournamentsState([]); setHealthRecordsState([]);
+      setNestsState([]); setProfileState(defaultProfile); setLoading(false);
+      return;
+    }
+    (async () => {
+      await migrateLocalToCloud(user.id);
+      await loadAll(user.id);
+    })();
+  }, [user, migrateLocalToCloud, loadAll]);
+
+  // Claim pending transfers on login (insert into birds)
+  useEffect(() => {
+    if (!user?.email || loading) return;
+    (async () => {
+      try {
+        const { data: transfers } = await supabase
+          .from('pending_transfers').select('*').eq('claimed', false)
+          .ilike('recipient_email', user.email!);
+        if (!transfers?.length) return;
+
+        const rows = transfers.map((t: any) => {
+          const bd = (t.bird_data || {}) as any;
+          return birdToRow({ ...bd, pai_id: undefined, mae_id: undefined }, user.id);
+        });
+        const { data: inserted, error } = await supabase.from('birds').insert(rows).select('*');
+        if (error) { console.error(error); return; }
+        await Promise.all(transfers.map((t: any) =>
+          supabase.from('pending_transfers').update({ claimed: true }).eq('id', t.id)
+        ));
+        if (inserted?.length) {
+          setBirdsState(prev => [...prev, ...inserted.map(rowToBird)]);
+          toast.success(`${inserted.length} ave(s) transferida(s) adicionadas ao seu plantel!`);
+        }
+      } catch (err) { console.error('Claim transfers error', err); }
+    })();
+  }, [user?.email, user?.id, loading]);
+
+  // ============ Bird CRUD ============
+  const addBird = useCallback(async (bird: Bird) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('birds').insert(birdToRow(bird, user.id)).select('*').single();
+    if (error) { toast.error('Erro ao salvar ave'); console.error(error); return; }
+    setBirdsState(prev => [...prev, rowToBird(data)]);
+  }, [user]);
+
+  const updateBird = useCallback(async (id: string, data: Partial<Bird>) => {
+    if (!user) return;
+    const patch: any = {};
+    const allowed: (keyof Bird)[] = ['nome','nome_cientifico','nome_comum_especie','sexo','data_nascimento','tipo_anilha','diametro_anilha','codigo_anilha','status','observacoes','pai_id','mae_id','foto_url','fotos','estado'];
+    allowed.forEach(k => { if (k in data) patch[k] = (data as any)[k] ?? null; });
+    if (patch.data_nascimento === '') patch.data_nascimento = null;
+    const { data: row, error } = await supabase.from('birds').update(patch).eq('id', id).select('*').single();
+    if (error) { toast.error('Erro ao atualizar'); console.error(error); return; }
+    setBirdsState(prev => prev.map(b => b.id === id ? rowToBird(row) : b));
+  }, [user]);
+
+  const deleteBird = useCallback(async (id: string) => {
+    const { error } = await supabase.from('birds').delete().eq('id', id);
+    if (error) { toast.error('Erro ao excluir'); console.error(error); return; }
+    setBirdsState(prev => prev.filter(b => b.id !== id));
+  }, []);
+
+  // ============ Tournaments ============
+  const addTournament = useCallback(async (t: Tournament) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('tournaments').insert({
+      user_id: user.id, bird_id: t.bird_id, data: t.data, nome_torneio: t.nome_torneio,
+      clube: t.clube ?? null, pontuacao: t.pontuacao, classificacao: t.classificacao ?? null,
+    }).select('*').single();
+    if (error) { toast.error('Erro ao salvar torneio'); console.error(error); return; }
+    setTournamentsState(prev => [rowToTournament(data), ...prev]);
+  }, [user]);
+
+  const updateTournament = useCallback(async (id: string, data: Partial<Tournament>) => {
+    const patch: any = {};
+    ['bird_id','data','nome_torneio','clube','pontuacao','classificacao'].forEach(k => {
+      if (k in data) patch[k] = (data as any)[k] ?? null;
+    });
+    const { data: row, error } = await supabase.from('tournaments').update(patch).eq('id', id).select('*').single();
+    if (error) { toast.error('Erro ao atualizar'); console.error(error); return; }
+    setTournamentsState(prev => prev.map(t => t.id === id ? rowToTournament(row) : t));
+  }, []);
+
+  const deleteTournament = useCallback(async (id: string) => {
+    const { error } = await supabase.from('tournaments').delete().eq('id', id);
+    if (error) { toast.error('Erro ao excluir'); return; }
+    setTournamentsState(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // ============ Health ============
+  const addHealthRecord = useCallback(async (h: HealthRecord) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('health_records').insert({
+      user_id: user.id, bird_id: h.bird_id, data: h.data, tipo: h.tipo,
+      descricao: h.descricao ?? null, proxima_dose: h.proxima_dose || null,
+    }).select('*').single();
+    if (error) { toast.error('Erro ao salvar'); console.error(error); return; }
+    setHealthRecordsState(prev => [rowToHealth(data), ...prev]);
+  }, [user]);
+
+  const deleteHealthRecord = useCallback(async (id: string) => {
+    const { error } = await supabase.from('health_records').delete().eq('id', id);
+    if (error) { toast.error('Erro ao excluir'); return; }
+    setHealthRecordsState(prev => prev.filter(h => h.id !== id));
+  }, []);
+
+  // ============ Nests ============
+  const addNest = useCallback(async (n: Nest) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('nests').insert({
+      user_id: user.id, femea_id: n.femea_id, macho_id: n.macho_id,
+      data_postura: n.data_postura, data_eclosao: n.data_eclosao || null,
+      quantidade_ovos: n.quantidade_ovos, quantidade_filhotes: n.quantidade_filhotes ?? null,
+      status: n.status, observacoes: n.observacoes ?? null,
+    }).select('*').single();
+    if (error) { toast.error('Erro ao salvar ninhada'); console.error(error); return; }
+    setNestsState(prev => [rowToNest(data), ...prev]);
+  }, [user]);
+
+  const updateNest = useCallback(async (id: string, data: Partial<Nest>) => {
+    const patch: any = {};
+    ['femea_id','macho_id','data_postura','data_eclosao','quantidade_ovos','quantidade_filhotes','status','observacoes'].forEach(k => {
+      if (k in data) patch[k] = (data as any)[k] ?? null;
+    });
+    const { data: row, error } = await supabase.from('nests').update(patch).eq('id', id).select('*').single();
+    if (error) { toast.error('Erro ao atualizar'); console.error(error); return; }
+    setNestsState(prev => prev.map(n => n.id === id ? rowToNest(row) : n));
+  }, []);
+
+  // ============ Profile ============
+  const setProfile = useCallback(async (p: CriadorProfile) => {
+    if (!user) return;
+    setProfileState(p);
+    const { error } = await supabase.from('criador_profile').upsert({
+      user_id: user.id,
+      nome_criadouro: p.nome_criadouro ?? '',
+      cpf: p.cpf ?? null,
+      registro_ctf: p.registro_ctf ?? null,
+      validade_ctf: p.validade_ctf || null,
+      endereco: p.endereco ?? null,
+      telefone: p.telefone ?? null,
+      logo_url: p.logo_url ?? null,
+    });
+    if (error) { toast.error('Erro ao salvar perfil'); console.error(error); }
+  }, [user]);
+
+  // Bulk setters (kept for API compatibility, just update local state)
+  const setBirds = useCallback((b: Bird[]) => setBirdsState(b), []);
+  const setTournaments = useCallback((t: Tournament[]) => setTournamentsState(t), []);
+  const setHealthRecords = useCallback((h: HealthRecord[]) => setHealthRecordsState(h), []);
+  const setNests = useCallback((n: Nest[]) => setNestsState(n), []);
 
   return (
     <AppContext.Provider value={{
-      birds, tournaments, healthRecords, nests, profile,
+      birds, tournaments, healthRecords, nests, profile, loading,
       setBirds, setTournaments, setHealthRecords, setNests, setProfile,
       addBird, updateBird, deleteBird,
       addTournament, updateTournament, deleteTournament,
