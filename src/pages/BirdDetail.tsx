@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 
 export default function BirdDetail() {
   const { id } = useParams<{ id: string }>();
-  const { birds, tournaments, healthRecords } = useAppState();
+  const { birds, tournaments, healthRecords, deleteBird } = useAppState();
+  const { user } = useAuth();
   const bird = birds.find(b => b.id === id);
   const crachaRef = useRef<HTMLDivElement>(null);
   const [showCracha, setShowCracha] = useState(false);
