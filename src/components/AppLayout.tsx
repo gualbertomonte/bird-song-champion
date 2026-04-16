@@ -23,6 +23,8 @@ const mobileNavItems = [
   { to: '/arvore', icon: GitBranch, label: 'Árvore' },
   { to: '/bercario', icon: Egg, label: 'Berçário' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
+  { to: '/saude', icon: Heart, label: 'Saúde' },
+  { to: '/perfil', icon: User, label: 'Perfil' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
