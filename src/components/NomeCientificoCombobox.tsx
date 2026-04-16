@@ -2,31 +2,57 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Plus, Check } from 'lucide-react';
 
+// Species mapping: nome científico <-> nome comum
+const SPECIES_MAP: Record<string, string> = {
+  'Sporophila angolensis': 'Curió',
+  'Sporophila maximiliani': 'Bicudo',
+  'Serinus canaria': 'Canário',
+  'Sporophila caerulescens': 'Coleirinho',
+  'Sporophila nigricollis': 'Baiano',
+  'Saltator similis': 'Trinca-ferro',
+  'Sicalis flaveola': 'Canário-da-terra',
+  'Sporophila frontalis': 'Pixoxó',
+  'Sporophila leucoptera': 'Chorão',
+  'Carduelis magellanica': 'Pintassilgo',
+  'Paroaria dominicana': 'Cardeal',
+  'Cyanoloxia brissonii': 'Azulão',
+};
+
 interface Props {
   value: string;
   onChange: (val: string) => void;
+  nomeComum?: string;
+  onNomeComumChange?: (val: string) => void;
 }
 
-export default function NomeCientificoCombobox({ value, onChange }: Props) {
+export default function NomeCientificoCombobox({ value, onChange, nomeComum, onNomeComumChange }: Props) {
   const { birds } = useAppState();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState(value);
-  const [customNames, setCustomNames] = useState<string[]>(() => {
+  const [customSpecies, setCustomSpecies] = useState<Record<string, string>>(() => {
     try {
-      return JSON.parse(localStorage.getItem('ppp_nomes_cientificos') || '[]');
-    } catch { return []; }
+      return JSON.parse(localStorage.getItem('ppp_species_map') || '{}');
+    } catch { return {}; }
   });
   const ref = useRef<HTMLDivElement>(null);
 
-  const allNames = useMemo(() => {
-    const fromBirds = birds.map(b => b.nome_cientifico).filter(Boolean);
-    return [...new Set([...fromBirds, ...customNames])].sort();
-  }, [birds, customNames]);
+  const allSpecies = useMemo(() => {
+    const fromBirds: Record<string, string> = {};
+    birds.forEach(b => {
+      if (b.nome_cientifico) {
+        fromBirds[b.nome_cientifico] = b.nome_comum_especie || SPECIES_MAP[b.nome_cientifico] || '';
+      }
+    });
+    return { ...SPECIES_MAP, ...fromBirds, ...customSpecies };
+  }, [birds, customSpecies]);
+
+  const allNames = useMemo(() => Object.keys(allSpecies).sort(), [allSpecies]);
 
   const filtered = useMemo(() => {
     if (!input) return allNames;
-    return allNames.filter(n => n.toLowerCase().includes(input.toLowerCase()));
-  }, [allNames, input]);
+    const q = input.toLowerCase();
+    return allNames.filter(n => n.toLowerCase().includes(q) || (allSpecies[n] || '').toLowerCase().includes(q));
+  }, [allNames, allSpecies, input]);
 
   useEffect(() => { setInput(value); }, [value]);
 
@@ -40,9 +66,9 @@ export default function NomeCientificoCombobox({ value, onChange }: Props) {
 
   const addCustom = () => {
     if (!input.trim() || allNames.includes(input.trim())) return;
-    const updated = [...customNames, input.trim()];
-    setCustomNames(updated);
-    localStorage.setItem('ppp_nomes_cientificos', JSON.stringify(updated));
+    const updated = { ...customSpecies, [input.trim()]: nomeComum || '' };
+    setCustomSpecies(updated);
+    localStorage.setItem('ppp_species_map', JSON.stringify(updated));
     onChange(input.trim());
     setOpen(false);
   };
@@ -50,6 +76,11 @@ export default function NomeCientificoCombobox({ value, onChange }: Props) {
   const select = (name: string) => {
     onChange(name);
     setInput(name);
+    // Auto-fill nome comum
+    const common = allSpecies[name];
+    if (common && onNomeComumChange) {
+      onNomeComumChange(common);
+    }
     setOpen(false);
   };
 
@@ -72,7 +103,10 @@ export default function NomeCientificoCombobox({ value, onChange }: Props) {
               className="w-full text-left px-3 py-2 text-sm hover:bg-muted/40 transition-colors flex items-center gap-2"
             >
               {name === value && <Check className="w-3 h-3 text-secondary" />}
-              <span className="italic">{name}</span>
+              <span className="flex-1">
+                <span className="italic">{name}</span>
+                {allSpecies[name] && <span className="text-muted-foreground ml-2">({allSpecies[name]})</span>}
+              </span>
             </button>
           ))}
           {input.trim() && !allNames.includes(input.trim()) && (
