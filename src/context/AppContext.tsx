@@ -613,9 +613,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (destProfile.user_id === user.id) throw new Error('Você não pode emprestar para si mesmo');
 
     // 2. Buscar e-mail do destinatário
-    const { data: destAuth } = await supabase
-      .from('profiles').select('email').eq('user_id', destProfile.user_id).maybeSingle();
-    const borrowerEmail = destAuth?.email;
+    const { data: destAuth, error: destAuthErr } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('user_id', destProfile.user_id)
+      .maybeSingle();
+    if (destAuthErr) {
+      console.error(destAuthErr);
+      throw new Error('Erro ao localizar o e-mail do destinatário');
+    }
+    const borrowerEmail = destAuth?.email?.trim();
     if (!borrowerEmail) throw new Error('Não foi possível localizar o e-mail do destinatário');
 
     // 3. Criar registro de loan

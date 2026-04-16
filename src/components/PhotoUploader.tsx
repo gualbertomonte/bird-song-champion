@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { forwardRef, useState, useRef, useCallback } from 'react';
 import { Camera, ImagePlus, X, Star, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -38,7 +38,10 @@ async function uploadToCloud(dataUrl: string, userId: string): Promise<string> {
   return data.publicUrl;
 }
 
-export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props) {
+const PhotoUploader = forwardRef<HTMLDivElement, Props>(function PhotoUploader(
+  { photos, onChange, maxPhotos = 5 },
+  forwardedRef,
+) {
   const { user } = useAuth();
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -110,7 +113,7 @@ export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props
   };
 
   return (
-    <div className="space-y-3">
+    <div ref={forwardedRef} className="space-y-3">
       <label className="text-xs font-medium text-muted-foreground">Fotos ({photos.length}/{maxPhotos})</label>
 
       <div className="flex flex-wrap gap-2">
@@ -179,4 +182,6 @@ export default function PhotoUploader({ photos, onChange, maxPhotos = 5 }: Props
       )}
     </div>
   );
-}
+});
+
+export default PhotoUploader;
