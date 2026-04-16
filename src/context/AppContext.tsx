@@ -603,105 +603,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!bird) throw new Error('Ave não encontrada');
     if (bird.loan_status !== 'proprio') throw new Error('Esta ave já está em empréstimo');
 
-    // 1. Localizar destinatário pelo código
     const codigo = params.codigoCriadouro.trim().toUpperCase();
-    const { data: destProfile, error: destErr } = await supabase
-      .from('criador_profile').select('user_id, nome_criadouro')
-      .eq('codigo_criadouro', codigo).maybeSingle();
-    if (destErr) { console.error(destErr); throw new Error('Erro ao buscar criadouro'); }
-    if (!destProfile) throw new Error('Código de criadouro não encontrado');
-    if (destProfile.user_id === user.id) throw new Error('Você não pode emprestar para si mesmo');
 
-    // 2. Buscar e-mail do destinatário
-    const { data: destAuth, error: destAuthErr } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('user_id', destProfile.user_id)
-      .maybeSingle();
-    if (destAuthErr) {
-      console.error(destAuthErr);
-      throw new Error('Erro ao localizar o e-mail do destinatário');
+    // Atomic server-side loan creation (handles validation, loan record,
+    // owner bird update, and borrower clone insert with SECURITY DEFINER).
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('create_loan', {
+      _bird_id: bird.id,
+      _codigo_criadouro: codigo,
+      _prazo: params.prazo || null,
+      _observacoes: params.observacoes ?? null,
+    });
+    if (rpcErr) {
+      console.error('create_loan rpc error', rpcErr);
+      throw new Error(rpcErr.message || 'Erro ao criar empréstimo');
     }
-    const borrowerEmail = destAuth?.email?.trim();
-    if (!borrowerEmail) throw new Error('Não foi possível localizar o e-mail do destinatário');
-
-    // 3. Criar registro de loan
-    const snapshot = { ...bird };
-    const { data: loanRow, error: loanErr } = await supabase.from('bird_loans').insert({
-      bird_id: bird.id,
-      bird_snapshot: snapshot as any,
-      owner_user_id: user.id,
-      owner_email: user.email,
-      borrower_user_id: destProfile.user_id,
-      borrower_email: borrowerEmail,
-      borrower_codigo_criadouro: codigo,
-      prazo_devolucao: params.prazo || null,
-      observacoes: params.observacoes ?? null,
-      status: 'Emprestada',
-    }).select('*').single();
-    if (loanErr) { console.error(loanErr); throw new Error('Erro ao criar empréstimo'); }
-
-    // 4. Marcar a ave do dono como emprestada (saída)
-    await supabase.from('birds').update({
-      loan_status: 'emprestada_saida',
-      loan_id: loanRow.id,
-    }).eq('id', bird.id);
-
-    // 5. Clonar a ave no plantel do recebedor (anilha permanece igual; usamos código com prefixo para evitar conflito de unique)
-    const clonedAnilha = bird.codigo_anilha; // mantém anilha original; se houver conflito, será capturado
-    const cloneRow: any = {
-      user_id: destProfile.user_id,
-      nome: bird.nome,
-      nome_cientifico: bird.nome_cientifico,
-      nome_comum_especie: bird.nome_comum_especie ?? null,
-      sexo: bird.sexo,
-      data_nascimento: bird.data_nascimento || null,
-      tipo_anilha: bird.tipo_anilha ?? null,
-      diametro_anilha: bird.diametro_anilha ?? null,
-      codigo_anilha: clonedAnilha,
-      status: bird.status,
-      observacoes: bird.observacoes ?? null,
-      foto_url: bird.foto_url ?? null,
-      fotos: bird.fotos ?? [],
-      estado: bird.estado ?? null,
-      loan_status: 'emprestada_entrada',
-      loan_id: loanRow.id,
-      original_owner_user_id: user.id,
-      original_owner_email: user.email,
-      original_bird_id: bird.id,
+    const result = rpcData as {
+      loan_id: string;
+      borrower_bird_id: string;
+      borrower_user_id: string;
+      borrower_email: string;
+      borrower_nome_criadouro: string;
     };
-    const { data: cloneData, error: cloneErr } = await supabase.from('birds').insert(cloneRow).select('id').single();
-    if (cloneErr) {
-      // Se duplicada, ainda assim segue — ave do recebedor pode existir; registramos só o loan
-      console.warn('Clone bird failed (provavelmente anilha duplicada no plantel do destinatário)', cloneErr);
-    } else if (cloneData) {
-      await supabase.from('bird_loans').update({ borrower_bird_id: cloneData.id }).eq('id', loanRow.id);
-    }
 
-    // 6. Notificações
+    // Fetch the created loan row for local state
+    const { data: loanRow } = await supabase
+      .from('bird_loans').select('*').eq('id', result.loan_id).single();
+
+    // Notify recipient
     await createNotification({
-      user_id: destProfile.user_id,
+      user_id: result.borrower_user_id,
       tipo: 'loan_received',
       titulo: 'Você recebeu uma ave por empréstimo',
       mensagem: `${user.email} emprestou a ave "${bird.nome}" (${bird.codigo_anilha}) para reprodução.`,
       link: '/emprestimos',
-      metadata: { loan_id: loanRow.id },
+      metadata: { loan_id: result.loan_id },
     });
 
-    // 7. E-mail
+    // Email
     sendLoanEmail({
       kind: 'novo_emprestimo',
-      recipientEmail: borrowerEmail,
+      recipientEmail: result.borrower_email,
       birdName: bird.nome,
       birdCode: bird.codigo_anilha,
       ownerName: profile.nome_criadouro || user.email,
       prazo: params.prazo,
     });
 
-    // 8. Atualizar estado local
-    setBirdsState(prev => prev.map(b => b.id === bird.id ? { ...b, loan_status: 'emprestada_saida', loan_id: loanRow.id } : b));
-    setLoansState(prev => [rowToLoan(loanRow), ...prev]);
-    toast.success(`Ave emprestada para ${destProfile.nome_criadouro}!`);
+    // Update local state
+    setBirdsState(prev => prev.map(b => b.id === bird.id ? { ...b, loan_status: 'emprestada_saida', loan_id: result.loan_id } : b));
+    if (loanRow) setLoansState(prev => [rowToLoan(loanRow), ...prev]);
+    toast.success(`Ave emprestada para ${result.borrower_nome_criadouro || result.borrower_email}!`);
   }, [user, birds, profile, createNotification, sendLoanEmail]);
 
   const requestLoanReturn = useCallback(async (loanId: string) => {
