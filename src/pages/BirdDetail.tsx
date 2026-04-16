@@ -16,6 +16,7 @@ export default function BirdDetail() {
   const crachaRef = useRef<HTMLDivElement>(null);
   const [showCracha, setShowCracha] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
+  const [sending, setSending] = useState(false);
   const [transferTo, setTransferTo] = useState('');
 
   if (!bird) return (
