@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
-import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle } from 'lucide-react';
+import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle, Handshake, ArrowDownToLine } from 'lucide-react';
 import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import { toast } from 'sonner';

@@ -414,6 +414,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
           logo_url: p.logo_url ?? undefined,
         });
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bird_loans' }, (payload) => {
+        const isMine = (row: any) => row && (row.owner_user_id === uid || row.borrower_user_id === uid);
+        if (payload.eventType === 'INSERT' && isMine(payload.new)) {
+          const nl = rowToLoan(payload.new);
+          setLoansState(prev => prev.some(l => l.id === nl.id) ? prev : [nl, ...prev]);
+        } else if (payload.eventType === 'UPDATE' && isMine(payload.new)) {
+          const nl = rowToLoan(payload.new);
+          setLoansState(prev => prev.map(l => l.id === nl.id ? nl : l));
+        } else if (payload.eventType === 'DELETE') {
+          setLoansState(prev => prev.filter(l => l.id !== (payload.old as any).id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const nn = rowToNotification(payload.new);
+          setNotificationsState(prev => prev.some(n => n.id === nn.id) ? prev : [nn, ...prev]);
+          toast.message(nn.titulo, { description: nn.mensagem });
+        } else if (payload.eventType === 'UPDATE') {
+          const nn = rowToNotification(payload.new);
+          setNotificationsState(prev => prev.map(n => n.id === nn.id ? nn : n));
+        } else if (payload.eventType === 'DELETE') {
+          setNotificationsState(prev => prev.filter(n => n.id !== (payload.old as any).id));
+        }
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

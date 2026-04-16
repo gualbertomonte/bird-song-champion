@@ -1,7 +1,7 @@
 import { useAppState } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff, Copy, Hash } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
@@ -97,6 +97,34 @@ export default function Perfil() {
           {progress < 100 ? `Preencha ${fields.length - filledCount} campo(s) restante(s) para completar seu perfil` : 'Perfil completo! ✨'}
         </p>
       </div>
+
+      {/* Código do Criadouro */}
+      {profile.codigo_criadouro && (
+        <div className="bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent rounded-xl border border-secondary/20 p-5 animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Hash className="w-4 h-4 text-secondary" />
+            <h3 className="font-semibold text-sm">Código do Criadouro</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Compartilhe este código com outros criadores para receber aves emprestadas para reprodução.
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-card border-2 border-dashed border-secondary/30 rounded-lg px-4 py-3 font-mono text-xl font-bold tracking-[0.3em] text-center text-secondary">
+              {profile.codigo_criadouro}
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(profile.codigo_criadouro!);
+                toast.success('Código copiado!');
+              }}
+              className="btn-secondary"
+              title="Copiar código"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Logo */}
       <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '100ms' }}>
