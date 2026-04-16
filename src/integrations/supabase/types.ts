@@ -33,6 +33,8 @@ export type Database = {
           sexo: string
           status: string
           tipo_anilha: string | null
+          transferido_em: string | null
+          transferido_por_email: string | null
           updated_at: string
           user_id: string
         }
@@ -54,6 +56,8 @@ export type Database = {
           sexo?: string
           status?: string
           tipo_anilha?: string | null
+          transferido_em?: string | null
+          transferido_por_email?: string | null
           updated_at?: string
           user_id: string
         }
@@ -75,6 +79,8 @@ export type Database = {
           sexo?: string
           status?: string
           tipo_anilha?: string | null
+          transferido_em?: string | null
+          transferido_por_email?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -198,6 +204,8 @@ export type Database = {
           id: string
           recipient_email: string
           sender_email: string | null
+          transferido_por_email: string | null
+          transferido_por_user_id: string | null
           transferred_at: string
         }
         Insert: {
@@ -206,6 +214,8 @@ export type Database = {
           id?: string
           recipient_email: string
           sender_email?: string | null
+          transferido_por_email?: string | null
+          transferido_por_user_id?: string | null
           transferred_at?: string
         }
         Update: {
@@ -214,6 +224,8 @@ export type Database = {
           id?: string
           recipient_email?: string
           sender_email?: string | null
+          transferido_por_email?: string | null
+          transferido_por_user_id?: string | null
           transferred_at?: string
         }
         Relationships: []

@@ -65,12 +65,14 @@ export default function BirdDetail() {
     if (sending) return;
     setSending(true);
     try {
-      // Save to pending_transfers table
+      // Save to pending_transfers table (registra remetente)
       const { error: dbError } = await supabase.from('pending_transfers').insert({
         recipient_email: transferTo.trim().toLowerCase(),
         bird_data: bird as any,
         sender_email: (user?.email || '').toLowerCase(),
-      });
+        transferido_por_user_id: user?.id ?? null,
+        transferido_por_email: (user?.email || '').toLowerCase(),
+      } as any);
       if (dbError) {
         console.error('DB transfer error:', dbError);
         toast.error('Erro ao registrar transferência no banco de dados. Tente novamente.');
@@ -187,6 +189,19 @@ export default function BirdDetail() {
               </div>
             </div>
           </div>
+          {bird.transferido_por_email && (
+            <div className="bg-card rounded-xl border p-5 mt-4">
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <Send className="w-4 h-4 text-secondary" /> Origem da Transferência
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Esta ave foi transferida por <span className="font-medium text-foreground">{bird.transferido_por_email}</span>
+                {bird.transferido_em && (
+                  <> em <span className="font-medium text-foreground">{new Date(bird.transferido_em).toLocaleString('pt-BR')}</span></>
+                )}.
+              </p>
+            </div>
+          )}
           {bird.observacoes && (
             <div className="bg-card rounded-xl border p-5 mt-4">
               <h3 className="font-semibold mb-2">Observações</h3>

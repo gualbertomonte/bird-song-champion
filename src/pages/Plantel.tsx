@@ -60,20 +60,31 @@ export default function Plantel() {
   const openNew = () => { setForm(emptyForm()); setEditId(null); setShowForm(true); };
   const openEdit = (b: BirdType) => { setForm({ ...b }); setEditId(b.id); setShowForm(true); };
 
-  const save = () => {
+  const save = async () => {
     if (!form.codigo_anilha?.trim() || !form.nome?.trim() || !form.nome_cientifico?.trim()) {
       toast.error('Preencha os campos obrigatórios: Anilha, Nome e Nome Científico');
       return;
     }
-    if (editId) {
-      updateBird(editId, { ...form });
-      toast.success('Ave atualizada com sucesso!');
-    } else {
-      addBird({ ...form, id: Date.now().toString(), created_at: new Date().toISOString() } as BirdType);
-      toast.success('Ave cadastrada com sucesso!');
+    // Validação client-side de anilha duplicada (no plantel atual)
+    const codigo = form.codigo_anilha.trim().toLowerCase();
+    const conflito = birds.find(b => b.codigo_anilha?.trim().toLowerCase() === codigo && b.id !== editId);
+    if (conflito) {
+      toast.error(`Já existe uma ave com a anilha "${form.codigo_anilha}" no seu plantel.`);
+      return;
     }
-    setShowForm(false);
-    setEditId(null);
+    try {
+      if (editId) {
+        await updateBird(editId, { ...form });
+        toast.success('Ave atualizada com sucesso!');
+      } else {
+        await addBird({ ...form, id: Date.now().toString(), created_at: new Date().toISOString() } as BirdType);
+        toast.success('Ave cadastrada com sucesso!');
+      }
+      setShowForm(false);
+      setEditId(null);
+    } catch {
+      // Toast de erro já exibido pelo contexto (ex.: anilha duplicada globalmente)
+    }
   };
 
   const confirmDelete = (id: string) => { deleteBird(id); setDeleteConfirm(null); toast.success('Ave excluída'); };

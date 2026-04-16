@@ -55,6 +55,8 @@ function rowToBird(r: any): Bird {
     estado: r.estado ?? undefined,
     created_at: r.created_at,
     updated_at: r.updated_at,
+    transferido_por_email: r.transferido_por_email ?? undefined,
+    transferido_em: r.transferido_em ?? undefined,
   };
 }
 
@@ -263,7 +265,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })();
   }, [user, migrateLocalToCloud, loadAll]);
 
-  // Claim pending transfers on login (insert into birds)
+  // Claim pending transfers on login (insert into birds, one by one to track sender)
   useEffect(() => {
     if (!user?.email || loading) return;
     (async () => {
@@ -273,18 +275,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
           .ilike('recipient_email', user.email!);
         if (!transfers?.length) return;
 
-        const rows = transfers.map((t: any) => {
+        let claimedCount = 0;
+        const insertedBirds: any[] = [];
+        for (const t of transfers as any[]) {
           const bd = (t.bird_data || {}) as any;
-          return birdToRow({ ...bd, pai_id: undefined, mae_id: undefined }, user.id);
-        });
-        const { data: inserted, error } = await supabase.from('birds').insert(rows).select('*');
-        if (error) { console.error(error); return; }
-        await Promise.all(transfers.map((t: any) =>
-          supabase.from('pending_transfers').update({ claimed: true }).eq('id', t.id)
-        ));
-        if (inserted?.length) {
-          setBirdsState(prev => [...prev, ...inserted.map(rowToBird)]);
-          toast.success(`${inserted.length} ave(s) transferida(s) adicionadas ao seu plantel!`);
+          const row: any = birdToRow({ ...bd, pai_id: undefined, mae_id: undefined }, user.id);
+          row.transferido_por_email = t.sender_email ?? t.transferido_por_email ?? null;
+          row.transferido_em = t.transferred_at ?? new Date().toISOString();
+          const { data: ins, error } = await supabase.from('birds').insert(row).select('*').single();
+          if (error) {
+            // Likely duplicate ring code already claimed — mark as claimed to avoid loop
+            console.error('Claim insert error:', error);
+            if ((error as any).code === '23505') {
+              toast.error(`Ave "${bd.nome || bd.codigo_anilha}" já existe no seu plantel (anilha duplicada).`);
+              await supabase.from('pending_transfers').update({ claimed: true }).eq('id', t.id);
+            }
+            continue;
+          }
+          insertedBirds.push(ins);
+          await supabase.from('pending_transfers').update({ claimed: true }).eq('id', t.id);
+          claimedCount++;
+        }
+        if (insertedBirds.length) {
+          setBirdsState(prev => [...prev, ...insertedBirds.map(rowToBird)]);
+          toast.success(`${claimedCount} ave(s) transferida(s) adicionadas ao seu plantel!`);
         }
       } catch (err) { console.error('Claim transfers error', err); }
     })();
@@ -294,7 +308,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addBird = useCallback(async (bird: Bird) => {
     if (!user) return;
     const { data, error } = await supabase.from('birds').insert(birdToRow(bird, user.id)).select('*').single();
-    if (error) { toast.error('Erro ao salvar ave'); console.error(error); return; }
+    if (error) {
+      if ((error as any).code === '23505') {
+        toast.error(`Já existe uma ave cadastrada com a anilha "${bird.codigo_anilha}".`);
+      } else {
+        toast.error('Erro ao salvar ave');
+      }
+      console.error(error);
+      throw error;
+    }
     setBirdsState(prev => [...prev, rowToBird(data)]);
   }, [user]);
 
@@ -305,7 +327,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     allowed.forEach(k => { if (k in data) patch[k] = (data as any)[k] ?? null; });
     if (patch.data_nascimento === '') patch.data_nascimento = null;
     const { data: row, error } = await supabase.from('birds').update(patch).eq('id', id).select('*').single();
-    if (error) { toast.error('Erro ao atualizar'); console.error(error); return; }
+    if (error) {
+      if ((error as any).code === '23505') {
+        toast.error(`Já existe uma ave cadastrada com essa numeração de anilha.`);
+      } else {
+        toast.error('Erro ao atualizar');
+      }
+      console.error(error);
+      throw error;
+    }
     setBirdsState(prev => prev.map(b => b.id === id ? rowToBird(row) : b));
   }, [user]);
 
