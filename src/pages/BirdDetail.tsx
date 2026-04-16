@@ -16,6 +16,7 @@ export default function BirdDetail() {
   const crachaRef = useRef<HTMLDivElement>(null);
   const [showCracha, setShowCracha] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
+  const [sending, setSending] = useState(false);
   const [transferTo, setTransferTo] = useState('');
 
   if (!bird) return (
@@ -59,6 +60,8 @@ export default function BirdDetail() {
       toast.error('Informe o identificador do destinatário');
       return;
     }
+    if (sending) return;
+    setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-transfer-email', {
         body: {
@@ -78,6 +81,8 @@ export default function BirdDetail() {
       toast.error('Transferência registrada, mas houve erro ao enviar o e-mail.');
       setShowTransfer(false);
       setTransferTo('');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -357,7 +362,7 @@ export default function BirdDetail() {
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowTransfer(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={handleTransfer} className="btn-primary text-sm"><Send className="w-3.5 h-3.5" /> Transferir</button>
+              <button onClick={handleTransfer} disabled={sending} className="btn-primary text-sm disabled:opacity-50"><Send className="w-3.5 h-3.5" /> {sending ? 'Enviando...' : 'Transferir'}</button>
             </div>
           </div>
         </div>
