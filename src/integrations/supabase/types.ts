@@ -14,6 +14,183 @@ export type Database = {
   }
   public: {
     Tables: {
+      birds: {
+        Row: {
+          codigo_anilha: string
+          created_at: string
+          data_nascimento: string | null
+          diametro_anilha: string | null
+          estado: string | null
+          foto_url: string | null
+          fotos: Json | null
+          id: string
+          mae_id: string | null
+          nome: string
+          nome_cientifico: string
+          nome_comum_especie: string | null
+          observacoes: string | null
+          pai_id: string | null
+          sexo: string
+          status: string
+          tipo_anilha: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          codigo_anilha?: string
+          created_at?: string
+          data_nascimento?: string | null
+          diametro_anilha?: string | null
+          estado?: string | null
+          foto_url?: string | null
+          fotos?: Json | null
+          id?: string
+          mae_id?: string | null
+          nome: string
+          nome_cientifico?: string
+          nome_comum_especie?: string | null
+          observacoes?: string | null
+          pai_id?: string | null
+          sexo?: string
+          status?: string
+          tipo_anilha?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          codigo_anilha?: string
+          created_at?: string
+          data_nascimento?: string | null
+          diametro_anilha?: string | null
+          estado?: string | null
+          foto_url?: string | null
+          fotos?: Json | null
+          id?: string
+          mae_id?: string | null
+          nome?: string
+          nome_cientifico?: string
+          nome_comum_especie?: string | null
+          observacoes?: string | null
+          pai_id?: string | null
+          sexo?: string
+          status?: string
+          tipo_anilha?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      criador_profile: {
+        Row: {
+          cpf: string | null
+          endereco: string | null
+          logo_url: string | null
+          nome_criadouro: string
+          registro_ctf: string | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+          validade_ctf: string | null
+        }
+        Insert: {
+          cpf?: string | null
+          endereco?: string | null
+          logo_url?: string | null
+          nome_criadouro?: string
+          registro_ctf?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+          validade_ctf?: string | null
+        }
+        Update: {
+          cpf?: string | null
+          endereco?: string | null
+          logo_url?: string | null
+          nome_criadouro?: string
+          registro_ctf?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+          validade_ctf?: string | null
+        }
+        Relationships: []
+      }
+      health_records: {
+        Row: {
+          bird_id: string
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+          proxima_dose: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          bird_id: string
+          created_at?: string
+          data: string
+          descricao?: string | null
+          id?: string
+          proxima_dose?: string | null
+          tipo?: string
+          user_id: string
+        }
+        Update: {
+          bird_id?: string
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          proxima_dose?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nests: {
+        Row: {
+          created_at: string
+          data_eclosao: string | null
+          data_postura: string
+          femea_id: string
+          id: string
+          macho_id: string
+          observacoes: string | null
+          quantidade_filhotes: number | null
+          quantidade_ovos: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_eclosao?: string | null
+          data_postura: string
+          femea_id: string
+          id?: string
+          macho_id: string
+          observacoes?: string | null
+          quantidade_filhotes?: number | null
+          quantidade_ovos?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_eclosao?: string | null
+          data_postura?: string
+          femea_id?: string
+          id?: string
+          macho_id?: string
+          observacoes?: string | null
+          quantidade_filhotes?: number | null
+          quantidade_ovos?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pending_transfers: {
         Row: {
           bird_data: Json
@@ -61,6 +238,42 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tournaments: {
+        Row: {
+          bird_id: string
+          classificacao: string | null
+          clube: string | null
+          created_at: string
+          data: string
+          id: string
+          nome_torneio: string
+          pontuacao: number
+          user_id: string
+        }
+        Insert: {
+          bird_id: string
+          classificacao?: string | null
+          clube?: string | null
+          created_at?: string
+          data: string
+          id?: string
+          nome_torneio?: string
+          pontuacao?: number
+          user_id: string
+        }
+        Update: {
+          bird_id?: string
+          classificacao?: string | null
+          clube?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          nome_torneio?: string
+          pontuacao?: number
           user_id?: string
         }
         Relationships: []
