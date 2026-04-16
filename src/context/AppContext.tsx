@@ -307,7 +307,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     (async () => {
       await migrateLocalToCloud(user.id);
-      await loadAll(user.id);
+      await loadAll(user.id, user.email);
     })();
   }, [user, migrateLocalToCloud, loadAll]);
 
