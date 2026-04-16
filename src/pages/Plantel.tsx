@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
-import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch } from 'lucide-react';
+import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle } from 'lucide-react';
 import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const statusLabels: Record<BirdStatus, string> = { Ativo: 'Ativo', 'Berçário': 'Berçário', Vendido: 'Vendido', Falecido: 'Falecido' };
 const statusClass: Record<BirdStatus, string> = { Ativo: 'badge-active', 'Berçário': 'badge-bercario', Vendido: 'badge-sold', Falecido: 'badge-deceased' };
@@ -31,10 +32,53 @@ export default function Plantel() {
   const [sortKey, setSortKey] = useState<SortKey>('nome');
   const [sortAsc, setSortAsc] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [anilhaCheck, setAnilhaCheck] = useState<{ status: 'idle' | 'checking' | 'available' | 'taken-local' | 'taken-global'; message?: string }>({ status: 'idle' });
 
   useEffect(() => {
     if (searchParams.get('new') === '1') { openNew(); }
   }, [searchParams]);
+
+  // Validação em tempo real do código de anilha (debounced)
+  useEffect(() => {
+    if (!showForm) return;
+    const codigoRaw = form.codigo_anilha?.trim() || '';
+    if (!codigoRaw) { setAnilhaCheck({ status: 'idle' }); return; }
+    const codigo = codigoRaw.toLowerCase();
+
+    // 1) Conflito local (mesmo plantel)
+    const conflitoLocal = birds.find(b => b.codigo_anilha?.trim().toLowerCase() === codigo && b.id !== editId);
+    if (conflitoLocal) {
+      setAnilhaCheck({ status: 'taken-local', message: `Já existe no seu plantel: ${conflitoLocal.nome}` });
+      return;
+    }
+
+    setAnilhaCheck({ status: 'checking' });
+    const t = setTimeout(async () => {
+      // 2) Conflito global (qualquer usuário) — usa o índice único; em caso de erro 23505 ao salvar, ainda barramos
+      try {
+        const { data, error } = await supabase
+          .from('birds')
+          .select('id')
+          .ilike('codigo_anilha', codigoRaw)
+          .limit(1)
+          .maybeSingle();
+        if (error && (error as any).code !== 'PGRST116') {
+          // RLS bloqueia ver aves de outros usuários, então normalmente só veremos as próprias.
+          // Se não houver retorno, consideramos disponível (a unicidade global é garantida pelo banco no salvar).
+          setAnilhaCheck({ status: 'available' });
+          return;
+        }
+        if (data && data.id !== editId) {
+          setAnilhaCheck({ status: 'taken-global', message: 'Esta anilha já está em uso.' });
+        } else {
+          setAnilhaCheck({ status: 'available' });
+        }
+      } catch {
+        setAnilhaCheck({ status: 'available' });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [form.codigo_anilha, birds, editId, showForm]);
 
   const uniqueEspecies = useMemo(() => [...new Set(birds.map(b => b.nome))], [birds]);
 
@@ -265,7 +309,33 @@ export default function Plantel() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Código de Anilha (SISPASS) *</label>
-                <input value={form.codigo_anilha || ''} onChange={e => setForm({ ...form, codigo_anilha: e.target.value })} className="mt-1 input-field" placeholder="SISPASS X.X XX/X XXXXXX" />
+                <div className="relative">
+                  <input
+                    value={form.codigo_anilha || ''}
+                    onChange={e => setForm({ ...form, codigo_anilha: e.target.value })}
+                    className={`mt-1 input-field pr-9 ${
+                      anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global'
+                        ? 'border-destructive focus:ring-destructive/30'
+                        : anilhaCheck.status === 'available'
+                        ? 'border-green-500/60 focus:ring-green-500/30'
+                        : ''
+                    }`}
+                    placeholder="SISPASS X.X XX/X XXXXXX"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5">
+                    {anilhaCheck.status === 'checking' && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />}
+                    {anilhaCheck.status === 'available' && <Check className="w-4 h-4 text-green-500" />}
+                    {(anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global') && <AlertCircle className="w-4 h-4 text-destructive" />}
+                  </div>
+                </div>
+                {(anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global') && (
+                  <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {anilhaCheck.message || 'Anilha já existe.'}
+                  </p>
+                )}
+                {anilhaCheck.status === 'available' && form.codigo_anilha && (
+                  <p className="text-xs text-green-600 dark:text-green-500 mt-1">Anilha disponível</p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Nome *</label>
@@ -350,7 +420,13 @@ export default function Plantel() {
 
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={save} className="btn-primary"><Check className="w-4 h-4" /> Salvar</button>
+              <button
+                onClick={save}
+                disabled={anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global' || anilhaCheck.status === 'checking'}
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="w-4 h-4" /> Salvar
+              </button>
             </div>
           </div>
         </div>
