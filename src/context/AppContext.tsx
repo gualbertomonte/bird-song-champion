@@ -740,26 +740,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const loan = loans.find(l => l.id === loanId);
     if (!loan) return;
 
-    // 1. Marcar empréstimo como Devolvida
-    const { data, error } = await supabase.from('bird_loans').update({
-      status: 'Devolvida',
-      data_devolucao: new Date().toISOString(),
-    }).eq('id', loanId).select('*').single();
-    if (error) { toast.error('Erro ao confirmar devolução'); return; }
-
-    // 2. Excluir cópia da ave do plantel do recebedor
-    if (loan.borrower_bird_id) {
-      await supabase.from('birds').delete().eq('id', loan.borrower_bird_id);
-    } else {
-      // fallback: tenta achar pela original_bird_id
-      await supabase.from('birds').delete().eq('original_bird_id', loan.bird_id).eq('user_id', user.id);
+    // Executa toda a devolução de forma atômica via RPC SECURITY DEFINER
+    // (recebedor não tem permissão para mexer na ave do dono nem deletar a própria via RLS)
+    const { error: rpcError } = await supabase.rpc('confirm_loan_return' as any, { _loan_id: loanId });
+    if (rpcError) {
+      toast.error(rpcError.message || 'Erro ao confirmar devolução');
+      return;
     }
 
-    // 3. Restaurar status da ave do dono
-    await supabase.from('birds').update({
-      loan_status: 'proprio',
-      loan_id: null,
-    }).eq('id', loan.bird_id);
+    // Recarrega o empréstimo atualizado para refletir status/data_devolucao
+    const { data } = await supabase.from('bird_loans').select('*').eq('id', loanId).single();
 
     // 4. Notificar o dono
     await createNotification({
