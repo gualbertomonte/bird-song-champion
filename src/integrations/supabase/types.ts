@@ -412,6 +412,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_loan: { Args: { _loan_id: string }; Returns: undefined }
+      confirm_loan_return: { Args: { _loan_id: string }; Returns: undefined }
       generate_codigo_criadouro: { Args: never; Returns: string }
     }
     Enums: {
