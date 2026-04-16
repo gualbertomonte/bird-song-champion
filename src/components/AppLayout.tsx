@@ -30,6 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { loading } = useAppState();
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -128,7 +129,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 p-3 sm:p-4 md:p-6">
-          {children}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-32 gap-3">
+              <Loader2 className="w-8 h-8 text-secondary animate-spin" />
+              <p className="text-sm text-muted-foreground">Sincronizando seus dados da nuvem...</p>
+            </div>
+          ) : children}
         </main>
       </div>
 
