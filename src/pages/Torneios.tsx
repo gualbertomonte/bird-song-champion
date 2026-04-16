@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { Tournament } from '@/types/bird';
-import { Trophy, Plus, X, Check, Medal, Calendar, Filter } from 'lucide-react';
+import { Trophy, Plus, X, Check, Medal, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -65,7 +64,6 @@ export default function Torneios() {
         </button>
       </div>
 
-      {/* Ranking */}
       {ranking.length > 0 && (
         <div className="bg-card rounded-xl border p-5 animate-fade-in">
           <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
@@ -73,13 +71,13 @@ export default function Torneios() {
           </h2>
           <div className="space-y-2">
             {ranking.map((item, i) => (
-              <div key={item.bird!.id} className={`flex items-center gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
+              <div key={item.bird!.id} className={`flex items-center gap-3 sm:gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
                 <span className={`text-lg font-bold w-8 text-center ${medalColor(i)}`}>{i + 1}º</span>
                 <div className="flex-1 min-w-0">
-                  <span className="font-medium text-sm">{item.bird!.nome_comum}</span>
-                  <span className="text-xs text-muted-foreground ml-2">{item.bird!.codigo_anilha}</span>
+                  <span className="font-medium text-sm">{item.bird!.nome}</span>
+                  <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">{item.bird!.codigo_anilha}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{item.count} torneios</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">{item.count} torneios</span>
                 <span className="font-bold text-lg text-secondary">{item.avg}</span>
               </div>
             ))}
@@ -87,57 +85,56 @@ export default function Torneios() {
         </div>
       )}
 
-      {/* Filter */}
       <div className="flex items-center gap-2">
         <Filter className="w-4 h-4 text-muted-foreground" />
         <select value={filterBird} onChange={e => setFilterBird(e.target.value)} className="input-field w-auto min-w-[200px]">
           <option value="">Todas as aves</option>
-          {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome_comum} ({b.codigo_anilha})</option>)}
+          {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
         </select>
       </div>
 
-      {/* History table */}
       <div className="bg-card rounded-xl border overflow-hidden animate-fade-in">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/20">
-              <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Torneio</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Ave</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Clube</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Pontuação</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Classificação</th>
-              <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(t => {
-              const bird = birds.find(b => b.id === t.bird_id);
-              return (
-                <tr key={t.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
-                  <td className="p-3 text-muted-foreground">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
-                  <td className="p-3 font-medium">{t.nome_torneio}</td>
-                  <td className="p-3">{bird?.nome_comum || '—'}</td>
-                  <td className="p-3 text-muted-foreground">{t.clube || '—'}</td>
-                  <td className="p-3 font-bold text-secondary">{t.pontuacao}</td>
-                  <td className="p-3">{t.classificacao || '—'}</td>
-                  <td className="p-3 text-right">
-                    <button onClick={() => { deleteTournament(t.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/20">
+                <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Torneio</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Ave</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Clube</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Pts</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Classificação</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(t => {
+                const bird = birds.find(b => b.id === t.bird_id);
+                return (
+                  <tr key={t.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
+                    <td className="p-3 text-muted-foreground text-xs sm:text-sm">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
+                    <td className="p-3 font-medium text-xs sm:text-sm">{t.nome_torneio}</td>
+                    <td className="p-3 text-xs sm:text-sm">{bird?.nome || '—'}</td>
+                    <td className="p-3 text-muted-foreground hidden sm:table-cell">{t.clube || '—'}</td>
+                    <td className="p-3 font-bold text-secondary">{t.pontuacao}</td>
+                    <td className="p-3 hidden sm:table-cell">{t.classificacao || '—'}</td>
+                    <td className="p-3 text-right">
+                      <button onClick={() => { deleteTournament(t.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         {filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">Nenhum torneio registrado</p>}
       </div>
 
-      {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-xl">Registrar Torneio</h2>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
@@ -147,7 +144,7 @@ export default function Torneios() {
                 <label className="text-xs font-medium text-muted-foreground">Ave *</label>
                 <select value={form.bird_id} onChange={e => setForm({ ...form, bird_id: e.target.value })} className="mt-1 input-field">
                   <option value="">Selecionar ave...</option>
-                  {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome_comum} ({b.codigo_anilha})</option>)}
+                  {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
                 </select>
               </div>
               <div>

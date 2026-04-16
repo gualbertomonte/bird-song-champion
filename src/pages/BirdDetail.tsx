@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
-import { Bird, ChevronLeft, Trophy, Heart, Users, QrCode, Download, FileText } from 'lucide-react';
+import { Bird, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { QRCodeSVG } from 'qrcode.react';
@@ -14,6 +14,8 @@ export default function BirdDetail() {
   const bird = birds.find(b => b.id === id);
   const crachaRef = useRef<HTMLDivElement>(null);
   const [showCracha, setShowCracha] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferTo, setTransferTo] = useState('');
 
   if (!bird) return (
     <div className="text-center py-20">
@@ -51,6 +53,17 @@ export default function BirdDetail() {
     } catch { toast.error('Erro ao gerar crachá'); }
   };
 
+  const handleTransfer = () => {
+    if (!transferTo.trim()) {
+      toast.error('Informe o identificador do destinatário');
+      return;
+    }
+    // Placeholder: in a real app this would call an API
+    toast.success(`Transferência da ave "${bird.nome}" para "${transferTo}" solicitada! Todos os dados (histórico, saúde, torneios) serão transferidos.`);
+    setShowTransfer(false);
+    setTransferTo('');
+  };
+
   return (
     <div className="space-y-5 pb-20 md:pb-0">
       <Link to="/plantel" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -60,23 +73,26 @@ export default function BirdDetail() {
       {/* Header */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-48 h-48 rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center flex-shrink-0">
-          {photo ? <img src={photo} alt={bird.nome_comum} className="w-full h-full object-cover" /> : <Bird className="w-16 h-16 text-muted-foreground/30" />}
+          {photo ? <img src={photo} alt={bird.nome} className="w-full h-full object-cover" /> : <Bird className="w-16 h-16 text-muted-foreground/30" />}
         </div>
         <div className="flex-1 space-y-2">
           <div>
-            <h1 className="page-title">{bird.nome_comum}</h1>
+            <h1 className="page-title">{bird.nome}</h1>
             <p className="text-muted-foreground italic">{bird.nome_cientifico}</p>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm">
+          <div className="flex flex-wrap gap-2 text-sm">
             <span className="px-3 py-1 rounded-full bg-muted/40 font-mono text-xs">{bird.codigo_anilha}</span>
             <span className={bird.sexo === 'M' ? 'badge-active' : 'badge-sold'}>{bird.sexo === 'M' ? '♂ Macho' : '♀ Fêmea'}</span>
             <span className={`badge-status ${bird.status === 'Ativo' ? 'bg-success/15 text-success' : bird.status === 'Berçário' ? 'bg-info/15 text-info' : bird.status === 'Vendido' ? 'bg-secondary/15 text-secondary' : 'bg-destructive/15 text-destructive'}`}>
               {bird.status}
             </span>
           </div>
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <button onClick={() => setShowCracha(true)} className="btn-primary text-xs">
               <QrCode className="w-3.5 h-3.5" /> Crachá Digital
+            </button>
+            <button onClick={() => setShowTransfer(true)} className="btn-secondary text-xs">
+              <Send className="w-3.5 h-3.5" /> Transferir Ave
             </button>
           </div>
         </div>
@@ -84,22 +100,21 @@ export default function BirdDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="bg-muted/30 border">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="genealogy">Genealogia</TabsTrigger>
-          <TabsTrigger value="tournaments">Torneios ({birdTournaments.length})</TabsTrigger>
-          <TabsTrigger value="health">Saúde ({birdHealth.length})</TabsTrigger>
-          <TabsTrigger value="offspring">Filhotes ({filhotes.length})</TabsTrigger>
+        <TabsList className="bg-muted/30 border flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Visão Geral</TabsTrigger>
+          <TabsTrigger value="genealogy" className="text-xs sm:text-sm">Genealogia</TabsTrigger>
+          <TabsTrigger value="tournaments" className="text-xs sm:text-sm">Torneios ({birdTournaments.length})</TabsTrigger>
+          <TabsTrigger value="health" className="text-xs sm:text-sm">Saúde ({birdHealth.length})</TabsTrigger>
+          <TabsTrigger value="offspring" className="text-xs sm:text-sm">Filhotes ({filhotes.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="animate-fade-in">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-card rounded-xl border p-5 space-y-3">
               <h3 className="font-semibold">Dados Gerais</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {[
                   ['Cor', bird.cor || '—'],
-                  ['Gaiola', bird.gaiola || '—'],
                   ['Tipo Anilha', bird.tipo_anilha || '—'],
                   ['Diâmetro', bird.diametro_anilha || '—'],
                   ['Estado', bird.estado || '—'],
@@ -143,37 +158,34 @@ export default function BirdDetail() {
         </TabsContent>
 
         <TabsContent value="genealogy" className="animate-fade-in">
-          <div className="bg-card rounded-xl border p-6">
+          <div className="bg-card rounded-xl border p-6 overflow-x-auto">
             <h3 className="font-semibold mb-6">Árvore Genealógica</h3>
-            <div className="flex flex-col items-center gap-4">
-              {/* Avós (if available) */}
+            <div className="flex flex-col items-center gap-4 min-w-[500px]">
               <div className="flex gap-8 flex-wrap justify-center">
                 {[pai?.pai_id, pai?.mae_id, mae?.pai_id, mae?.mae_id].map((gId, i) => {
                   const g = gId ? birds.find(b => b.id === gId) : null;
                   return (
                     <div key={i} className="w-32 p-2 rounded-lg bg-muted/20 border border-border/50 text-center text-xs">
-                      <p className="font-medium truncate">{g?.nome_comum || '—'}</p>
+                      <p className="font-medium truncate">{g?.nome || '—'}</p>
                       <p className="text-muted-foreground truncate">{g?.codigo_anilha || 'Desconhecido'}</p>
                     </div>
                   );
                 })}
               </div>
               <div className="w-px h-6 bg-border" />
-              {/* Pais */}
               <div className="flex gap-12 flex-wrap justify-center">
                 {[{ label: 'Pai', b: pai }, { label: 'Mãe', b: mae }].map(({ label, b }) => (
                   <div key={label} className="w-40 p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
                     <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className="font-semibold text-sm mt-1">{b?.nome_comum || '—'}</p>
+                    <p className="font-semibold text-sm mt-1">{b?.nome || '—'}</p>
                     <p className="text-xs text-muted-foreground italic">{b?.nome_cientifico || ''}</p>
                     <p className="text-xs font-mono mt-1">{b?.codigo_anilha || 'Não cadastrado'}</p>
                   </div>
                 ))}
               </div>
               <div className="w-px h-6 bg-secondary" />
-              {/* Ave central */}
               <div className="w-48 p-4 rounded-xl bg-secondary/10 border-2 border-secondary/30 text-center">
-                <p className="font-bold">{bird.nome_comum}</p>
+                <p className="font-bold">{bird.nome}</p>
                 <p className="text-xs italic text-muted-foreground">{bird.nome_cientifico}</p>
                 <p className="text-xs font-mono mt-1">{bird.codigo_anilha}</p>
               </div>
@@ -197,28 +209,30 @@ export default function BirdDetail() {
             </div>
           )}
           <div className="bg-card rounded-xl border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/20">
-                  <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Torneio</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Clube</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Pontuação</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Classificação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {birdTournaments.map(t => (
-                  <tr key={t.id} className="border-b border-border/30">
-                    <td className="p-3 text-muted-foreground">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
-                    <td className="p-3 font-medium">{t.nome_torneio}</td>
-                    <td className="p-3 text-muted-foreground">{t.clube || '—'}</td>
-                    <td className="p-3 font-bold text-secondary">{t.pontuacao}</td>
-                    <td className="p-3">{t.classificacao || '—'}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/20">
+                    <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Torneio</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Clube</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Pontuação</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Classificação</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {birdTournaments.map(t => (
+                    <tr key={t.id} className="border-b border-border/30">
+                      <td className="p-3 text-muted-foreground">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
+                      <td className="p-3 font-medium">{t.nome_torneio}</td>
+                      <td className="p-3 text-muted-foreground hidden sm:table-cell">{t.clube || '—'}</td>
+                      <td className="p-3 font-bold text-secondary">{t.pontuacao}</td>
+                      <td className="p-3 hidden sm:table-cell">{t.classificacao || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {birdTournaments.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhum torneio registrado</p>}
           </div>
         </TabsContent>
@@ -232,7 +246,7 @@ export default function BirdDetail() {
                 <div key={h.id} className="relative">
                   <div className="absolute -left-[27px] w-3 h-3 rounded-full bg-secondary border-2 border-card" />
                   <div className="p-3 rounded-lg bg-muted/20">
-                    <div className="flex justify-between items-start">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-1">
                       <div>
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">{h.tipo}</span>
                         <p className="text-sm mt-1">{h.descricao || '—'}</p>
@@ -253,14 +267,14 @@ export default function BirdDetail() {
           <div className="bg-card rounded-xl border p-5">
             <h3 className="font-semibold mb-4">Filhotes</h3>
             {filhotes.length === 0 && <p className="text-sm text-muted-foreground">Nenhum filhote registrado.</p>}
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {filhotes.map(f => (
                 <Link to={`/ave/${f.id}`} key={f.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     <Bird className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{f.nome_comum}</p>
+                    <p className="font-medium text-sm">{f.nome}</p>
                     <p className="text-xs text-muted-foreground">{f.codigo_anilha} · {f.sexo === 'M' ? '♂' : '♀'}</p>
                   </div>
                 </Link>
@@ -273,8 +287,8 @@ export default function BirdDetail() {
       {/* Crachá Modal */}
       {showCracha && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCracha(false)}>
-          <div className="space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div ref={crachaRef} className="w-[400px] bg-gradient-to-br from-[#0B3B2A] to-[#0A0F0D] rounded-2xl p-6 border border-secondary/20 text-white">
+          <div className="space-y-4 animate-scale-in max-w-full" onClick={e => e.stopPropagation()}>
+            <div ref={crachaRef} className="w-[360px] sm:w-[400px] bg-gradient-to-br from-[#0B3B2A] to-[#0A0F0D] rounded-2xl p-5 sm:p-6 border border-secondary/20 text-white">
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
                 <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
                   <Bird className="w-5 h-5 text-secondary" />
@@ -282,13 +296,13 @@ export default function BirdDetail() {
                 <span className="font-bold text-secondary text-sm">Plantel Pro+</span>
               </div>
               <div className="flex gap-4">
-                <div className="w-24 h-24 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center">
                   {photo ? <img src={photo} className="w-full h-full object-cover" /> : <Bird className="w-8 h-8 text-white/20" />}
                 </div>
-                <div className="flex-1 space-y-1">
-                  <h3 className="font-bold text-lg leading-tight">{bird.nome_comum}</h3>
-                  <p className="text-xs italic text-white/60">{bird.nome_cientifico}</p>
-                  <p className="text-xs font-mono text-secondary">{bird.codigo_anilha}</p>
+                <div className="flex-1 space-y-1 min-w-0">
+                  <h3 className="font-bold text-lg leading-tight truncate">{bird.nome}</h3>
+                  <p className="text-xs italic text-white/60 truncate">{bird.nome_cientifico}</p>
+                  <p className="text-xs font-mono text-secondary truncate">{bird.codigo_anilha}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
@@ -296,22 +310,38 @@ export default function BirdDetail() {
                 <div><span className="text-white/40">Cor:</span> <span>{bird.cor || '—'}</span></div>
                 <div><span className="text-white/40">Nascimento:</span> <span>{bird.data_nascimento ? new Date(bird.data_nascimento).toLocaleDateString('pt-BR') : '—'}</span></div>
                 <div><span className="text-white/40">Status:</span> <span>{bird.status}</span></div>
-                {pai && <div><span className="text-white/40">Pai:</span> <span>{pai.nome_comum}</span></div>}
-                {mae && <div><span className="text-white/40">Mãe:</span> <span>{mae.nome_comum}</span></div>}
+                {pai && <div><span className="text-white/40">Pai:</span> <span>{pai.nome}</span></div>}
+                {mae && <div><span className="text-white/40">Mãe:</span> <span>{mae.nome}</span></div>}
               </div>
               <div className="flex justify-between items-end mt-4 pt-3 border-t border-white/10">
-                <div className="text-[10px] text-white/30">
-                  Gerado por Plantel Pro+
-                </div>
+                <div className="text-[10px] text-white/30">Gerado por Plantel Pro+</div>
                 <QRCodeSVG value={`https://plantelproplus.app/ave/${bird.id}`} size={56} bgColor="transparent" fgColor="#D4AF37" level="L" />
               </div>
             </div>
             <button onClick={downloadCracha} className="w-full btn-primary justify-center">
               <Download className="w-4 h-4" /> Baixar como Imagem
             </button>
-            <button onClick={() => setShowCracha(false)} className="w-full px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors text-center">
-              Fechar
-            </button>
+            <button onClick={() => setShowCracha(false)} className="w-full px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors text-center">Fechar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Modal */}
+      {showTransfer && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowTransfer(false)}>
+          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-sm p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+            <h2 className="font-bold text-lg">Transferir Ave</h2>
+            <p className="text-sm text-muted-foreground">
+              Ao transferir, todos os dados da ave (histórico de saúde, torneios, observações) serão enviados ao novo proprietário.
+            </p>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Email ou ID do destinatário *</label>
+              <input value={transferTo} onChange={e => setTransferTo(e.target.value)} className="mt-1 input-field" placeholder="email@exemplo.com" />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowTransfer(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
+              <button onClick={handleTransfer} className="btn-primary text-sm"><Send className="w-3.5 h-3.5" /> Transferir</button>
+            </div>
           </div>
         </div>
       )}

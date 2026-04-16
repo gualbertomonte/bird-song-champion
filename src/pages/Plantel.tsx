@@ -3,6 +3,7 @@ import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
 import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch } from 'lucide-react';
 import PhotoUploader from '@/components/PhotoUploader';
+import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -10,7 +11,7 @@ import { useEffect } from 'react';
 const statusLabels: Record<BirdStatus, string> = { Ativo: 'Ativo', 'Berçário': 'Berçário', Vendido: 'Vendido', Falecido: 'Falecido' };
 const statusClass: Record<BirdStatus, string> = { Ativo: 'badge-active', 'Berçário': 'badge-bercario', Vendido: 'badge-sold', Falecido: 'badge-deceased' };
 
-type SortKey = 'nome_comum' | 'codigo_anilha' | 'data_nascimento';
+type SortKey = 'nome' | 'codigo_anilha' | 'data_nascimento';
 type ViewMode = 'cards' | 'table';
 
 const emptyForm = (): Partial<BirdType> => ({ sexo: 'M', status: 'Ativo', fotos: [], nome_cientifico: '' });
@@ -27,7 +28,7 @@ export default function Plantel() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<BirdType>>(emptyForm());
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
-  const [sortKey, setSortKey] = useState<SortKey>('nome_comum');
+  const [sortKey, setSortKey] = useState<SortKey>('nome');
   const [sortAsc, setSortAsc] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -35,16 +36,15 @@ export default function Plantel() {
     if (searchParams.get('new') === '1') { openNew(); }
   }, [searchParams]);
 
-  const especies = useMemo(() => [...new Set(birds.map(b => b.nome_cientifico ? `${b.nome_comum} (${b.nome_cientifico})` : b.nome_comum).map((_, i) => birds[i].nome_comum))].filter(Boolean), [birds]);
-  const uniqueEspecies = useMemo(() => [...new Set(birds.map(b => b.nome_comum))], [birds]);
+  const uniqueEspecies = useMemo(() => [...new Set(birds.map(b => b.nome))], [birds]);
 
   const filtered = useMemo(() => {
     let result = birds.filter(b => {
       const s = search.toLowerCase();
-      const matchSearch = !s || b.nome_comum.toLowerCase().includes(s) || b.codigo_anilha.toLowerCase().includes(s) ||
+      const matchSearch = !s || b.nome.toLowerCase().includes(s) || b.codigo_anilha.toLowerCase().includes(s) ||
         b.nome_cientifico?.toLowerCase().includes(s);
       return matchSearch
-        && (!filterEspecie || b.nome_comum === filterEspecie)
+        && (!filterEspecie || b.nome === filterEspecie)
         && (!filterStatus || b.status === filterStatus)
         && (!filterSexo || b.sexo === filterSexo)
         && (!filterEstado || b.estado === filterEstado);
@@ -61,8 +61,8 @@ export default function Plantel() {
   const openEdit = (b: BirdType) => { setForm({ ...b }); setEditId(b.id); setShowForm(true); };
 
   const save = () => {
-    if (!form.codigo_anilha?.trim() || !form.nome_comum?.trim() || !form.nome_cientifico?.trim()) {
-      toast.error('Preencha os campos obrigatórios: Anilha, Nome Comum e Nome Científico');
+    if (!form.codigo_anilha?.trim() || !form.nome?.trim() || !form.nome_cientifico?.trim()) {
+      toast.error('Preencha os campos obrigatórios: Anilha, Nome e Nome Científico');
       return;
     }
     if (editId) {
@@ -102,20 +102,20 @@ export default function Plantel() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, anilha, espécie..." className="w-full pl-9 pr-4 py-2 input-field" />
         </div>
-        <select value={filterEspecie} onChange={e => setFilterEspecie(e.target.value)} className="input-field w-auto min-w-[140px]">
+        <select value={filterEspecie} onChange={e => setFilterEspecie(e.target.value)} className="input-field w-auto min-w-[120px]">
           <option value="">Todas espécies</option>
           {uniqueEspecies.map(e => <option key={e} value={e}>{e}</option>)}
         </select>
-        <select value={filterSexo} onChange={e => setFilterSexo(e.target.value)} className="input-field w-auto">
+        <select value={filterSexo} onChange={e => setFilterSexo(e.target.value)} className="input-field w-auto min-w-[80px]">
           <option value="">Sexo</option>
           <option value="M">Macho</option>
           <option value="F">Fêmea</option>
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-auto">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-auto min-w-[100px]">
           <option value="">Status</option>
           <option value="Ativo">Ativo</option>
           <option value="Berçário">Berçário</option>
@@ -126,12 +126,12 @@ export default function Plantel() {
 
       {/* Cards View */}
       {viewMode === 'cards' && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((bird, i) => (
             <div key={bird.id} className="card-hover group animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
               <div className="h-32 bg-gradient-to-br from-primary/20 to-muted/30 flex items-center justify-center relative overflow-hidden">
                 {getPhoto(bird) ? (
-                  <img src={getPhoto(bird)!} alt={bird.nome_comum} className="w-full h-full object-cover" />
+                  <img src={getPhoto(bird)!} alt={bird.nome} className="w-full h-full object-cover" />
                 ) : (
                   <Bird className="w-10 h-10 text-primary/30" />
                 )}
@@ -144,11 +144,10 @@ export default function Plantel() {
               </div>
               <div className="p-3 space-y-1.5">
                 <div>
-                  <h3 className="font-semibold text-sm leading-tight">{bird.nome_comum}</h3>
+                  <h3 className="font-semibold text-sm leading-tight">{bird.nome}</h3>
                   <p className="text-xs text-muted-foreground italic">{bird.nome_cientifico}</p>
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">{bird.codigo_anilha}</p>
-                {bird.gaiola && <p className="text-xs text-muted-foreground">Gaiola: {bird.gaiola}</p>}
                 <div className="flex gap-1 pt-1">
                   <Link to={`/ave/${bird.id}`} className="flex-1 text-xs py-1.5 rounded-md bg-muted/40 text-foreground hover:bg-muted/60 transition-colors flex items-center justify-center gap-1">
                     <Eye className="w-3 h-3" /> Ver
@@ -177,13 +176,12 @@ export default function Plantel() {
                   <th className="text-left p-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort('codigo_anilha')}>
                     <span className="inline-flex items-center gap-1">Anilha <ArrowUpDown className="w-3 h-3" /></span>
                   </th>
-                  <th className="text-left p-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort('nome_comum')}>
+                  <th className="text-left p-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort('nome')}>
                     <span className="inline-flex items-center gap-1">Nome <ArrowUpDown className="w-3 h-3" /></span>
                   </th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Espécie</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Espécie</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Sexo</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Gaiola</th>
                   <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
                 </tr>
               </thead>
@@ -198,14 +196,13 @@ export default function Plantel() {
                     <td className="p-3 font-mono text-xs">{bird.codigo_anilha}</td>
                     <td className="p-3">
                       <div>
-                        <span className="font-medium">{bird.nome_comum}</span>
+                        <span className="font-medium">{bird.nome}</span>
                         <p className="text-xs text-muted-foreground italic">{bird.nome_cientifico}</p>
                       </div>
                     </td>
-                    <td className="p-3 text-muted-foreground">{bird.nome_comum}</td>
-                    <td className="p-3">{bird.sexo === 'M' ? '♂ Macho' : '♀ Fêmea'}</td>
+                    <td className="p-3 text-muted-foreground hidden md:table-cell italic">{bird.nome_cientifico}</td>
+                    <td className="p-3">{bird.sexo === 'M' ? '♂' : '♀'}</td>
                     <td className="p-3"><span className={statusClass[bird.status]}>{statusLabels[bird.status]}</span></td>
-                    <td className="p-3 text-muted-foreground">{bird.gaiola || '—'}</td>
                     <td className="p-3 text-right">
                       <div className="flex justify-end gap-1">
                         <Link to={`/ave/${bird.id}`} className="btn-ghost p-1.5"><Eye className="w-3.5 h-3.5" /></Link>
@@ -245,25 +242,25 @@ export default function Plantel() {
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-xl">{editId ? 'Editar Ave' : 'Nova Ave'}</h2>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Código de Anilha (SISPASS) *</label>
                 <input value={form.codigo_anilha || ''} onChange={e => setForm({ ...form, codigo_anilha: e.target.value })} className="mt-1 input-field" placeholder="SISPASS X.X XX/X XXXXXX" />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome Comum *</label>
-                <input value={form.nome_comum || ''} onChange={e => setForm({ ...form, nome_comum: e.target.value })} className="mt-1 input-field" placeholder="Curió, Canário..." />
+                <label className="text-xs font-medium text-muted-foreground">Nome *</label>
+                <input value={form.nome || ''} onChange={e => setForm({ ...form, nome: e.target.value })} className="mt-1 input-field" placeholder="Trovão, Serena..." />
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome Científico *</label>
-                <input value={form.nome_cientifico || ''} onChange={e => setForm({ ...form, nome_cientifico: e.target.value })} className="mt-1 input-field" placeholder="Sporophila angolensis" />
-              </div>
+              <NomeCientificoCombobox
+                value={form.nome_cientifico || ''}
+                onChange={val => setForm({ ...form, nome_cientifico: val })}
+              />
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Sexo</label>
                 <select value={form.sexo} onChange={e => setForm({ ...form, sexo: e.target.value as any })} className="mt-1 input-field">
@@ -301,38 +298,34 @@ export default function Plantel() {
                 <input value={form.cor || ''} onChange={e => setForm({ ...form, cor: e.target.value })} className="mt-1 input-field" />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Gaiola</label>
-                <input value={form.gaiola || ''} onChange={e => setForm({ ...form, gaiola: e.target.value })} className="mt-1 input-field" placeholder="G-001" />
-              </div>
-              <div>
                 <label className="text-xs font-medium text-muted-foreground">Estado (UF)</label>
                 <select value={form.estado || ''} onChange={e => setForm({ ...form, estado: e.target.value as any || undefined })} className="mt-1 input-field">
                   <option value="">Selecionar...</option>
                   {ESTADOS_BR.map(uf => <option key={uf} value={uf}>{uf}</option>)}
                 </select>
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Pai</label>
                 <select value={form.pai_id || ''} onChange={e => setForm({ ...form, pai_id: e.target.value || undefined })} className="mt-1 input-field">
                   <option value="">Sem pai cadastrado</option>
                   {birds.filter(b => b.sexo === 'M' && b.id !== editId).map(b => (
-                    <option key={b.id} value={b.id}>{b.codigo_anilha} – {b.nome_comum}</option>
+                    <option key={b.id} value={b.id}>{b.codigo_anilha} – {b.nome}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Mãe</label>
                 <select value={form.mae_id || ''} onChange={e => setForm({ ...form, mae_id: e.target.value || undefined })} className="mt-1 input-field">
                   <option value="">Sem mãe cadastrada</option>
                   {birds.filter(b => b.sexo === 'F' && b.id !== editId).map(b => (
-                    <option key={b.id} value={b.id}>{b.codigo_anilha} – {b.nome_comum}</option>
+                    <option key={b.id} value={b.id}>{b.codigo_anilha} – {b.nome}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <PhotoUploader photos={form.fotos || []} onChange={fotos => setForm({ ...form, fotos, foto_url: fotos[0] || form.foto_url })} />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Observações</label>
                 <textarea value={form.observacoes || ''} onChange={e => setForm({ ...form, observacoes: e.target.value })} rows={2} className="mt-1 input-field resize-none" />
               </div>

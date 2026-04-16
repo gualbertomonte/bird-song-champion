@@ -10,20 +10,19 @@ export type EstadoUF = typeof ESTADOS_BR[number];
 
 export interface Bird {
   id: string;
-  nome_comum: string;
+  nome: string; // was nome_comum
   nome_cientifico: string;
   sexo: BirdSex;
   data_nascimento?: string;
   tipo_anilha?: 'Fechada' | 'Aberta';
   diametro_anilha?: string;
-  codigo_anilha: string; // SISPASS format
+  codigo_anilha: string;
   status: BirdStatus;
-  gaiola?: string;
   observacoes?: string;
   pai_id?: string;
   mae_id?: string;
-  foto_url?: string; // main photo (base64)
-  fotos?: string[]; // additional photos
+  foto_url?: string;
+  fotos?: string[];
   estado?: EstadoUF;
   cor?: string;
   created_at?: string;
@@ -49,7 +48,7 @@ export interface Tournament {
   data: string;
   nome_torneio: string;
   clube?: string;
-  pontuacao: number; // 1-1000
+  pontuacao: number;
   classificacao?: string;
   created_at?: string;
 }
@@ -58,7 +57,7 @@ export interface HealthRecord {
   id: string;
   bird_id: string;
   data: string;
-  tipo: string; // Vermifugação, Vacina, Exame, etc.
+  tipo: string;
   descricao?: string;
   proxima_dose?: string;
 }
