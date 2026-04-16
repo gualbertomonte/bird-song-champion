@@ -58,9 +58,10 @@ export default function Bercario() {
       newBirds.push({
         id,
         codigo_anilha: `PEND-${id.slice(-6)}`,
-        nome: mae?.nome || 'Filhote',
+        nome: '',
         nome_cientifico: mae?.nome_cientifico || pai?.nome_cientifico || '',
-        sexo: 'M' as const,
+        nome_comum_especie: mae?.nome_comum_especie || pai?.nome_comum_especie || '',
+        sexo: 'I' as const,
         data_nascimento: new Date().toISOString().split('T')[0],
         status: 'Berçário' as const,
         pai_id: nest.macho_id,
