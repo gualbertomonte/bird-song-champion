@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Bird, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
@@ -53,15 +54,31 @@ export default function BirdDetail() {
     } catch { toast.error('Erro ao gerar crachá'); }
   };
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (!transferTo.trim()) {
       toast.error('Informe o identificador do destinatário');
       return;
     }
-    // Placeholder: in a real app this would call an API
-    toast.success(`Transferência da ave "${bird.nome}" para "${transferTo}" solicitada! Todos os dados (histórico, saúde, torneios) serão transferidos.`);
-    setShowTransfer(false);
-    setTransferTo('');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-transfer-email', {
+        body: {
+          recipientEmail: transferTo.trim(),
+          birdName: bird.nome,
+          birdSpecies: bird.nome_cientifico,
+          birdCode: bird.codigo_anilha,
+          senderName: 'Usuário Plantel Pro+',
+        },
+      });
+      if (error) throw error;
+      toast.success(`Transferência da ave "${bird.nome}" para "${transferTo}" realizada! E-mail enviado ao destinatário.`);
+      setShowTransfer(false);
+      setTransferTo('');
+    } catch (err) {
+      console.error('Transfer email error:', err);
+      toast.error('Transferência registrada, mas houve erro ao enviar o e-mail.');
+      setShowTransfer(false);
+      setTransferTo('');
+    }
   };
 
   return (
