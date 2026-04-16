@@ -60,6 +60,8 @@ export default function BirdDetail() {
       toast.error('Informe o identificador do destinatário');
       return;
     }
+    if (sending) return;
+    setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-transfer-email', {
         body: {
@@ -79,6 +81,8 @@ export default function BirdDetail() {
       toast.error('Transferência registrada, mas houve erro ao enviar o e-mail.');
       setShowTransfer(false);
       setTransferTo('');
+    } finally {
+      setSending(false);
     }
   };
 
