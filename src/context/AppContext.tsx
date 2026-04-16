@@ -182,6 +182,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           endereco: p.data.endereco ?? undefined,
           telefone: p.data.telefone ?? undefined,
           logo_url: p.data.logo_url ?? undefined,
+          codigo_criadouro: (p.data as any).codigo_criadouro ?? undefined,
         });
       } else {
         setProfileState(defaultProfile);
