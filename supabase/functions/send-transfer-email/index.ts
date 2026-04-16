@@ -35,6 +35,8 @@ Deno.serve(async (req) => {
 
     const { recipientEmail, birdName, birdSpecies, birdCode, senderName } = await req.json()
 
+    const SITE_URL = 'https://plantelpro.lovable.app'
+
     if (!recipientEmail || !birdCode) {
       return new Response(
         JSON.stringify({ error: 'recipientEmail and birdCode are required' }),
@@ -54,7 +56,10 @@ Deno.serve(async (req) => {
             <tr><td style="padding: 8px 0; color: #999;">Transferido por:</td><td style="padding: 8px 0; color: #fff;">${senderName || 'Usuário Plantel Pro+'}</td></tr>
           </table>
           <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;" />
-          <p style="color: #888; font-size: 12px; margin: 0;">Todos os dados da ave (histórico de saúde, torneios, observações) foram transferidos junto. Acesse o Plantel Pro+ para visualizar os detalhes completos.</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${SITE_URL}/login" style="display: inline-block; background: linear-gradient(135deg, #D4AF37, #B8962E); color: #0A0F0D; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-size: 16px;">Acessar Plantel Pro+</a>
+          </div>
+          <p style="color: #888; font-size: 12px; margin: 0;">Todos os dados da ave (histórico de saúde, torneios, observações) foram transferidos junto. Clique no botão acima para acessar o sistema e visualizar os detalhes completos.</p>
         </div>
         <p style="color: #666; font-size: 11px; text-align: center; margin-top: 16px;">Este é um e-mail automático enviado pelo sistema Plantel Pro+.</p>
       </div>
