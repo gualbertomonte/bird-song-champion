@@ -23,6 +23,8 @@ const mobileNavItems = [
   { to: '/arvore', icon: GitBranch, label: 'Árvore' },
   { to: '/bercario', icon: Egg, label: 'Berçário' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
+  { to: '/saude', icon: Heart, label: 'Saúde' },
+  { to: '/perfil', icon: User, label: 'Perfil' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -128,7 +130,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-3 sm:p-4 md:p-6">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-32 gap-3">
               <Loader2 className="w-8 h-8 text-secondary animate-spin" />
@@ -140,13 +142,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-sidebar border-t border-sidebar-border safe-area-bottom">
-        <div className="flex justify-around py-1.5">
+        <div className="flex justify-between items-stretch py-1.5 px-1 overflow-x-auto no-scrollbar">
           {mobileNavItems.map(item => {
-            const active = location.pathname === item.to;
+            const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
             return (
-              <Link key={item.to} to={item.to} className={`flex flex-col items-center gap-0.5 py-1 px-1.5 min-w-0 ${active ? 'text-sidebar-primary' : 'text-sidebar-foreground'}`}>
-                <item.icon className="w-4.5 h-4.5" />
-                <span className="text-[9px] sm:text-[10px] font-medium truncate">{item.label}</span>
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center justify-center gap-0.5 py-1 px-1 flex-1 min-w-[44px] rounded-md transition-colors ${
+                  active ? 'text-sidebar-primary bg-sidebar-accent/40' : 'text-sidebar-foreground'
+                }`}
+              >
+                <item.icon className="w-4 h-4 sm:w-[18px] sm:h-[18px] flex-shrink-0" />
+                <span className="text-[9px] sm:text-[10px] font-medium leading-tight truncate max-w-full">{item.label}</span>
               </Link>
             );
           })}
