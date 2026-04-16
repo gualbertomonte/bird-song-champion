@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram, LogOut
+  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram, LogOut, Loader2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAppState } from '@/context/AppContext';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
