@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
-import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch } from 'lucide-react';
+import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle } from 'lucide-react';
 import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const statusLabels: Record<BirdStatus, string> = { Ativo: 'Ativo', 'Berçário': 'Berçário', Vendido: 'Vendido', Falecido: 'Falecido' };
 const statusClass: Record<BirdStatus, string> = { Ativo: 'badge-active', 'Berçário': 'badge-bercario', Vendido: 'badge-sold', Falecido: 'badge-deceased' };
