@@ -67,6 +67,35 @@ function rowToBird(r: any): Bird {
     updated_at: r.updated_at,
     transferido_por_email: r.transferido_por_email ?? undefined,
     transferido_em: r.transferido_em ?? undefined,
+    loan_status: r.loan_status ?? 'proprio',
+    loan_id: r.loan_id ?? undefined,
+    original_owner_user_id: r.original_owner_user_id ?? undefined,
+    original_owner_email: r.original_owner_email ?? undefined,
+    original_bird_id: r.original_bird_id ?? undefined,
+  };
+}
+
+function rowToLoan(r: any): BirdLoan {
+  return {
+    id: r.id, bird_id: r.bird_id, bird_snapshot: r.bird_snapshot ?? {},
+    owner_user_id: r.owner_user_id, owner_email: r.owner_email ?? undefined,
+    borrower_user_id: r.borrower_user_id ?? undefined, borrower_email: r.borrower_email,
+    borrower_codigo_criadouro: r.borrower_codigo_criadouro ?? undefined,
+    borrower_bird_id: r.borrower_bird_id ?? undefined,
+    data_emprestimo: r.data_emprestimo, prazo_devolucao: r.prazo_devolucao ?? undefined,
+    data_solicitacao_devolucao: r.data_solicitacao_devolucao ?? undefined,
+    data_devolucao: r.data_devolucao ?? undefined,
+    status: r.status, observacoes: r.observacoes ?? undefined,
+    filhotes_gerados: r.filhotes_gerados ?? 0,
+    created_at: r.created_at, updated_at: r.updated_at,
+  };
+}
+
+function rowToNotification(r: any): AppNotification {
+  return {
+    id: r.id, user_id: r.user_id, tipo: r.tipo, titulo: r.titulo,
+    mensagem: r.mensagem ?? undefined, link: r.link ?? undefined,
+    lida: r.lida, metadata: r.metadata ?? {}, created_at: r.created_at,
   };
 }
 
