@@ -414,6 +414,15 @@ export type Database = {
     Functions: {
       cancel_loan: { Args: { _loan_id: string }; Returns: undefined }
       confirm_loan_return: { Args: { _loan_id: string }; Returns: undefined }
+      create_loan: {
+        Args: {
+          _bird_id: string
+          _codigo_criadouro: string
+          _observacoes?: string
+          _prazo?: string
+        }
+        Returns: Json
+      }
       generate_codigo_criadouro: { Args: never; Returns: string }
     }
     Enums: {
