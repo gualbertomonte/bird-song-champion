@@ -294,8 +294,8 @@ export default function Plantel() {
                 <input type="date" value={form.data_nascimento || ''} onChange={e => setForm({ ...form, data_nascimento: e.target.value })} className="mt-1 input-field" />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Cor</label>
-                <input value={form.cor || ''} onChange={e => setForm({ ...form, cor: e.target.value })} className="mt-1 input-field" />
+                <label className="text-xs font-medium text-muted-foreground">Nome Comum da Espécie</label>
+                <input value={form.nome_comum_especie || ''} onChange={e => setForm({ ...form, nome_comum_especie: e.target.value })} className="mt-1 input-field" placeholder="Curió, Canário, Bicudo..." />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Estado (UF)</label>

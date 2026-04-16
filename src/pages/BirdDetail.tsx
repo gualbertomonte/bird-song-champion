@@ -114,7 +114,7 @@ export default function BirdDetail() {
               <h3 className="font-semibold">Dados Gerais</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {[
-                  ['Cor', bird.cor || '—'],
+                  ['Espécie', bird.nome_comum_especie || '—'],
                   ['Tipo Anilha', bird.tipo_anilha || '—'],
                   ['Diâmetro', bird.diametro_anilha || '—'],
                   ['Estado', bird.estado || '—'],
@@ -306,8 +306,8 @@ export default function BirdDetail() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
-                <div><span className="text-white/40">Sexo:</span> <span>{bird.sexo === 'M' ? 'Macho' : 'Fêmea'}</span></div>
-                <div><span className="text-white/40">Cor:</span> <span>{bird.cor || '—'}</span></div>
+                <div><span className="text-white/40">Sexo:</span> <span>{bird.sexo === 'M' ? 'Macho' : bird.sexo === 'F' ? 'Fêmea' : 'A definir'}</span></div>
+                <div><span className="text-white/40">Espécie:</span> <span>{bird.nome_comum_especie || '—'}</span></div>
                 <div><span className="text-white/40">Nascimento:</span> <span>{bird.data_nascimento ? new Date(bird.data_nascimento).toLocaleDateString('pt-BR') : '—'}</span></div>
                 <div><span className="text-white/40">Status:</span> <span>{bird.status}</span></div>
                 {pai && <div><span className="text-white/40">Pai:</span> <span>{pai.nome}</span></div>}
