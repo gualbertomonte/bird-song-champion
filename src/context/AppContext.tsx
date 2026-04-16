@@ -530,8 +530,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ============ Profile ============
   const setProfile = useCallback(async (p: CriadorProfile) => {
     if (!user) return;
-    setProfileState(p);
-    const { error } = await supabase.from('criador_profile').upsert({
+    setProfileState(prev => ({ ...p, codigo_criadouro: prev.codigo_criadouro ?? p.codigo_criadouro }));
+    const { data, error } = await supabase.from('criador_profile').upsert({
       user_id: user.id,
       nome_criadouro: p.nome_criadouro ?? '',
       cpf: p.cpf ?? null,
@@ -540,9 +540,250 @@ export function AppProvider({ children }: { children: ReactNode }) {
       endereco: p.endereco ?? null,
       telefone: p.telefone ?? null,
       logo_url: p.logo_url ?? null,
-    });
-    if (error) { toast.error('Erro ao salvar perfil'); console.error(error); }
+    }).select('*').single();
+    if (error) { toast.error('Erro ao salvar perfil'); console.error(error); return; }
+    if (data) {
+      setProfileState({
+        nome_criadouro: data.nome_criadouro ?? '',
+        cpf: data.cpf ?? undefined,
+        registro_ctf: data.registro_ctf ?? undefined,
+        validade_ctf: data.validade_ctf ?? undefined,
+        endereco: data.endereco ?? undefined,
+        telefone: data.telefone ?? undefined,
+        logo_url: data.logo_url ?? undefined,
+        codigo_criadouro: (data as any).codigo_criadouro ?? undefined,
+      });
+    }
   }, [user]);
+
+  // ============ Loans ============
+  const sendLoanEmail = useCallback(async (payload: any) => {
+    try {
+      await supabase.functions.invoke('send-loan-email', { body: payload });
+    } catch (e) { console.error('send-loan-email error', e); }
+  }, []);
+
+  const createNotification = useCallback(async (n: Omit<AppNotification, 'id' | 'created_at' | 'lida'> & { lida?: boolean }) => {
+    try {
+      await supabase.from('notifications').insert({
+        user_id: n.user_id, tipo: n.tipo, titulo: n.titulo,
+        mensagem: n.mensagem ?? null, link: n.link ?? null,
+        metadata: n.metadata ?? {},
+      });
+    } catch (e) { console.error('createNotification error', e); }
+  }, []);
+
+  const createLoan = useCallback(async (params: { birdId: string; codigoCriadouro: string; prazo?: string; observacoes?: string }) => {
+    if (!user) throw new Error('not authenticated');
+    const bird = birds.find(b => b.id === params.birdId);
+    if (!bird) throw new Error('Ave não encontrada');
+    if (bird.loan_status !== 'proprio') throw new Error('Esta ave já está em empréstimo');
+
+    // 1. Localizar destinatário pelo código
+    const codigo = params.codigoCriadouro.trim().toUpperCase();
+    const { data: destProfile, error: destErr } = await supabase
+      .from('criador_profile').select('user_id, nome_criadouro')
+      .eq('codigo_criadouro', codigo).maybeSingle();
+    if (destErr) { console.error(destErr); throw new Error('Erro ao buscar criadouro'); }
+    if (!destProfile) throw new Error('Código de criadouro não encontrado');
+    if (destProfile.user_id === user.id) throw new Error('Você não pode emprestar para si mesmo');
+
+    // 2. Buscar e-mail do destinatário
+    const { data: destAuth } = await supabase
+      .from('profiles').select('email').eq('user_id', destProfile.user_id).maybeSingle();
+    const borrowerEmail = destAuth?.email;
+    if (!borrowerEmail) throw new Error('Não foi possível localizar o e-mail do destinatário');
+
+    // 3. Criar registro de loan
+    const snapshot = { ...bird };
+    const { data: loanRow, error: loanErr } = await supabase.from('bird_loans').insert({
+      bird_id: bird.id,
+      bird_snapshot: snapshot as any,
+      owner_user_id: user.id,
+      owner_email: user.email,
+      borrower_user_id: destProfile.user_id,
+      borrower_email: borrowerEmail,
+      borrower_codigo_criadouro: codigo,
+      prazo_devolucao: params.prazo || null,
+      observacoes: params.observacoes ?? null,
+      status: 'Emprestada',
+    }).select('*').single();
+    if (loanErr) { console.error(loanErr); throw new Error('Erro ao criar empréstimo'); }
+
+    // 4. Marcar a ave do dono como emprestada (saída)
+    await supabase.from('birds').update({
+      loan_status: 'emprestada_saida',
+      loan_id: loanRow.id,
+    }).eq('id', bird.id);
+
+    // 5. Clonar a ave no plantel do recebedor (anilha permanece igual; usamos código com prefixo para evitar conflito de unique)
+    const clonedAnilha = bird.codigo_anilha; // mantém anilha original; se houver conflito, será capturado
+    const cloneRow: any = {
+      user_id: destProfile.user_id,
+      nome: bird.nome,
+      nome_cientifico: bird.nome_cientifico,
+      nome_comum_especie: bird.nome_comum_especie ?? null,
+      sexo: bird.sexo,
+      data_nascimento: bird.data_nascimento || null,
+      tipo_anilha: bird.tipo_anilha ?? null,
+      diametro_anilha: bird.diametro_anilha ?? null,
+      codigo_anilha: clonedAnilha,
+      status: bird.status,
+      observacoes: bird.observacoes ?? null,
+      foto_url: bird.foto_url ?? null,
+      fotos: bird.fotos ?? [],
+      estado: bird.estado ?? null,
+      loan_status: 'emprestada_entrada',
+      loan_id: loanRow.id,
+      original_owner_user_id: user.id,
+      original_owner_email: user.email,
+      original_bird_id: bird.id,
+    };
+    const { data: cloneData, error: cloneErr } = await supabase.from('birds').insert(cloneRow).select('id').single();
+    if (cloneErr) {
+      // Se duplicada, ainda assim segue — ave do recebedor pode existir; registramos só o loan
+      console.warn('Clone bird failed (provavelmente anilha duplicada no plantel do destinatário)', cloneErr);
+    } else if (cloneData) {
+      await supabase.from('bird_loans').update({ borrower_bird_id: cloneData.id }).eq('id', loanRow.id);
+    }
+
+    // 6. Notificações
+    await createNotification({
+      user_id: destProfile.user_id,
+      tipo: 'loan_received',
+      titulo: 'Você recebeu uma ave por empréstimo',
+      mensagem: `${user.email} emprestou a ave "${bird.nome}" (${bird.codigo_anilha}) para reprodução.`,
+      link: '/emprestimos',
+      metadata: { loan_id: loanRow.id },
+    });
+
+    // 7. E-mail
+    sendLoanEmail({
+      kind: 'novo_emprestimo',
+      recipientEmail: borrowerEmail,
+      birdName: bird.nome,
+      birdCode: bird.codigo_anilha,
+      ownerName: profile.nome_criadouro || user.email,
+      prazo: params.prazo,
+    });
+
+    // 8. Atualizar estado local
+    setBirdsState(prev => prev.map(b => b.id === bird.id ? { ...b, loan_status: 'emprestada_saida', loan_id: loanRow.id } : b));
+    setLoansState(prev => [rowToLoan(loanRow), ...prev]);
+    toast.success(`Ave emprestada para ${destProfile.nome_criadouro}!`);
+  }, [user, birds, profile, createNotification, sendLoanEmail]);
+
+  const requestLoanReturn = useCallback(async (loanId: string) => {
+    if (!user) return;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) return;
+    const { data, error } = await supabase.from('bird_loans').update({
+      status: 'Devolucao_Solicitada',
+      data_solicitacao_devolucao: new Date().toISOString(),
+    }).eq('id', loanId).select('*').single();
+    if (error) { toast.error('Erro ao solicitar devolução'); return; }
+
+    if (loan.borrower_user_id) {
+      await createNotification({
+        user_id: loan.borrower_user_id,
+        tipo: 'loan_return_requested',
+        titulo: 'Pedido de devolução de ave',
+        mensagem: `${user.email} solicitou a devolução da ave "${loan.bird_snapshot?.nome || ''}".`,
+        link: '/emprestimos',
+        metadata: { loan_id: loanId },
+      });
+    }
+    sendLoanEmail({
+      kind: 'solicitacao_devolucao',
+      recipientEmail: loan.borrower_email,
+      birdName: loan.bird_snapshot?.nome,
+      birdCode: loan.bird_snapshot?.codigo_anilha,
+      ownerName: profile.nome_criadouro || user.email,
+    });
+    setLoansState(prev => prev.map(l => l.id === loanId ? rowToLoan(data) : l));
+    toast.success('Solicitação de devolução enviada');
+  }, [user, loans, profile, createNotification, sendLoanEmail]);
+
+  const confirmLoanReturn = useCallback(async (loanId: string) => {
+    if (!user) return;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) return;
+
+    // 1. Marcar empréstimo como Devolvida
+    const { data, error } = await supabase.from('bird_loans').update({
+      status: 'Devolvida',
+      data_devolucao: new Date().toISOString(),
+    }).eq('id', loanId).select('*').single();
+    if (error) { toast.error('Erro ao confirmar devolução'); return; }
+
+    // 2. Excluir cópia da ave do plantel do recebedor
+    if (loan.borrower_bird_id) {
+      await supabase.from('birds').delete().eq('id', loan.borrower_bird_id);
+    } else {
+      // fallback: tenta achar pela original_bird_id
+      await supabase.from('birds').delete().eq('original_bird_id', loan.bird_id).eq('user_id', user.id);
+    }
+
+    // 3. Restaurar status da ave do dono
+    await supabase.from('birds').update({
+      loan_status: 'proprio',
+      loan_id: null,
+    }).eq('id', loan.bird_id);
+
+    // 4. Notificar o dono
+    await createNotification({
+      user_id: loan.owner_user_id,
+      tipo: 'loan_returned',
+      titulo: 'Devolução confirmada',
+      mensagem: `${user.email} confirmou a devolução da ave "${loan.bird_snapshot?.nome || ''}".`,
+      link: '/emprestimos',
+      metadata: { loan_id: loanId },
+    });
+    if (loan.owner_email) {
+      sendLoanEmail({
+        kind: 'devolucao_confirmada',
+        recipientEmail: loan.owner_email,
+        birdName: loan.bird_snapshot?.nome,
+        birdCode: loan.bird_snapshot?.codigo_anilha,
+        borrowerName: profile.nome_criadouro || user.email,
+      });
+    }
+
+    setLoansState(prev => prev.map(l => l.id === loanId ? rowToLoan(data) : l));
+    setBirdsState(prev => prev.filter(b => b.id !== loan.borrower_bird_id));
+    toast.success('Devolução confirmada!');
+  }, [user, loans, profile, createNotification, sendLoanEmail]);
+
+  const cancelLoan = useCallback(async (loanId: string) => {
+    // Apenas dono cancela um empréstimo ainda não confirmado
+    if (!user) return;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan || loan.owner_user_id !== user.id) return;
+    if (loan.borrower_bird_id) {
+      await supabase.from('birds').delete().eq('id', loan.borrower_bird_id);
+    }
+    await supabase.from('birds').update({ loan_status: 'proprio', loan_id: null }).eq('id', loan.bird_id);
+    await supabase.from('bird_loans').update({ status: 'Devolvida', data_devolucao: new Date().toISOString() }).eq('id', loanId);
+    setLoansState(prev => prev.map(l => l.id === loanId ? { ...l, status: 'Devolvida', data_devolucao: new Date().toISOString() } : l));
+    toast.success('Empréstimo cancelado');
+  }, [user, loans]);
+
+  // ============ Notifications ============
+  const markNotificationRead = useCallback(async (id: string) => {
+    await supabase.from('notifications').update({ lida: true }).eq('id', id);
+    setNotificationsState(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+  }, []);
+
+  const markAllNotificationsRead = useCallback(async () => {
+    if (!user) return;
+    await supabase.from('notifications').update({ lida: true }).eq('user_id', user.id).eq('lida', false);
+    setNotificationsState(prev => prev.map(n => ({ ...n, lida: true })));
+  }, [user]);
+
+  const deleteNotification = useCallback(async (id: string) => {
+    await supabase.from('notifications').delete().eq('id', id);
+    setNotificationsState(prev => prev.filter(n => n.id !== id));
+  }, []);
 
   // Bulk setters (kept for API compatibility, just update local state)
   const setBirds = useCallback((b: Bird[]) => setBirdsState(b), []);
@@ -552,12 +793,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      birds, tournaments, healthRecords, nests, profile, loading,
+      birds, tournaments, healthRecords, nests, profile, loans, notifications, loading,
       setBirds, setTournaments, setHealthRecords, setNests, setProfile,
       addBird, updateBird, deleteBird,
       addTournament, updateTournament, deleteTournament,
       addHealthRecord, deleteHealthRecord,
       addNest, updateNest,
+      createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan,
+      markNotificationRead, markAllNotificationsRead, deleteNotification,
     }}>
       {children}
     </AppContext.Provider>
