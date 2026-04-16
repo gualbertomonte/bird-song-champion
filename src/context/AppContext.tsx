@@ -776,16 +776,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user, loans, profile, createNotification, sendLoanEmail]);
 
   const cancelLoan = useCallback(async (loanId: string) => {
-    // Apenas dono cancela um empréstimo ainda não confirmado
     if (!user) return;
     const loan = loans.find(l => l.id === loanId);
     if (!loan || loan.owner_user_id !== user.id) return;
-    if (loan.borrower_bird_id) {
-      await supabase.from('birds').delete().eq('id', loan.borrower_bird_id);
-    }
-    await supabase.from('birds').update({ loan_status: 'proprio', loan_id: null }).eq('id', loan.bird_id);
-    await supabase.from('bird_loans').update({ status: 'Devolvida', data_devolucao: new Date().toISOString() }).eq('id', loanId);
+    const { error } = await supabase.rpc('cancel_loan' as any, { _loan_id: loanId });
+    if (error) { toast.error(error.message || 'Erro ao cancelar empréstimo'); return; }
     setLoansState(prev => prev.map(l => l.id === loanId ? { ...l, status: 'Devolvida', data_devolucao: new Date().toISOString() } : l));
+    setBirdsState(prev => prev.filter(b => b.id !== loan.borrower_bird_id).map(b => b.id === loan.bird_id ? { ...b, loan_status: 'proprio', loan_id: undefined } : b));
     toast.success('Empréstimo cancelado');
   }, [user, loans]);
 
