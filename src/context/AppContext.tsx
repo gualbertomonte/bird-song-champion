@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useRef } from 'react';
 import { Bird, Tournament, HealthRecord, Nest, CriadorProfile } from '@/types/bird';
+import { BirdLoan, AppNotification } from '@/types/loan';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -10,6 +11,8 @@ interface AppState {
   healthRecords: HealthRecord[];
   nests: Nest[];
   profile: CriadorProfile;
+  loans: BirdLoan[];
+  notifications: AppNotification[];
   loading: boolean;
   setBirds: (birds: Bird[]) => void;
   setTournaments: (t: Tournament[]) => void;
@@ -26,6 +29,13 @@ interface AppState {
   deleteHealthRecord: (id: string) => void;
   addNest: (n: Nest) => void;
   updateNest: (id: string, data: Partial<Nest>) => void;
+  createLoan: (params: { birdId: string; codigoCriadouro: string; prazo?: string; observacoes?: string }) => Promise<void>;
+  requestLoanReturn: (loanId: string) => Promise<void>;
+  confirmLoanReturn: (loanId: string) => Promise<void>;
+  cancelLoan: (loanId: string) => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
