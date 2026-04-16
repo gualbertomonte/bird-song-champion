@@ -138,8 +138,10 @@ export default function Plantel() {
                 <span className={`absolute top-2 right-2 ${statusClass[bird.status]}`}>{statusLabels[bird.status]}</span>
                 {bird.sexo === 'M' ? (
                   <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-primary/60 text-primary-foreground text-xs flex items-center justify-center font-bold">♂</span>
-                ) : (
+                ) : bird.sexo === 'F' ? (
                   <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-secondary/60 text-secondary-foreground text-xs flex items-center justify-center font-bold">♀</span>
+                ) : (
+                  <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-muted/60 text-foreground text-xs flex items-center justify-center font-bold">?</span>
                 )}
               </div>
               <div className="p-3 space-y-1.5">
@@ -201,7 +203,7 @@ export default function Plantel() {
                       </div>
                     </td>
                     <td className="p-3 text-muted-foreground hidden md:table-cell italic">{bird.nome_cientifico}</td>
-                    <td className="p-3">{bird.sexo === 'M' ? '♂' : '♀'}</td>
+                    <td className="p-3">{bird.sexo === 'M' ? '♂' : bird.sexo === 'F' ? '♀' : '?'}</td>
                     <td className="p-3"><span className={statusClass[bird.status]}>{statusLabels[bird.status]}</span></td>
                     <td className="p-3 text-right">
                       <div className="flex justify-end gap-1">
@@ -260,12 +262,15 @@ export default function Plantel() {
               <NomeCientificoCombobox
                 value={form.nome_cientifico || ''}
                 onChange={val => setForm({ ...form, nome_cientifico: val })}
+                nomeComum={form.nome_comum_especie || ''}
+                onNomeComumChange={val => setForm(prev => ({ ...prev, nome_comum_especie: val }))}
               />
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Sexo</label>
                 <select value={form.sexo} onChange={e => setForm({ ...form, sexo: e.target.value as any })} className="mt-1 input-field">
                   <option value="M">Macho</option>
                   <option value="F">Fêmea</option>
+                  <option value="I">A definir</option>
                 </select>
               </div>
               <div>
