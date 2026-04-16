@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useRef } from 'react';
 import { Bird, Tournament, HealthRecord, Nest, CriadorProfile } from '@/types/bird';
+import { BirdLoan, AppNotification } from '@/types/loan';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -10,6 +11,8 @@ interface AppState {
   healthRecords: HealthRecord[];
   nests: Nest[];
   profile: CriadorProfile;
+  loans: BirdLoan[];
+  notifications: AppNotification[];
   loading: boolean;
   setBirds: (birds: Bird[]) => void;
   setTournaments: (t: Tournament[]) => void;
@@ -26,6 +29,13 @@ interface AppState {
   deleteHealthRecord: (id: string) => void;
   addNest: (n: Nest) => void;
   updateNest: (id: string, data: Partial<Nest>) => void;
+  createLoan: (params: { birdId: string; codigoCriadouro: string; prazo?: string; observacoes?: string }) => Promise<void>;
+  requestLoanReturn: (loanId: string) => Promise<void>;
+  confirmLoanReturn: (loanId: string) => Promise<void>;
+  cancelLoan: (loanId: string) => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -57,6 +67,35 @@ function rowToBird(r: any): Bird {
     updated_at: r.updated_at,
     transferido_por_email: r.transferido_por_email ?? undefined,
     transferido_em: r.transferido_em ?? undefined,
+    loan_status: r.loan_status ?? 'proprio',
+    loan_id: r.loan_id ?? undefined,
+    original_owner_user_id: r.original_owner_user_id ?? undefined,
+    original_owner_email: r.original_owner_email ?? undefined,
+    original_bird_id: r.original_bird_id ?? undefined,
+  };
+}
+
+function rowToLoan(r: any): BirdLoan {
+  return {
+    id: r.id, bird_id: r.bird_id, bird_snapshot: r.bird_snapshot ?? {},
+    owner_user_id: r.owner_user_id, owner_email: r.owner_email ?? undefined,
+    borrower_user_id: r.borrower_user_id ?? undefined, borrower_email: r.borrower_email,
+    borrower_codigo_criadouro: r.borrower_codigo_criadouro ?? undefined,
+    borrower_bird_id: r.borrower_bird_id ?? undefined,
+    data_emprestimo: r.data_emprestimo, prazo_devolucao: r.prazo_devolucao ?? undefined,
+    data_solicitacao_devolucao: r.data_solicitacao_devolucao ?? undefined,
+    data_devolucao: r.data_devolucao ?? undefined,
+    status: r.status, observacoes: r.observacoes ?? undefined,
+    filhotes_gerados: r.filhotes_gerados ?? 0,
+    created_at: r.created_at, updated_at: r.updated_at,
+  };
+}
+
+function rowToNotification(r: any): AppNotification {
+  return {
+    id: r.id, user_id: r.user_id, tipo: r.tipo, titulo: r.titulo,
+    mensagem: r.mensagem ?? undefined, link: r.link ?? undefined,
+    lida: r.lida, metadata: r.metadata ?? {}, created_at: r.created_at,
   };
 }
 
@@ -110,24 +149,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [healthRecords, setHealthRecordsState] = useState<HealthRecord[]>([]);
   const [nests, setNestsState] = useState<Nest[]>([]);
   const [profile, setProfileState] = useState<CriadorProfile>(defaultProfile);
+  const [loans, setLoansState] = useState<BirdLoan[]>([]);
+  const [notifications, setNotificationsState] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const idMapRef = useRef<Map<string, string>>(new Map()); // localId -> cloudId during migration
 
   // Load all data from Supabase
-  const loadAll = useCallback(async (uid: string) => {
+  const loadAll = useCallback(async (uid: string, userEmail?: string) => {
     setLoading(true);
     try {
-      const [b, t, h, n, p] = await Promise.all([
+      const [b, t, h, n, p, l, nt] = await Promise.all([
         supabase.from('birds').select('*').order('created_at', { ascending: true }),
         supabase.from('tournaments').select('*').order('data', { ascending: false }),
         supabase.from('health_records').select('*').order('data', { ascending: false }),
         supabase.from('nests').select('*').order('created_at', { ascending: false }),
         supabase.from('criador_profile').select('*').eq('user_id', uid).maybeSingle(),
+        supabase.from('bird_loans').select('*').order('created_at', { ascending: false }),
+        supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(50),
       ]);
       setBirdsState((b.data || []).map(rowToBird));
       setTournamentsState((t.data || []).map(rowToTournament));
       setHealthRecordsState((h.data || []).map(rowToHealth));
       setNestsState((n.data || []).map(rowToNest));
+      setLoansState((l.data || []).map(rowToLoan));
+      setNotificationsState((nt.data || []).map(rowToNotification));
       if (p.data) {
         setProfileState({
           nome_criadouro: p.data.nome_criadouro ?? '',
@@ -137,6 +182,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           endereco: p.data.endereco ?? undefined,
           telefone: p.data.telefone ?? undefined,
           logo_url: p.data.logo_url ?? undefined,
+          codigo_criadouro: (p.data as any).codigo_criadouro ?? undefined,
         });
       } else {
         setProfileState(defaultProfile);
@@ -261,7 +307,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     (async () => {
       await migrateLocalToCloud(user.id);
-      await loadAll(user.id);
+      await loadAll(user.id, user.email);
     })();
   }, [user, migrateLocalToCloud, loadAll]);
 
@@ -484,8 +530,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ============ Profile ============
   const setProfile = useCallback(async (p: CriadorProfile) => {
     if (!user) return;
-    setProfileState(p);
-    const { error } = await supabase.from('criador_profile').upsert({
+    setProfileState(prev => ({ ...p, codigo_criadouro: prev.codigo_criadouro ?? p.codigo_criadouro }));
+    const { data, error } = await supabase.from('criador_profile').upsert({
       user_id: user.id,
       nome_criadouro: p.nome_criadouro ?? '',
       cpf: p.cpf ?? null,
@@ -494,9 +540,250 @@ export function AppProvider({ children }: { children: ReactNode }) {
       endereco: p.endereco ?? null,
       telefone: p.telefone ?? null,
       logo_url: p.logo_url ?? null,
-    });
-    if (error) { toast.error('Erro ao salvar perfil'); console.error(error); }
+    }).select('*').single();
+    if (error) { toast.error('Erro ao salvar perfil'); console.error(error); return; }
+    if (data) {
+      setProfileState({
+        nome_criadouro: data.nome_criadouro ?? '',
+        cpf: data.cpf ?? undefined,
+        registro_ctf: data.registro_ctf ?? undefined,
+        validade_ctf: data.validade_ctf ?? undefined,
+        endereco: data.endereco ?? undefined,
+        telefone: data.telefone ?? undefined,
+        logo_url: data.logo_url ?? undefined,
+        codigo_criadouro: (data as any).codigo_criadouro ?? undefined,
+      });
+    }
   }, [user]);
+
+  // ============ Loans ============
+  const sendLoanEmail = useCallback(async (payload: any) => {
+    try {
+      await supabase.functions.invoke('send-loan-email', { body: payload });
+    } catch (e) { console.error('send-loan-email error', e); }
+  }, []);
+
+  const createNotification = useCallback(async (n: Omit<AppNotification, 'id' | 'created_at' | 'lida'> & { lida?: boolean }) => {
+    try {
+      await supabase.from('notifications').insert({
+        user_id: n.user_id, tipo: n.tipo, titulo: n.titulo,
+        mensagem: n.mensagem ?? null, link: n.link ?? null,
+        metadata: n.metadata ?? {},
+      });
+    } catch (e) { console.error('createNotification error', e); }
+  }, []);
+
+  const createLoan = useCallback(async (params: { birdId: string; codigoCriadouro: string; prazo?: string; observacoes?: string }) => {
+    if (!user) throw new Error('not authenticated');
+    const bird = birds.find(b => b.id === params.birdId);
+    if (!bird) throw new Error('Ave não encontrada');
+    if (bird.loan_status !== 'proprio') throw new Error('Esta ave já está em empréstimo');
+
+    // 1. Localizar destinatário pelo código
+    const codigo = params.codigoCriadouro.trim().toUpperCase();
+    const { data: destProfile, error: destErr } = await supabase
+      .from('criador_profile').select('user_id, nome_criadouro')
+      .eq('codigo_criadouro', codigo).maybeSingle();
+    if (destErr) { console.error(destErr); throw new Error('Erro ao buscar criadouro'); }
+    if (!destProfile) throw new Error('Código de criadouro não encontrado');
+    if (destProfile.user_id === user.id) throw new Error('Você não pode emprestar para si mesmo');
+
+    // 2. Buscar e-mail do destinatário
+    const { data: destAuth } = await supabase
+      .from('profiles').select('email').eq('user_id', destProfile.user_id).maybeSingle();
+    const borrowerEmail = destAuth?.email;
+    if (!borrowerEmail) throw new Error('Não foi possível localizar o e-mail do destinatário');
+
+    // 3. Criar registro de loan
+    const snapshot = { ...bird };
+    const { data: loanRow, error: loanErr } = await supabase.from('bird_loans').insert({
+      bird_id: bird.id,
+      bird_snapshot: snapshot as any,
+      owner_user_id: user.id,
+      owner_email: user.email,
+      borrower_user_id: destProfile.user_id,
+      borrower_email: borrowerEmail,
+      borrower_codigo_criadouro: codigo,
+      prazo_devolucao: params.prazo || null,
+      observacoes: params.observacoes ?? null,
+      status: 'Emprestada',
+    }).select('*').single();
+    if (loanErr) { console.error(loanErr); throw new Error('Erro ao criar empréstimo'); }
+
+    // 4. Marcar a ave do dono como emprestada (saída)
+    await supabase.from('birds').update({
+      loan_status: 'emprestada_saida',
+      loan_id: loanRow.id,
+    }).eq('id', bird.id);
+
+    // 5. Clonar a ave no plantel do recebedor (anilha permanece igual; usamos código com prefixo para evitar conflito de unique)
+    const clonedAnilha = bird.codigo_anilha; // mantém anilha original; se houver conflito, será capturado
+    const cloneRow: any = {
+      user_id: destProfile.user_id,
+      nome: bird.nome,
+      nome_cientifico: bird.nome_cientifico,
+      nome_comum_especie: bird.nome_comum_especie ?? null,
+      sexo: bird.sexo,
+      data_nascimento: bird.data_nascimento || null,
+      tipo_anilha: bird.tipo_anilha ?? null,
+      diametro_anilha: bird.diametro_anilha ?? null,
+      codigo_anilha: clonedAnilha,
+      status: bird.status,
+      observacoes: bird.observacoes ?? null,
+      foto_url: bird.foto_url ?? null,
+      fotos: bird.fotos ?? [],
+      estado: bird.estado ?? null,
+      loan_status: 'emprestada_entrada',
+      loan_id: loanRow.id,
+      original_owner_user_id: user.id,
+      original_owner_email: user.email,
+      original_bird_id: bird.id,
+    };
+    const { data: cloneData, error: cloneErr } = await supabase.from('birds').insert(cloneRow).select('id').single();
+    if (cloneErr) {
+      // Se duplicada, ainda assim segue — ave do recebedor pode existir; registramos só o loan
+      console.warn('Clone bird failed (provavelmente anilha duplicada no plantel do destinatário)', cloneErr);
+    } else if (cloneData) {
+      await supabase.from('bird_loans').update({ borrower_bird_id: cloneData.id }).eq('id', loanRow.id);
+    }
+
+    // 6. Notificações
+    await createNotification({
+      user_id: destProfile.user_id,
+      tipo: 'loan_received',
+      titulo: 'Você recebeu uma ave por empréstimo',
+      mensagem: `${user.email} emprestou a ave "${bird.nome}" (${bird.codigo_anilha}) para reprodução.`,
+      link: '/emprestimos',
+      metadata: { loan_id: loanRow.id },
+    });
+
+    // 7. E-mail
+    sendLoanEmail({
+      kind: 'novo_emprestimo',
+      recipientEmail: borrowerEmail,
+      birdName: bird.nome,
+      birdCode: bird.codigo_anilha,
+      ownerName: profile.nome_criadouro || user.email,
+      prazo: params.prazo,
+    });
+
+    // 8. Atualizar estado local
+    setBirdsState(prev => prev.map(b => b.id === bird.id ? { ...b, loan_status: 'emprestada_saida', loan_id: loanRow.id } : b));
+    setLoansState(prev => [rowToLoan(loanRow), ...prev]);
+    toast.success(`Ave emprestada para ${destProfile.nome_criadouro}!`);
+  }, [user, birds, profile, createNotification, sendLoanEmail]);
+
+  const requestLoanReturn = useCallback(async (loanId: string) => {
+    if (!user) return;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) return;
+    const { data, error } = await supabase.from('bird_loans').update({
+      status: 'Devolucao_Solicitada',
+      data_solicitacao_devolucao: new Date().toISOString(),
+    }).eq('id', loanId).select('*').single();
+    if (error) { toast.error('Erro ao solicitar devolução'); return; }
+
+    if (loan.borrower_user_id) {
+      await createNotification({
+        user_id: loan.borrower_user_id,
+        tipo: 'loan_return_requested',
+        titulo: 'Pedido de devolução de ave',
+        mensagem: `${user.email} solicitou a devolução da ave "${loan.bird_snapshot?.nome || ''}".`,
+        link: '/emprestimos',
+        metadata: { loan_id: loanId },
+      });
+    }
+    sendLoanEmail({
+      kind: 'solicitacao_devolucao',
+      recipientEmail: loan.borrower_email,
+      birdName: loan.bird_snapshot?.nome,
+      birdCode: loan.bird_snapshot?.codigo_anilha,
+      ownerName: profile.nome_criadouro || user.email,
+    });
+    setLoansState(prev => prev.map(l => l.id === loanId ? rowToLoan(data) : l));
+    toast.success('Solicitação de devolução enviada');
+  }, [user, loans, profile, createNotification, sendLoanEmail]);
+
+  const confirmLoanReturn = useCallback(async (loanId: string) => {
+    if (!user) return;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) return;
+
+    // 1. Marcar empréstimo como Devolvida
+    const { data, error } = await supabase.from('bird_loans').update({
+      status: 'Devolvida',
+      data_devolucao: new Date().toISOString(),
+    }).eq('id', loanId).select('*').single();
+    if (error) { toast.error('Erro ao confirmar devolução'); return; }
+
+    // 2. Excluir cópia da ave do plantel do recebedor
+    if (loan.borrower_bird_id) {
+      await supabase.from('birds').delete().eq('id', loan.borrower_bird_id);
+    } else {
+      // fallback: tenta achar pela original_bird_id
+      await supabase.from('birds').delete().eq('original_bird_id', loan.bird_id).eq('user_id', user.id);
+    }
+
+    // 3. Restaurar status da ave do dono
+    await supabase.from('birds').update({
+      loan_status: 'proprio',
+      loan_id: null,
+    }).eq('id', loan.bird_id);
+
+    // 4. Notificar o dono
+    await createNotification({
+      user_id: loan.owner_user_id,
+      tipo: 'loan_returned',
+      titulo: 'Devolução confirmada',
+      mensagem: `${user.email} confirmou a devolução da ave "${loan.bird_snapshot?.nome || ''}".`,
+      link: '/emprestimos',
+      metadata: { loan_id: loanId },
+    });
+    if (loan.owner_email) {
+      sendLoanEmail({
+        kind: 'devolucao_confirmada',
+        recipientEmail: loan.owner_email,
+        birdName: loan.bird_snapshot?.nome,
+        birdCode: loan.bird_snapshot?.codigo_anilha,
+        borrowerName: profile.nome_criadouro || user.email,
+      });
+    }
+
+    setLoansState(prev => prev.map(l => l.id === loanId ? rowToLoan(data) : l));
+    setBirdsState(prev => prev.filter(b => b.id !== loan.borrower_bird_id));
+    toast.success('Devolução confirmada!');
+  }, [user, loans, profile, createNotification, sendLoanEmail]);
+
+  const cancelLoan = useCallback(async (loanId: string) => {
+    // Apenas dono cancela um empréstimo ainda não confirmado
+    if (!user) return;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan || loan.owner_user_id !== user.id) return;
+    if (loan.borrower_bird_id) {
+      await supabase.from('birds').delete().eq('id', loan.borrower_bird_id);
+    }
+    await supabase.from('birds').update({ loan_status: 'proprio', loan_id: null }).eq('id', loan.bird_id);
+    await supabase.from('bird_loans').update({ status: 'Devolvida', data_devolucao: new Date().toISOString() }).eq('id', loanId);
+    setLoansState(prev => prev.map(l => l.id === loanId ? { ...l, status: 'Devolvida', data_devolucao: new Date().toISOString() } : l));
+    toast.success('Empréstimo cancelado');
+  }, [user, loans]);
+
+  // ============ Notifications ============
+  const markNotificationRead = useCallback(async (id: string) => {
+    await supabase.from('notifications').update({ lida: true }).eq('id', id);
+    setNotificationsState(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+  }, []);
+
+  const markAllNotificationsRead = useCallback(async () => {
+    if (!user) return;
+    await supabase.from('notifications').update({ lida: true }).eq('user_id', user.id).eq('lida', false);
+    setNotificationsState(prev => prev.map(n => ({ ...n, lida: true })));
+  }, [user]);
+
+  const deleteNotification = useCallback(async (id: string) => {
+    await supabase.from('notifications').delete().eq('id', id);
+    setNotificationsState(prev => prev.filter(n => n.id !== id));
+  }, []);
 
   // Bulk setters (kept for API compatibility, just update local state)
   const setBirds = useCallback((b: Bird[]) => setBirdsState(b), []);
@@ -506,12 +793,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      birds, tournaments, healthRecords, nests, profile, loading,
+      birds, tournaments, healthRecords, nests, profile, loans, notifications, loading,
       setBirds, setTournaments, setHealthRecords, setNests, setProfile,
       addBird, updateBird, deleteBird,
       addTournament, updateTournament, deleteTournament,
       addHealthRecord, deleteHealthRecord,
       addNest, updateNest,
+      createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan,
+      markNotificationRead, markAllNotificationsRead, deleteNotification,
     }}>
       {children}
     </AppContext.Provider>

@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      bird_loans: {
+        Row: {
+          bird_id: string
+          bird_snapshot: Json
+          borrower_bird_id: string | null
+          borrower_codigo_criadouro: string | null
+          borrower_email: string
+          borrower_user_id: string | null
+          created_at: string
+          data_devolucao: string | null
+          data_emprestimo: string
+          data_solicitacao_devolucao: string | null
+          filhotes_gerados: number
+          id: string
+          observacoes: string | null
+          owner_email: string | null
+          owner_user_id: string
+          prazo_devolucao: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bird_id: string
+          bird_snapshot?: Json
+          borrower_bird_id?: string | null
+          borrower_codigo_criadouro?: string | null
+          borrower_email: string
+          borrower_user_id?: string | null
+          created_at?: string
+          data_devolucao?: string | null
+          data_emprestimo?: string
+          data_solicitacao_devolucao?: string | null
+          filhotes_gerados?: number
+          id?: string
+          observacoes?: string | null
+          owner_email?: string | null
+          owner_user_id: string
+          prazo_devolucao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bird_id?: string
+          bird_snapshot?: Json
+          borrower_bird_id?: string | null
+          borrower_codigo_criadouro?: string | null
+          borrower_email?: string
+          borrower_user_id?: string | null
+          created_at?: string
+          data_devolucao?: string | null
+          data_emprestimo?: string
+          data_solicitacao_devolucao?: string | null
+          filhotes_gerados?: number
+          id?: string
+          observacoes?: string | null
+          owner_email?: string | null
+          owner_user_id?: string
+          prazo_devolucao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       birds: {
         Row: {
           codigo_anilha: string
@@ -24,11 +87,16 @@ export type Database = {
           foto_url: string | null
           fotos: Json | null
           id: string
+          loan_id: string | null
+          loan_status: string
           mae_id: string | null
           nome: string
           nome_cientifico: string
           nome_comum_especie: string | null
           observacoes: string | null
+          original_bird_id: string | null
+          original_owner_email: string | null
+          original_owner_user_id: string | null
           pai_id: string | null
           sexo: string
           status: string
@@ -47,11 +115,16 @@ export type Database = {
           foto_url?: string | null
           fotos?: Json | null
           id?: string
+          loan_id?: string | null
+          loan_status?: string
           mae_id?: string | null
           nome: string
           nome_cientifico?: string
           nome_comum_especie?: string | null
           observacoes?: string | null
+          original_bird_id?: string | null
+          original_owner_email?: string | null
+          original_owner_user_id?: string | null
           pai_id?: string | null
           sexo?: string
           status?: string
@@ -70,11 +143,16 @@ export type Database = {
           foto_url?: string | null
           fotos?: Json | null
           id?: string
+          loan_id?: string | null
+          loan_status?: string
           mae_id?: string | null
           nome?: string
           nome_cientifico?: string
           nome_comum_especie?: string | null
           observacoes?: string | null
+          original_bird_id?: string | null
+          original_owner_email?: string | null
+          original_owner_user_id?: string | null
           pai_id?: string | null
           sexo?: string
           status?: string
@@ -88,6 +166,7 @@ export type Database = {
       }
       criador_profile: {
         Row: {
+          codigo_criadouro: string | null
           cpf: string | null
           endereco: string | null
           logo_url: string | null
@@ -99,6 +178,7 @@ export type Database = {
           validade_ctf: string | null
         }
         Insert: {
+          codigo_criadouro?: string | null
           cpf?: string | null
           endereco?: string | null
           logo_url?: string | null
@@ -110,6 +190,7 @@ export type Database = {
           validade_ctf?: string | null
         }
         Update: {
+          codigo_criadouro?: string | null
           cpf?: string | null
           endereco?: string | null
           logo_url?: string | null
@@ -193,6 +274,42 @@ export type Database = {
           quantidade_filhotes?: number | null
           quantidade_ovos?: number
           status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          lida: boolean
+          link: string | null
+          mensagem: string | null
+          metadata: Json | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem?: string | null
+          metadata?: Json | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem?: string | null
+          metadata?: Json | null
+          tipo?: string
+          titulo?: string
           user_id?: string
         }
         Relationships: []
@@ -295,7 +412,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_codigo_criadouro: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
