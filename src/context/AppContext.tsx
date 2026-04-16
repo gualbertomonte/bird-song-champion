@@ -304,6 +304,75 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })();
   }, [user?.email, user?.id, loading]);
 
+  // ============ Realtime sync across devices ============
+  useEffect(() => {
+    if (!user) return;
+    const uid = user.id;
+
+    const channel = supabase
+      .channel(`realtime-user-${uid}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'birds', filter: `user_id=eq.${uid}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const nb = rowToBird(payload.new);
+          setBirdsState(prev => prev.some(b => b.id === nb.id) ? prev : [...prev, nb]);
+        } else if (payload.eventType === 'UPDATE') {
+          const nb = rowToBird(payload.new);
+          setBirdsState(prev => prev.map(b => b.id === nb.id ? nb : b));
+        } else if (payload.eventType === 'DELETE') {
+          setBirdsState(prev => prev.filter(b => b.id !== (payload.old as any).id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments', filter: `user_id=eq.${uid}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const nt = rowToTournament(payload.new);
+          setTournamentsState(prev => prev.some(t => t.id === nt.id) ? prev : [nt, ...prev]);
+        } else if (payload.eventType === 'UPDATE') {
+          const nt = rowToTournament(payload.new);
+          setTournamentsState(prev => prev.map(t => t.id === nt.id ? nt : t));
+        } else if (payload.eventType === 'DELETE') {
+          setTournamentsState(prev => prev.filter(t => t.id !== (payload.old as any).id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'health_records', filter: `user_id=eq.${uid}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const nh = rowToHealth(payload.new);
+          setHealthRecordsState(prev => prev.some(h => h.id === nh.id) ? prev : [nh, ...prev]);
+        } else if (payload.eventType === 'UPDATE') {
+          const nh = rowToHealth(payload.new);
+          setHealthRecordsState(prev => prev.map(h => h.id === nh.id ? nh : h));
+        } else if (payload.eventType === 'DELETE') {
+          setHealthRecordsState(prev => prev.filter(h => h.id !== (payload.old as any).id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'nests', filter: `user_id=eq.${uid}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const nn = rowToNest(payload.new);
+          setNestsState(prev => prev.some(n => n.id === nn.id) ? prev : [nn, ...prev]);
+        } else if (payload.eventType === 'UPDATE') {
+          const nn = rowToNest(payload.new);
+          setNestsState(prev => prev.map(n => n.id === nn.id ? nn : n));
+        } else if (payload.eventType === 'DELETE') {
+          setNestsState(prev => prev.filter(n => n.id !== (payload.old as any).id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'criador_profile', filter: `user_id=eq.${uid}` }, (payload) => {
+        if (payload.eventType === 'DELETE') return;
+        const p: any = payload.new;
+        setProfileState({
+          nome_criadouro: p.nome_criadouro ?? '',
+          cpf: p.cpf ?? undefined,
+          registro_ctf: p.registro_ctf ?? undefined,
+          validade_ctf: p.validade_ctf ?? undefined,
+          endereco: p.endereco ?? undefined,
+          telefone: p.telefone ?? undefined,
+          logo_url: p.logo_url ?? undefined,
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   // ============ Bird CRUD ============
   const addBird = useCallback(async (bird: Bird) => {
     if (!user) return;
