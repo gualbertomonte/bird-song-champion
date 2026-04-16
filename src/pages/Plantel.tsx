@@ -309,7 +309,33 @@ export default function Plantel() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Código de Anilha (SISPASS) *</label>
-                <input value={form.codigo_anilha || ''} onChange={e => setForm({ ...form, codigo_anilha: e.target.value })} className="mt-1 input-field" placeholder="SISPASS X.X XX/X XXXXXX" />
+                <div className="relative">
+                  <input
+                    value={form.codigo_anilha || ''}
+                    onChange={e => setForm({ ...form, codigo_anilha: e.target.value })}
+                    className={`mt-1 input-field pr-9 ${
+                      anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global'
+                        ? 'border-destructive focus:ring-destructive/30'
+                        : anilhaCheck.status === 'available'
+                        ? 'border-green-500/60 focus:ring-green-500/30'
+                        : ''
+                    }`}
+                    placeholder="SISPASS X.X XX/X XXXXXX"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5">
+                    {anilhaCheck.status === 'checking' && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />}
+                    {anilhaCheck.status === 'available' && <Check className="w-4 h-4 text-green-500" />}
+                    {(anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global') && <AlertCircle className="w-4 h-4 text-destructive" />}
+                  </div>
+                </div>
+                {(anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global') && (
+                  <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {anilhaCheck.message || 'Anilha já existe.'}
+                  </p>
+                )}
+                {anilhaCheck.status === 'available' && form.codigo_anilha && (
+                  <p className="text-xs text-green-600 dark:text-green-500 mt-1">Anilha disponível</p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Nome *</label>
