@@ -206,14 +206,34 @@ export default function Plantel() {
                   <p className="text-xs text-muted-foreground italic">{bird.nome_cientifico}</p>
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">{bird.codigo_anilha}</p>
+                {bird.loan_status === 'emprestada_entrada' && (
+                  <div className="flex items-center gap-1 text-[10px] text-info bg-info/10 rounded px-1.5 py-0.5">
+                    <Handshake className="w-3 h-3" /> Recebida em empréstimo — somente leitura
+                  </div>
+                )}
+                {bird.loan_status === 'emprestada_saida' && (
+                  <div className="flex items-center gap-1 text-[10px] text-warning bg-warning/10 rounded px-1.5 py-0.5">
+                    <ArrowDownToLine className="w-3 h-3" /> Emprestada para outro criador
+                  </div>
+                )}
                 <div className="flex gap-1 pt-1">
                   <Link to={`/ave/${bird.id}`} className="flex-1 text-xs py-1.5 rounded-md bg-muted/40 text-foreground hover:bg-muted/60 transition-colors flex items-center justify-center gap-1">
                     <Eye className="w-3 h-3" /> Ver
                   </Link>
-                  <button onClick={() => openEdit(bird)} className="flex-1 text-xs py-1.5 rounded-md bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors flex items-center justify-center gap-1">
+                  <button
+                    onClick={() => openEdit(bird)}
+                    disabled={bird.loan_status === 'emprestada_entrada'}
+                    title={bird.loan_status === 'emprestada_entrada' ? 'Aves recebidas em empréstimo não podem ser editadas' : ''}
+                    className="flex-1 text-xs py-1.5 rounded-md bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary/10"
+                  >
                     <Edit className="w-3 h-3" /> Editar
                   </button>
-                  <button onClick={() => setDeleteConfirm(bird.id)} className="text-xs py-1.5 px-2 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
+                  <button
+                    onClick={() => setDeleteConfirm(bird.id)}
+                    disabled={bird.loan_status === 'emprestada_entrada'}
+                    title={bird.loan_status === 'emprestada_entrada' ? 'Aves recebidas em empréstimo não podem ser excluídas' : ''}
+                    className="text-xs py-1.5 px-2 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-destructive/10"
+                  >
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
@@ -262,10 +282,26 @@ export default function Plantel() {
                     <td className="p-3">{bird.sexo === 'M' ? '♂' : bird.sexo === 'F' ? '♀' : '?'}</td>
                     <td className="p-3"><span className={statusClass[bird.status]}>{statusLabels[bird.status]}</span></td>
                     <td className="p-3 text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1 items-center">
+                        {bird.loan_status === 'emprestada_entrada' && (
+                          <span title="Recebida em empréstimo — somente leitura" className="text-info"><Handshake className="w-3.5 h-3.5" /></span>
+                        )}
+                        {bird.loan_status === 'emprestada_saida' && (
+                          <span title="Emprestada para outro criador" className="text-warning"><ArrowDownToLine className="w-3.5 h-3.5" /></span>
+                        )}
                         <Link to={`/ave/${bird.id}`} className="btn-ghost p-1.5"><Eye className="w-3.5 h-3.5" /></Link>
-                        <button onClick={() => openEdit(bird)} className="btn-ghost p-1.5 text-secondary"><Edit className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setDeleteConfirm(bird.id)} className="btn-ghost p-1.5 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button
+                          onClick={() => openEdit(bird)}
+                          disabled={bird.loan_status === 'emprestada_entrada'}
+                          title={bird.loan_status === 'emprestada_entrada' ? 'Aves recebidas em empréstimo não podem ser editadas' : ''}
+                          className="btn-ghost p-1.5 text-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                        ><Edit className="w-3.5 h-3.5" /></button>
+                        <button
+                          onClick={() => setDeleteConfirm(bird.id)}
+                          disabled={bird.loan_status === 'emprestada_entrada'}
+                          title={bird.loan_status === 'emprestada_entrada' ? 'Aves recebidas em empréstimo não podem ser excluídas' : ''}
+                          className="btn-ghost p-1.5 text-destructive disabled:opacity-40 disabled:cursor-not-allowed"
+                        ><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
                   </tr>
