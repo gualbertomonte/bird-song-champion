@@ -1,7 +1,7 @@
 import { useAppState } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Save, Upload, Check, Loader2 } from 'lucide-react';
+import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +12,31 @@ export default function Perfil() {
   const [form, setForm] = useState({ ...profile });
   const [saved, setSaved] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [changingPw, setChangingPw] = useState(false);
+
+  const handlePasswordChange = async () => {
+    if (newPw.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setChangingPw(false);
+    if (error) {
+      toast.error(error.message || 'Erro ao alterar senha');
+    } else {
+      toast.success('Senha alterada com sucesso!');
+      setNewPw('');
+      setConfirmPw('');
+    }
+  };
 
   const fields = [
     { key: 'nome_criadouro', label: 'Nome do Criadouro', required: true },
