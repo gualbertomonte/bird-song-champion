@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Bird, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send } from 'lucide-react';
+import { Bird as BirdIcon, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { QRCodeSVG } from 'qrcode.react';
@@ -11,7 +12,8 @@ import { toast } from 'sonner';
 
 export default function BirdDetail() {
   const { id } = useParams<{ id: string }>();
-  const { birds, tournaments, healthRecords } = useAppState();
+  const { birds, tournaments, healthRecords, deleteBird } = useAppState();
+  const { user } = useAuth();
   const bird = birds.find(b => b.id === id);
   const crachaRef = useRef<HTMLDivElement>(null);
   const [showCracha, setShowCracha] = useState(false);
@@ -21,7 +23,7 @@ export default function BirdDetail() {
 
   if (!bird) return (
     <div className="text-center py-20">
-      <Bird className="w-12 h-12 mx-auto mb-3 opacity-20 text-muted-foreground" />
+      <BirdIcon className="w-12 h-12 mx-auto mb-3 opacity-20 text-muted-foreground" />
       <p className="text-muted-foreground">Ave não encontrada</p>
       <Link to="/plantel" className="text-secondary text-sm hover:underline mt-2 inline-block">Voltar ao plantel</Link>
     </div>
@@ -57,30 +59,40 @@ export default function BirdDetail() {
 
   const handleTransfer = async () => {
     if (!transferTo.trim()) {
-      toast.error('Informe o identificador do destinatário');
+      toast.error('Informe o email do destinatário');
       return;
     }
     if (sending) return;
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-transfer-email', {
+      // Save to pending_transfers table
+      const { error: dbError } = await supabase.from('pending_transfers').insert({
+        recipient_email: transferTo.trim().toLowerCase(),
+        bird_data: bird as any,
+        sender_email: user?.email || '',
+      });
+      if (dbError) console.error('DB transfer error:', dbError);
+
+      // Send email notification
+      const { error } = await supabase.functions.invoke('send-transfer-email', {
         body: {
           recipientEmail: transferTo.trim(),
           birdName: bird.nome,
           birdSpecies: bird.nome_cientifico,
           birdCode: bird.codigo_anilha,
-          senderName: 'Usuário Plantel Pro+',
+          senderName: user?.email || 'Usuário Plantel Pro+',
         },
       });
-      if (error) throw error;
-      toast.success(`Transferência da ave "${bird.nome}" para "${transferTo}" realizada! E-mail enviado ao destinatário.`);
+      if (error) console.error('Email error:', error);
+
+      // Remove bird from current user's plantel
+      deleteBird(bird.id);
+      toast.success(`Ave "${bird.nome}" transferida para "${transferTo}"! E-mail enviado ao destinatário.`);
       setShowTransfer(false);
       setTransferTo('');
     } catch (err) {
-      console.error('Transfer email error:', err);
-      toast.error('Transferência registrada, mas houve erro ao enviar o e-mail.');
-      setShowTransfer(false);
-      setTransferTo('');
+      console.error('Transfer error:', err);
+      toast.error('Erro ao processar transferência.');
     } finally {
       setSending(false);
     }
@@ -95,7 +107,7 @@ export default function BirdDetail() {
       {/* Header */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-48 h-48 rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center flex-shrink-0">
-          {photo ? <img src={photo} alt={bird.nome} className="w-full h-full object-cover" /> : <Bird className="w-16 h-16 text-muted-foreground/30" />}
+          {photo ? <img src={photo} alt={bird.nome} className="w-full h-full object-cover" /> : <BirdIcon className="w-16 h-16 text-muted-foreground/30" />}
         </div>
         <div className="flex-1 space-y-2">
           <div>
@@ -293,7 +305,7 @@ export default function BirdDetail() {
               {filhotes.map(f => (
                 <Link to={`/ave/${f.id}`} key={f.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Bird className="w-5 h-5 text-primary-foreground" />
+                    <BirdIcon className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div>
                     <p className="font-medium text-sm">{f.nome}</p>
@@ -313,13 +325,13 @@ export default function BirdDetail() {
             <div ref={crachaRef} className="w-[360px] sm:w-[400px] bg-gradient-to-br from-[#0B3B2A] to-[#0A0F0D] rounded-2xl p-5 sm:p-6 border border-secondary/20 text-white">
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
                 <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
-                  <Bird className="w-5 h-5 text-secondary" />
+                  <BirdIcon className="w-5 h-5 text-secondary" />
                 </div>
                 <span className="font-bold text-secondary text-sm">Plantel Pro+</span>
               </div>
               <div className="flex gap-4">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center">
-                  {photo ? <img src={photo} className="w-full h-full object-cover" /> : <Bird className="w-8 h-8 text-white/20" />}
+                  {photo ? <img src={photo} className="w-full h-full object-cover" /> : <BirdIcon className="w-8 h-8 text-white/20" />}
                 </div>
                 <div className="flex-1 space-y-1 min-w-0">
                   <h3 className="font-bold text-lg leading-tight truncate">{bird.nome}</h3>

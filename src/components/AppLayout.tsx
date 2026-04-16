@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram
+  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram, LogOut
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -27,6 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { signOut, user } = useAuth();
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -72,7 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Instagram link */}
-        <div className="px-2 pb-2">
+        <div className="px-2 pb-1">
           <a
             href="https://www.instagram.com/tech_boxbr/"
             target="_blank"
@@ -82,6 +84,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Instagram className="w-4.5 h-4.5 flex-shrink-0" />
             {!collapsed && <span>Seguir no Instagram</span>}
           </a>
+        </div>
+
+        {/* Logout */}
+        <div className="px-2 pb-2">
+          <button
+            onClick={signOut}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-destructive/70 hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full"
+          >
+            <LogOut className="w-4.5 h-4.5 flex-shrink-0" />
+            {!collapsed && <span>Sair</span>}
+          </button>
+          {!collapsed && user && (
+            <p className="px-3 py-1 text-[10px] text-sidebar-foreground/40 truncate">{user.email}</p>
+          )}
         </div>
 
         <button
