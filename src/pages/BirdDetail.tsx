@@ -59,30 +59,40 @@ export default function BirdDetail() {
 
   const handleTransfer = async () => {
     if (!transferTo.trim()) {
-      toast.error('Informe o identificador do destinatário');
+      toast.error('Informe o email do destinatário');
       return;
     }
     if (sending) return;
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-transfer-email', {
+      // Save to pending_transfers table
+      const { error: dbError } = await supabase.from('pending_transfers').insert({
+        recipient_email: transferTo.trim().toLowerCase(),
+        bird_data: bird as any,
+        sender_email: user?.email || '',
+      });
+      if (dbError) console.error('DB transfer error:', dbError);
+
+      // Send email notification
+      const { error } = await supabase.functions.invoke('send-transfer-email', {
         body: {
           recipientEmail: transferTo.trim(),
           birdName: bird.nome,
           birdSpecies: bird.nome_cientifico,
           birdCode: bird.codigo_anilha,
-          senderName: 'Usuário Plantel Pro+',
+          senderName: user?.email || 'Usuário Plantel Pro+',
         },
       });
-      if (error) throw error;
-      toast.success(`Transferência da ave "${bird.nome}" para "${transferTo}" realizada! E-mail enviado ao destinatário.`);
+      if (error) console.error('Email error:', error);
+
+      // Remove bird from current user's plantel
+      deleteBird(bird.id);
+      toast.success(`Ave "${bird.nome}" transferida para "${transferTo}"! E-mail enviado ao destinatário.`);
       setShowTransfer(false);
       setTransferTo('');
     } catch (err) {
-      console.error('Transfer email error:', err);
-      toast.error('Transferência registrada, mas houve erro ao enviar o e-mail.');
-      setShowTransfer(false);
-      setTransferTo('');
+      console.error('Transfer error:', err);
+      toast.error('Erro ao processar transferência.');
     } finally {
       setSending(false);
     }
