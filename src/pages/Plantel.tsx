@@ -114,6 +114,7 @@ export default function Plantel() {
           <option value="">Sexo</option>
           <option value="M">Macho</option>
           <option value="F">Fêmea</option>
+          <option value="I">A definir</option>
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-auto min-w-[100px]">
           <option value="">Status</option>
