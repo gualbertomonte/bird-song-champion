@@ -27,6 +27,8 @@ export interface Bird {
   nome_comum_especie?: string;
   created_at?: string;
   updated_at?: string;
+  transferido_por_email?: string;
+  transferido_em?: string;
 }
 
 export interface Nest {
