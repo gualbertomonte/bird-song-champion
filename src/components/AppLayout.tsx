@@ -74,7 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Instagram link */}
         <div className="px-2 pb-2">
           <a
-            href="https://www.instagram.com/tech_boxbr/"
+            href="https://www.instagram.com/tech_boxbr?igsh=MXF1b3RqMnpiZ3Jzag%3D%3D&utm_source=qr"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all duration-200"

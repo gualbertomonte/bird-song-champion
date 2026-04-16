@@ -14,7 +14,7 @@ export default function Torneios() {
 
   useEffect(() => { if (searchParams.get('new') === '1') setShowForm(true); }, [searchParams]);
 
-  const activeBirds = birds.filter(b => b.status === 'Ativo' || b.status === 'Berçário');
+  const activeBirds = birds.filter(b => (b.status === 'Ativo' || b.status === 'Berçário') && b.sexo === 'M');
 
   const filtered = useMemo(() => {
     let result = [...tournaments];
