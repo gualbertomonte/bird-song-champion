@@ -14,6 +14,7 @@ import Saude from "@/pages/Saude";
 import Bercario from "@/pages/Bercario";
 import Perfil from "@/pages/Perfil";
 import ArvoreGenealogica from "@/pages/ArvoreGenealogica";
+import Emprestimos from "@/pages/Emprestimos";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -75,6 +76,7 @@ const App = () => (
                       <Route path="/torneios" element={<Torneios />} />
                       <Route path="/saude" element={<Saude />} />
                       <Route path="/bercario" element={<Bercario />} />
+                      <Route path="/emprestimos" element={<Emprestimos />} />
                       <Route path="/perfil" element={<Perfil />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>

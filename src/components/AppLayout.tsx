@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram, LogOut, Loader2
+  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram, LogOut, Loader2, Handshake
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
+import NotificationBell from '@/components/NotificationBell';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/plantel', icon: Bird, label: 'Plantel' },
   { to: '/arvore', icon: GitBranch, label: 'Árvore Genealógica' },
   { to: '/bercario', icon: Egg, label: 'Berçário' },
+  { to: '/emprestimos', icon: Handshake, label: 'Empréstimos' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
   { to: '/saude', icon: Heart, label: 'Saúde' },
   { to: '/perfil', icon: User, label: 'Perfil' },
@@ -22,6 +24,7 @@ const mobileNavItems = [
   { to: '/plantel', icon: Bird, label: 'Plantel' },
   { to: '/arvore', icon: GitBranch, label: 'Árvore' },
   { to: '/bercario', icon: Egg, label: 'Berçário' },
+  { to: '/emprestimos', icon: Handshake, label: 'Emprést.' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
   { to: '/saude', icon: Heart, label: 'Saúde' },
   { to: '/perfil', icon: User, label: 'Perfil' },
@@ -128,6 +131,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               />
             </div>
           </div>
+          <NotificationBell />
         </header>
 
         <main className="flex-1 p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
