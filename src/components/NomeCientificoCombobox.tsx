@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { forwardRef, useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Plus, Check } from 'lucide-react';
 
-// Species mapping: nome científico <-> nome comum
 const SPECIES_MAP: Record<string, string> = {
   'Sporophila angolensis': 'Curió',
   'Sporophila maximiliani': 'Bicudo',
@@ -25,16 +24,21 @@ interface Props {
   onNomeComumChange?: (val: string) => void;
 }
 
-export default function NomeCientificoCombobox({ value, onChange, nomeComum, onNomeComumChange }: Props) {
+const NomeCientificoCombobox = forwardRef<HTMLDivElement, Props>(function NomeCientificoCombobox(
+  { value, onChange, nomeComum, onNomeComumChange },
+  forwardedRef,
+) {
   const { birds } = useAppState();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState(value);
   const [customSpecies, setCustomSpecies] = useState<Record<string, string>>(() => {
     try {
       return JSON.parse(localStorage.getItem('ppp_species_map') || '{}');
-    } catch { return {}; }
+    } catch {
+      return {};
+    }
   });
-  const ref = useRef<HTMLDivElement>(null);
+  const internalRef = useRef<HTMLDivElement>(null);
 
   const allSpecies = useMemo(() => {
     const fromBirds: Record<string, string> = {};
@@ -54,15 +58,26 @@ export default function NomeCientificoCombobox({ value, onChange, nomeComum, onN
     return allNames.filter(n => n.toLowerCase().includes(q) || (allSpecies[n] || '').toLowerCase().includes(q));
   }, [allNames, allSpecies, input]);
 
-  useEffect(() => { setInput(value); }, [value]);
+  useEffect(() => {
+    setInput(value);
+  }, [value]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (internalRef.current && !internalRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const setRefs = (node: HTMLDivElement | null) => {
+    internalRef.current = node;
+    if (typeof forwardedRef === 'function') {
+      forwardedRef(node);
+    } else if (forwardedRef) {
+      forwardedRef.current = node;
+    }
+  };
 
   const addCustom = () => {
     if (!input.trim() || allNames.includes(input.trim())) return;
@@ -76,7 +91,6 @@ export default function NomeCientificoCombobox({ value, onChange, nomeComum, onN
   const select = (name: string) => {
     onChange(name);
     setInput(name);
-    // Auto-fill nome comum
     const common = allSpecies[name];
     if (common && onNomeComumChange) {
       onNomeComumChange(common);
@@ -85,11 +99,15 @@ export default function NomeCientificoCombobox({ value, onChange, nomeComum, onN
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={setRefs} className="relative">
       <label className="text-xs font-medium text-muted-foreground">Nome Científico *</label>
       <input
         value={input}
-        onChange={e => { setInput(e.target.value); onChange(e.target.value); setOpen(true); }}
+        onChange={e => {
+          setInput(e.target.value);
+          onChange(e.target.value);
+          setOpen(true);
+        }}
         onFocus={() => setOpen(true)}
         className="mt-1 input-field"
         placeholder="Sporophila angolensis"
@@ -124,4 +142,6 @@ export default function NomeCientificoCombobox({ value, onChange, nomeComum, onN
       )}
     </div>
   );
-}
+});
+
+export default NomeCientificoCombobox;
