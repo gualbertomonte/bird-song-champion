@@ -149,24 +149,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [healthRecords, setHealthRecordsState] = useState<HealthRecord[]>([]);
   const [nests, setNestsState] = useState<Nest[]>([]);
   const [profile, setProfileState] = useState<CriadorProfile>(defaultProfile);
+  const [loans, setLoansState] = useState<BirdLoan[]>([]);
+  const [notifications, setNotificationsState] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const idMapRef = useRef<Map<string, string>>(new Map()); // localId -> cloudId during migration
 
   // Load all data from Supabase
-  const loadAll = useCallback(async (uid: string) => {
+  const loadAll = useCallback(async (uid: string, userEmail?: string) => {
     setLoading(true);
     try {
-      const [b, t, h, n, p] = await Promise.all([
+      const [b, t, h, n, p, l, nt] = await Promise.all([
         supabase.from('birds').select('*').order('created_at', { ascending: true }),
         supabase.from('tournaments').select('*').order('data', { ascending: false }),
         supabase.from('health_records').select('*').order('data', { ascending: false }),
         supabase.from('nests').select('*').order('created_at', { ascending: false }),
         supabase.from('criador_profile').select('*').eq('user_id', uid).maybeSingle(),
+        supabase.from('bird_loans').select('*').order('created_at', { ascending: false }),
+        supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(50),
       ]);
       setBirdsState((b.data || []).map(rowToBird));
       setTournamentsState((t.data || []).map(rowToTournament));
       setHealthRecordsState((h.data || []).map(rowToHealth));
       setNestsState((n.data || []).map(rowToNest));
+      setLoansState((l.data || []).map(rowToLoan));
+      setNotificationsState((nt.data || []).map(rowToNotification));
       if (p.data) {
         setProfileState({
           nome_criadouro: p.data.nome_criadouro ?? '',
