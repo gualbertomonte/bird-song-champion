@@ -770,7 +770,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    setLoansState(prev => prev.map(l => l.id === loanId ? rowToLoan(data) : l));
+    setLoansState(prev => prev.map(l => l.id === loanId ? (data ? rowToLoan(data) : { ...l, status: 'Devolvida', data_devolucao: new Date().toISOString() }) : l));
     setBirdsState(prev => prev.filter(b => b.id !== loan.borrower_bird_id));
     toast.success('Devolução confirmada!');
   }, [user, loans, profile, createNotification, sendLoanEmail]);
