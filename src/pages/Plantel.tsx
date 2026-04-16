@@ -420,7 +420,13 @@ export default function Plantel() {
 
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={save} className="btn-primary"><Check className="w-4 h-4" /> Salvar</button>
+              <button
+                onClick={save}
+                disabled={anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global' || anilhaCheck.status === 'checking'}
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="w-4 h-4" /> Salvar
+              </button>
             </div>
           </div>
         </div>
