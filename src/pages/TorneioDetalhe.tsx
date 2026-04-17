@@ -250,49 +250,51 @@ function InscricoesTab({ isOrganizer, inscricoes, torneio, userId, onInscrever, 
           <button onClick={onInscrever} className="btn-primary text-xs"><Plus className="w-3.5 h-3.5" /> Inscrever ave</button>
         </div>
       )}
-      <table className="w-full text-sm">
-        <thead className="bg-muted/20">
-          <tr>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Anilha</th>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Status</th>
-            <th className="text-right p-3 text-xs font-medium text-muted-foreground">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {inscricoes.map((ins: any) => {
-            const minha = ins.participante_user_id === userId;
-            return (
-              <tr key={ins.id} className={`border-t border-border/30 ${minha ? 'bg-secondary/5' : ''}`}>
-                <td className="p-3">{ins.bird_snapshot?.nome || '—'}</td>
-                <td className="p-3 text-muted-foreground text-xs">{ins.bird_snapshot?.codigo_anilha || '—'}</td>
-                <td className="p-3">
-                  <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-semibold ${
-                    ins.status === 'Aprovada' ? 'bg-secondary/15 text-secondary' :
-                    ins.status === 'Rejeitada' ? 'bg-destructive/15 text-destructive' :
-                    'bg-muted text-muted-foreground'
-                  }`}>{ins.status}</span>
-                  {ins.motivo_rejeicao && <p className="text-[10px] text-muted-foreground mt-1">{ins.motivo_rejeicao}</p>}
-                </td>
-                <td className="p-3 text-right">
-                  {isOrganizer && ins.status === 'Pendente' && (
-                    <div className="flex gap-1 justify-end">
-                      <button onClick={() => aprovar(ins.id, true)} className="btn-ghost p-1.5 text-secondary"><Check className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => aprovar(ins.id, false)} className="btn-ghost p-1.5 text-destructive"><X className="w-3.5 h-3.5" /></button>
-                    </div>
-                  )}
-                  {!isOrganizer && minha && ins.status === 'Pendente' && (
-                    <button onClick={() => remover(ins.id)} className="btn-ghost p-1.5 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-          {inscricoes.length === 0 && (
-            <tr><td colSpan={4} className="p-8 text-center text-sm text-muted-foreground">Nenhuma inscrição ainda</td></tr>
-          )}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[520px]">
+          <thead className="bg-muted/20">
+            <tr>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Anilha</th>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Status</th>
+              <th className="text-right p-3 text-xs font-medium text-muted-foreground">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {inscricoes.map((ins: any) => {
+              const minha = ins.participante_user_id === userId;
+              return (
+                <tr key={ins.id} className={`border-t border-border/30 ${minha ? 'bg-secondary/5' : ''}`}>
+                  <td className="p-3">{ins.bird_snapshot?.nome || '—'}</td>
+                  <td className="p-3 text-muted-foreground text-xs">{ins.bird_snapshot?.codigo_anilha || '—'}</td>
+                  <td className="p-3">
+                    <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-semibold ${
+                      ins.status === 'Aprovada' ? 'bg-secondary/15 text-secondary' :
+                      ins.status === 'Rejeitada' ? 'bg-destructive/15 text-destructive' :
+                      'bg-muted text-muted-foreground'
+                    }`}>{ins.status}</span>
+                    {ins.motivo_rejeicao && <p className="text-[10px] text-muted-foreground mt-1">{ins.motivo_rejeicao}</p>}
+                  </td>
+                  <td className="p-3 text-right">
+                    {isOrganizer && ins.status === 'Pendente' && (
+                      <div className="flex gap-1 justify-end">
+                        <button onClick={() => aprovar(ins.id, true)} className="btn-ghost p-1.5 text-secondary"><Check className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => aprovar(ins.id, false)} className="btn-ghost p-1.5 text-destructive"><X className="w-3.5 h-3.5" /></button>
+                      </div>
+                    )}
+                    {!isOrganizer && minha && ins.status === 'Pendente' && (
+                      <button onClick={() => remover(ins.id)} className="btn-ghost p-1.5 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {inscricoes.length === 0 && (
+              <tr><td colSpan={4} className="p-8 text-center text-sm text-muted-foreground">Nenhuma inscrição ainda</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
