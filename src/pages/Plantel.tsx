@@ -65,15 +65,12 @@ export default function Plantel() {
   }, [form.codigo_anilha, birds, editId, showForm]);
 
   // Auto-preencher diâmetro ao mudar a espécie (funciona em criação e edição)
-  const prevSciRef = useRef<string>('');
+  const prevSciRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!showForm) {
-      prevSciRef.current = '';
-      return;
-    }
+    if (!showForm) return;
     const sci = form.nome_cientifico?.trim() || '';
-    // Primeira renderização do form: registra valor inicial sem sobrescrever diâmetro existente
-    if (prevSciRef.current === '') {
+    // Primeira renderização do form: registra valor inicial sem alterar diâmetro
+    if (prevSciRef.current === null) {
       prevSciRef.current = sci;
       return;
     }
