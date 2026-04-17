@@ -165,7 +165,7 @@ export default function BirdDetail() {
             <LoanBadge status={bird.loan_status} size="sm" />
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
-            <button onClick={() => setShowCracha(true)} className="btn-primary text-xs">
+            <button onClick={openCracha} className="btn-primary text-xs">
               <QrCode className="w-3.5 h-3.5" /> Crachá Digital
             </button>
             <button
