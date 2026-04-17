@@ -17,7 +17,10 @@ export default function Bercario() {
 
   useEffect(() => { if (searchParams.get('new') === '1') setShowForm(true); }, [searchParams]);
 
-  const femeasBercario = birds.filter(b => b.sexo === 'F' && b.status === 'Berçário');
+  const ninhadasAtivas = nests.filter(isAtivo);
+  // Fêmeas com ninhada ativa (incubando ou eclosão parcial), independente do status da ave
+  const femeaIdsAtivas = new Set(ninhadasAtivas.map(n => n.femea_id));
+  const femeasBercario = birds.filter(b => b.sexo === 'F' && (b.status === 'Berçário' || femeaIdsAtivas.has(b.id)));
   const machos = birds.filter(b => b.sexo === 'M' && (b.status === 'Ativo' || b.status === 'Berçário'));
   const ninhadasAtivas = nests.filter(isAtivo);
   const filhotesRecentes = birds.filter(b => {
