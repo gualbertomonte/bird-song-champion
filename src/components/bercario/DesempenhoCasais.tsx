@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Trophy } from 'lucide-react';
 import { Bird, Nest } from '@/types/bird';
 
@@ -89,3 +90,6 @@ function DesempenhoCasaisImpl({ nests, birds }: Props) {
     </div>
   );
 }
+
+export const DesempenhoCasais = React.memo(DesempenhoCasaisImpl);
+

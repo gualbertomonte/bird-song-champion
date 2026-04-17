@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { CalendarDays } from 'lucide-react';
 import { Bird, Nest } from '@/types/bird';
 
@@ -59,3 +60,6 @@ function CalendarioEclosoesImpl({ ninhadas, birds }: Props) {
     </div>
   );
 }
+
+export const CalendarioEclosoes = React.memo(CalendarioEclosoesImpl);
+

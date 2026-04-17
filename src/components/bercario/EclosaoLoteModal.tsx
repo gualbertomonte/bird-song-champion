@@ -146,3 +146,6 @@ function EclosaoLoteModalImpl({ nest, mae, pai, onCancel, onConfirm }: Props) {
     </div>
   );
 }
+
+export const EclosaoLoteModal = EclosaoLoteModalImpl;
+
