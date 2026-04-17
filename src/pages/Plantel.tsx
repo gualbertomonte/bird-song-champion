@@ -7,7 +7,7 @@ import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+
 import { supabase } from '@/integrations/supabase/client';
 
 const statusLabels: Record<BirdStatus, string> = { Ativo: 'Ativo', 'Berçário': 'Berçário', Vendido: 'Vendido', Falecido: 'Falecido' };
