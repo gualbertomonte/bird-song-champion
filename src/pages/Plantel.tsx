@@ -65,15 +65,12 @@ export default function Plantel() {
   }, [form.codigo_anilha, birds, editId, showForm]);
 
   // Auto-preencher diâmetro ao mudar a espécie (funciona em criação e edição)
-  const prevSciRef = useRef<string>('');
+  const prevSciRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!showForm) {
-      prevSciRef.current = '';
-      return;
-    }
+    if (!showForm) return;
     const sci = form.nome_cientifico?.trim() || '';
-    // Primeira renderização do form: registra valor inicial sem sobrescrever diâmetro existente
-    if (prevSciRef.current === '') {
+    // Primeira renderização do form: registra valor inicial sem alterar diâmetro
+    if (prevSciRef.current === null) {
       prevSciRef.current = sci;
       return;
     }
@@ -107,8 +104,8 @@ export default function Plantel() {
     return result;
   }, [birds, search, filterEspecie, filterStatus, filterSexo, filterEstado, sortKey, sortAsc]);
 
-  const openNew = () => { setForm(emptyForm()); setEditId(null); setShowForm(true); };
-  const openEdit = (b: BirdType) => { setForm({ ...b }); setEditId(b.id); setShowForm(true); };
+  const openNew = () => { prevSciRef.current = null; setForm(emptyForm()); setEditId(null); setShowForm(true); };
+  const openEdit = (b: BirdType) => { prevSciRef.current = (b.nome_cientifico || '').trim(); setForm({ ...b }); setEditId(b.id); setShowForm(true); };
 
   const save = async () => {
     if (!form.codigo_anilha?.trim() || !form.nome?.trim() || !form.nome_cientifico?.trim()) {
