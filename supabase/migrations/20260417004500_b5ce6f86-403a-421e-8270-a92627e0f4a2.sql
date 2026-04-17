@@ -1,0 +1,1 @@
+ALTER TABLE public.birds ADD COLUMN IF NOT EXISTS anilha_sispass boolean NOT NULL DEFAULT false;

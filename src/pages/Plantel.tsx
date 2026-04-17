@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
-import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle, Handshake, ArrowDownToLine } from 'lucide-react';
+import { DIAMETROS_PADRAO, DIAMETRO_POR_ESPECIE } from '@/data/anilhas';
+import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle, Handshake, ArrowDownToLine, Sparkles } from 'lucide-react';
 import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import { toast } from 'sonner';
@@ -63,6 +64,18 @@ export default function Plantel() {
     setAnilhaCheck({ status: 'available' });
   }, [form.codigo_anilha, birds, editId, showForm]);
 
+  // Auto-preencher diâmetro com base no nome científico (se ainda não escolhido manualmente)
+  useEffect(() => {
+    if (!showForm) return;
+    const sci = form.nome_cientifico?.trim();
+    if (!sci) return;
+    const sugerido = DIAMETRO_POR_ESPECIE[sci];
+    if (sugerido && !form.diametro_anilha) {
+      setForm(prev => ({ ...prev, diametro_anilha: sugerido }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.nome_cientifico, showForm]);
+
   const uniqueEspecies = useMemo(() => [...new Set(birds.map(b => b.nome))], [birds]);
 
   const filtered = useMemo(() => {
@@ -92,8 +105,14 @@ export default function Plantel() {
       toast.error('Preencha os campos obrigatórios: Anilha, Nome e Nome Científico');
       return;
     }
+    // Código de anilha: somente números (até 6 dígitos)
+    const codigoRaw = form.codigo_anilha.trim();
+    if (!/^\d{1,6}$/.test(codigoRaw)) {
+      toast.error('Código de anilha deve conter apenas números (até 6 dígitos).');
+      return;
+    }
     // Validação client-side de anilha duplicada (no plantel atual)
-    const codigo = form.codigo_anilha.trim().toLowerCase();
+    const codigo = codigoRaw.toLowerCase();
     const conflito = birds.find(b => b.codigo_anilha?.trim().toLowerCase() === codigo && b.id !== editId);
     if (conflito) {
       toast.error(`Já existe uma ave com a anilha "${form.codigo_anilha}" no seu plantel.`);
@@ -327,23 +346,29 @@ export default function Plantel() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-muted-foreground">Código de Anilha (SISPASS) *</label>
+                <label className="text-xs font-medium text-muted-foreground">Código de Anilha *</label>
                 <div className="relative">
                   <input
                     value={form.codigo_anilha || ''}
-                    onChange={e => setForm({ ...form, codigo_anilha: e.target.value })}
+                    onChange={e => {
+                      const onlyDigits = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setForm({ ...form, codigo_anilha: onlyDigits });
+                    }}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
                     className={`mt-1 input-field pr-9 ${
                       anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global'
                         ? 'border-destructive focus:ring-destructive/30'
                         : anilhaCheck.status === 'available'
-                        ? 'border-green-500/60 focus:ring-green-500/30'
+                        ? 'border-success focus:ring-success/30'
                         : ''
                     }`}
-                    placeholder="SISPASS X.X XX/X XXXXXX"
+                    placeholder="Ex: 123456"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5">
                     {anilhaCheck.status === 'checking' && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />}
-                    {anilhaCheck.status === 'available' && <Check className="w-4 h-4 text-green-500" />}
+                    {anilhaCheck.status === 'available' && <Check className="w-4 h-4 text-success" />}
                     {(anilhaCheck.status === 'taken-local' || anilhaCheck.status === 'taken-global') && <AlertCircle className="w-4 h-4 text-destructive" />}
                   </div>
                 </div>
@@ -353,11 +378,39 @@ export default function Plantel() {
                   </p>
                 )}
                 {anilhaCheck.status === 'available' && form.codigo_anilha && (
-                  <p className="text-xs text-green-600 dark:text-green-500 mt-1">Anilha disponível</p>
+                  <p className="text-xs text-success mt-1">Anilha disponível</p>
                 )}
+                <p className="text-[11px] text-muted-foreground mt-1">Apenas números, geralmente 6 dígitos.</p>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium text-muted-foreground">Anilha SISPASS?</label>
+                <div className="mt-1 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, anilha_sispass: true })}
+                    className={`flex-1 py-2 text-sm rounded-lg border transition-colors ${
+                      form.anilha_sispass === true
+                        ? 'bg-secondary text-secondary-foreground border-secondary'
+                        : 'bg-card hover:bg-muted/40'
+                    }`}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, anilha_sispass: false })}
+                    className={`flex-1 py-2 text-sm rounded-lg border transition-colors ${
+                      form.anilha_sispass === false || form.anilha_sispass === undefined
+                        ? 'bg-secondary text-secondary-foreground border-secondary'
+                        : 'bg-card hover:bg-muted/40'
+                    }`}
+                  >
+                    Não
+                  </button>
+                </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome *</label>
+                <label className="text-xs font-medium text-muted-foreground">Nome (apelido) *</label>
                 <input value={form.nome || ''} onChange={e => setForm({ ...form, nome: e.target.value })} className="mt-1 input-field" placeholder="Trovão, Serena..." />
               </div>
               <NomeCientificoCombobox
@@ -393,7 +446,19 @@ export default function Plantel() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Diâmetro da Anilha</label>
-                <input value={form.diametro_anilha || ''} onChange={e => setForm({ ...form, diametro_anilha: e.target.value })} className="mt-1 input-field" placeholder="2.8mm" />
+                <select
+                  value={form.diametro_anilha || ''}
+                  onChange={e => setForm({ ...form, diametro_anilha: e.target.value || undefined })}
+                  className="mt-1 input-field"
+                >
+                  <option value="">Selecionar...</option>
+                  {DIAMETROS_PADRAO.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                {form.nome_cientifico && DIAMETRO_POR_ESPECIE[form.nome_cientifico.trim()] === form.diametro_anilha && (
+                  <p className="text-[11px] text-secondary mt-1 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> Sugerido pela federação — você pode alterar
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Data Nascimento</label>
@@ -404,7 +469,7 @@ export default function Plantel() {
                 <input value={form.nome_comum_especie || ''} onChange={e => setForm({ ...form, nome_comum_especie: e.target.value })} className="mt-1 input-field" placeholder="Curió, Canário, Bicudo..." />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Estado (UF)</label>
+                <label className="text-xs font-medium text-muted-foreground">Estado do SISPASS (UF)</label>
                 <select value={form.estado || ''} onChange={e => setForm({ ...form, estado: e.target.value as any || undefined })} className="mt-1 input-field">
                   <option value="">Selecionar...</option>
                   {ESTADOS_BR.map(uf => <option key={uf} value={uf}>{uf}</option>)}
