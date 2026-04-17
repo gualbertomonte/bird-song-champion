@@ -212,7 +212,7 @@ export default function TorneioDetalhe() {
       {inscreverOpen && (
         <InscreverModal
           torneioId={torneio.id}
-          birds={birds.filter(b => !inscricoes.some(i => i.bird_id === b.id))}
+          birds={birds.filter(b => b.sexo === 'M' && !inscricoes.some(i => i.bird_id === b.id))}
           onClose={() => { setInscreverOpen(false); refresh(); }}
         />
       )}
