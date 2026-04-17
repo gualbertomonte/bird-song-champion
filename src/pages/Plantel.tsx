@@ -2,9 +2,10 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
 import { DIAMETROS_PADRAO, DIAMETRO_POR_ESPECIE } from '@/data/anilhas';
-import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle, Handshake, ArrowDownToLine, Sparkles } from 'lucide-react';
+import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
+import LoanBadge from '@/components/LoanBadge';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -215,15 +216,8 @@ export default function Plantel() {
                   <p className="text-xs text-muted-foreground italic">{bird.nome_cientifico}</p>
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">{bird.codigo_anilha}</p>
-                {bird.loan_status === 'emprestada_entrada' && (
-                  <div className="flex items-center gap-1 text-[10px] text-info bg-info/10 rounded px-1.5 py-0.5">
-                    <Handshake className="w-3 h-3" /> Recebida em empréstimo — somente leitura
-                  </div>
-                )}
-                {bird.loan_status === 'emprestada_saida' && (
-                  <div className="flex items-center gap-1 text-[10px] text-warning bg-warning/10 rounded px-1.5 py-0.5">
-                    <ArrowDownToLine className="w-3 h-3" /> Emprestada para outro criador
-                  </div>
+                {bird.loan_status && bird.loan_status !== 'proprio' && (
+                  <LoanBadge status={bird.loan_status} />
                 )}
                 <div className="flex gap-1 pt-1">
                   <Link to={`/ave/${bird.id}`} className="flex-1 text-xs py-1.5 rounded-md bg-muted/40 text-foreground hover:bg-muted/60 transition-colors flex items-center justify-center gap-1">
@@ -292,11 +286,8 @@ export default function Plantel() {
                     <td className="p-3"><span className={statusClass[bird.status]}>{statusLabels[bird.status]}</span></td>
                     <td className="p-3 text-right">
                       <div className="flex justify-end gap-1 items-center">
-                        {bird.loan_status === 'emprestada_entrada' && (
-                          <span title="Recebida em empréstimo — somente leitura" className="text-info"><Handshake className="w-3.5 h-3.5" /></span>
-                        )}
-                        {bird.loan_status === 'emprestada_saida' && (
-                          <span title="Emprestada para outro criador" className="text-warning"><ArrowDownToLine className="w-3.5 h-3.5" /></span>
+                        {bird.loan_status && bird.loan_status !== 'proprio' && (
+                          <LoanBadge status={bird.loan_status} iconOnly />
                         )}
                         <Link to={`/ave/${bird.id}`} className="btn-ghost p-1.5"><Eye className="w-3.5 h-3.5" /></Link>
                         <button
