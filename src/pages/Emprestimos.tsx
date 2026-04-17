@@ -170,6 +170,9 @@ export default function Emprestimos() {
                 <div>Devolvida em: {fmtDate(loan.data_devolucao)}</div>
                 {loan.filhotes_gerados > 0 && <div>Filhotes gerados: {loan.filhotes_gerados}</div>}
               </div>
+              <button onClick={() => generateLoanReceiptPDF(loan, profile)} className="text-xs text-secondary hover:underline mt-2 inline-flex items-center gap-1">
+                <FileDown className="w-3.5 h-3.5" /> Recibo PDF
+              </button>
             </LoanCard>
           ))}
         </TabsContent>

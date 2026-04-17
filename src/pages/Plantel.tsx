@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
 import { DIAMETROS_PADRAO, DIAMETRO_POR_ESPECIE } from '@/data/anilhas';
-import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { Bird, Plus, Search, Trash2, Edit, X, Check, LayoutGrid, List, Eye, ArrowUpDown, FileText, GitBranch, Loader2, AlertCircle, Sparkles, FileDown } from 'lucide-react';
 import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import LoanBadge from '@/components/LoanBadge';
+import { generatePlantelReportPDF } from '@/lib/pdf';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -20,7 +21,7 @@ type ViewMode = 'cards' | 'table';
 const emptyForm = (): Partial<BirdType> => ({ sexo: 'M', status: 'Ativo', fotos: [], nome_cientifico: '' });
 
 export default function Plantel() {
-  const { birds, addBird, updateBird, deleteBird } = useAppState();
+  const { birds, profile, addBird, updateBird, deleteBird } = useAppState();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [filterEspecie, setFilterEspecie] = useState('');
@@ -161,6 +162,17 @@ export default function Plantel() {
               <List className="w-4 h-4" />
             </button>
           </div>
+          <button
+            onClick={() => {
+              if (filtered.length === 0) { toast.error('Nenhuma ave para exportar'); return; }
+              generatePlantelReportPDF(filtered, profile);
+              toast.success('Relatório gerado');
+            }}
+            className="btn-secondary text-sm"
+            title="Exportar plantel filtrado em PDF"
+          >
+            <FileDown className="w-4 h-4" /> Exportar PDF
+          </button>
           <button onClick={openNew} className="btn-primary"><Plus className="w-4 h-4" /> Nova Ave</button>
         </div>
       </div>
