@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Menu, GitBranch, Instagram, LogOut, Loader2, Handshake
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useAppState } from '@/context/AppContext';
+import { useAppState, MobileNavKey } from '@/context/AppContext';
 import NotificationBell from '@/components/NotificationBell';
 
 const navItems = [
@@ -19,23 +19,28 @@ const navItems = [
   { to: '/perfil', icon: User, label: 'Perfil' },
 ];
 
-const mobileNavItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Home' },
-  { to: '/plantel', icon: Bird, label: 'Plantel' },
-  { to: '/arvore', icon: GitBranch, label: 'Árvore' },
-  { to: '/bercario', icon: Egg, label: 'Berçário' },
-  { to: '/emprestimos', icon: Handshake, label: 'Emprést.' },
-  { to: '/torneios', icon: Trophy, label: 'Torneios' },
-  { to: '/saude', icon: Heart, label: 'Saúde' },
-  { to: '/perfil', icon: User, label: 'Perfil' },
-];
+const ALL_MOBILE_ITEMS: Record<MobileNavKey, { to: string; icon: any; label: string }> = {
+  dashboard: { to: '/', icon: LayoutDashboard, label: 'Home' },
+  plantel: { to: '/plantel', icon: Bird, label: 'Plantel' },
+  arvore: { to: '/arvore', icon: GitBranch, label: 'Árvore' },
+  bercario: { to: '/bercario', icon: Egg, label: 'Berçário' },
+  emprestimos: { to: '/emprestimos', icon: Handshake, label: 'Emprést.' },
+  torneios: { to: '/torneios', icon: Trophy, label: 'Torneios' },
+  saude: { to: '/saude', icon: Heart, label: 'Saúde' },
+  perfil: { to: '/perfil', icon: User, label: 'Perfil' },
+};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { signOut, user } = useAuth();
-  const { loading } = useAppState();
+  const { loading, mobileNavConfig } = useAppState();
+
+  const mobileNavItems = mobileNavConfig
+    .filter(c => c.visible)
+    .map(c => ({ key: c.key, ...ALL_MOBILE_ITEMS[c.key] }))
+    .filter(i => i.to);
 
   return (
     <div className="min-h-screen flex bg-background">
