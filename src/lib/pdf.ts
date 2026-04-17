@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Bird, CriadorProfile } from '@/types/bird';
 import type { BirdLoan } from '@/types/loan';
+import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
