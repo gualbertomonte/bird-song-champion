@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users
+  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users, Users2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState, MobileNavKey } from '@/context/AppContext';
@@ -15,6 +15,7 @@ const navItems = [
   { to: '/bercario', icon: Egg, label: 'Berçário' },
   { to: '/emprestimos', icon: Handshake, label: 'Empréstimos' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
+  { to: '/grupos', icon: Users2, label: 'Grupos' },
   { to: '/saude', icon: Heart, label: 'Saúde' },
   { to: '/amigos', icon: Users, label: 'Amigos' },
   { to: '/perfil', icon: User, label: 'Perfil' },

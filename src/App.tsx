@@ -14,6 +14,10 @@ import TorneioNovo from "@/pages/TorneioNovo";
 import TorneioDetalhe from "@/pages/TorneioDetalhe";
 import ConviteTorneio from "@/pages/ConviteTorneio";
 import HistoricoTorneios from "@/pages/HistoricoTorneios";
+import Grupos from "@/pages/Grupos";
+import GrupoNovo from "@/pages/GrupoNovo";
+import GrupoDetalhe from "@/pages/GrupoDetalhe";
+import BateriaDetalhe from "@/pages/BateriaDetalhe";
 import Saude from "@/pages/Saude";
 import Bercario from "@/pages/Bercario";
 import Perfil from "@/pages/Perfil";
@@ -87,6 +91,10 @@ const App = () => (
                       <Route path="/torneios/novo" element={<TorneioNovo />} />
                       <Route path="/torneios/:id" element={<TorneioDetalhe />} />
                       <Route path="/historico-torneios" element={<HistoricoTorneios />} />
+                      <Route path="/grupos" element={<Grupos />} />
+                      <Route path="/grupos/novo" element={<GrupoNovo />} />
+                      <Route path="/grupos/:id" element={<GrupoDetalhe />} />
+                      <Route path="/grupos/:id/baterias/:bateriaId" element={<BateriaDetalhe />} />
                       <Route path="/saude" element={<Saude />} />
                       <Route path="/bercario" element={<Bercario />} />
                       <Route path="/emprestimos" element={<Emprestimos />} />
