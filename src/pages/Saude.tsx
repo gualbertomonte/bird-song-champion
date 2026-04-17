@@ -184,7 +184,7 @@ export default function Saude() {
               <h2 className="font-bold text-xl">Novo Registro de Saúde</h2>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 p-4 sm:p-5 overflow-y-auto flex-1">
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Ave *</label>
                 <select value={form.bird_id} onChange={e => setForm({ ...form, bird_id: e.target.value })} className="mt-1 input-field">
