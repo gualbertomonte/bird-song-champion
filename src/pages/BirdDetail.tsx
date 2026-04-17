@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Bird as BirdIcon, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send } from 'lucide-react';
+import { Bird as BirdIcon, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
