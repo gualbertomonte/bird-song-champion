@@ -245,7 +245,7 @@ function InscricoesTab({ isOrganizer, inscricoes, torneio, userId, onInscrever, 
 
   return (
     <div className="card-premium overflow-hidden">
-      {!isOrganizer && ['Rascunho','Inscricoes'].includes(torneio.status) && (
+      {['Rascunho','Inscricoes'].includes(torneio.status) && (
         <div className="p-3 border-b">
           <button onClick={onInscrever} className="btn-primary text-xs"><Plus className="w-3.5 h-3.5" /> Inscrever ave</button>
         </div>
