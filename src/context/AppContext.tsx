@@ -45,6 +45,8 @@ interface AppState {
   markHealthApplied: (id: string) => Promise<void>;
   addNest: (n: Nest) => void;
   updateNest: (id: string, data: Partial<Nest>) => void;
+  deleteNest: (id: string) => Promise<void>;
+  clearNestsHistory: () => Promise<void>;
   createLoan: (params: { birdId: string; codigoCriadouro: string; prazo?: string; observacoes?: string }) => Promise<void>;
   requestLoanReturn: (loanId: string) => Promise<void>;
   confirmLoanReturn: (loanId: string) => Promise<void>;
