@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Trophy, Calendar, Users, Shuffle, Lock, Check, X,
-  Plus, Trash2, Mail, Link as LinkIcon, Medal, FileText, Loader2, Download,
+  Plus, Trash2, Mail, Link as LinkIcon, Medal, FileText, Loader2, Download, UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
 import { useTorneioDetalhe } from '@/hooks/useTorneios';
+import { useAmigos } from '@/hooks/useAmigos';
 import { calcularClassificacao } from '@/types/torneio';
 import { gerarRelatorioTorneio } from '@/lib/pdf';
 
@@ -474,10 +475,18 @@ function AuditoriaTab({ logs, inscricoes }: any) {
 }
 
 function ConvidarModal({ torneioId, onClose }: { torneioId: string; onClose: () => void }) {
-  const [tipo, setTipo] = useState<'email' | 'link_aberto'>('email');
+  const [tipo, setTipo] = useState<'amigos' | 'email' | 'link_aberto'>('amigos');
   const [emails, setEmails] = useState('');
   const [saving, setSaving] = useState(false);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
+  const { amigos } = useAmigos();
+  const [selectedAmigos, setSelectedAmigos] = useState<Set<string>>(new Set());
+
+  const toggleAmigo = (email: string) => {
+    const n = new Set(selectedAmigos);
+    n.has(email) ? n.delete(email) : n.add(email);
+    setSelectedAmigos(n);
+  };
 
   const gerar = async () => {
     setSaving(true);
@@ -488,6 +497,14 @@ function ConvidarModal({ torneioId, onClose }: { torneioId: string; onClose: () 
           .select().single();
         if (error) throw error;
         setLinkGerado(`${window.location.origin}/torneio/convite/${data.token}`);
+      } else if (tipo === 'amigos') {
+        const lista = Array.from(selectedAmigos);
+        if (lista.length === 0) { toast.error('Selecione ao menos um amigo'); setSaving(false); return; }
+        const rows = lista.map(e => ({ torneio_id: torneioId, tipo: 'email' as const, email_convidado: e.toLowerCase() }));
+        const { error } = await supabase.from('torneio_convites').insert(rows);
+        if (error) throw error;
+        toast.success(`${lista.length} convite(s) criado(s).`);
+        onClose();
       } else {
         const lista = emails.split(/[\s,;]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
         if (lista.length === 0) { toast.error('Informe ao menos um e-mail'); setSaving(false); return; }
@@ -502,43 +519,75 @@ function ConvidarModal({ torneioId, onClose }: { torneioId: string; onClose: () 
   };
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <div className="bg-card rounded-t-2xl sm:rounded-2xl border shadow-xl w-full max-w-md max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="p-6 pb-3 flex justify-between items-center flex-shrink-0">
           <h2 className="font-bold text-xl">Convidar participantes</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
 
-        <div className="flex gap-2">
-          <button onClick={() => setTipo('email')} className={`flex-1 py-2 rounded-lg text-sm font-medium ${tipo === 'email' ? 'bg-secondary text-secondary-foreground' : 'bg-muted/30'}`}>Por e-mail</button>
-          <button onClick={() => setTipo('link_aberto')} className={`flex-1 py-2 rounded-lg text-sm font-medium ${tipo === 'link_aberto' ? 'bg-secondary text-secondary-foreground' : 'bg-muted/30'}`}>Link aberto</button>
+        <div className="px-6 space-y-4 overflow-y-auto flex-1">
+          <div className="grid grid-cols-3 gap-2">
+            <button onClick={() => setTipo('amigos')} className={`py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 ${tipo === 'amigos' ? 'bg-secondary text-secondary-foreground' : 'bg-muted/30'}`}>
+              <UserPlus className="w-4 h-4" /> Amigos
+            </button>
+            <button onClick={() => setTipo('email')} className={`py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 ${tipo === 'email' ? 'bg-secondary text-secondary-foreground' : 'bg-muted/30'}`}>
+              <Mail className="w-4 h-4" /> E-mail
+            </button>
+            <button onClick={() => setTipo('link_aberto')} className={`py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 ${tipo === 'link_aberto' ? 'bg-secondary text-secondary-foreground' : 'bg-muted/30'}`}>
+              <LinkIcon className="w-4 h-4" /> Link
+            </button>
+          </div>
+
+          {tipo === 'amigos' ? (
+            amigos.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Você ainda não tem amigos. Adicione amigos na aba <strong>Amigos</strong> para convidá-los rapidamente.
+              </p>
+            ) : (
+              <div className="space-y-1.5 max-h-72 overflow-y-auto">
+                {amigos.map(a => {
+                  const email = a.other_email || '';
+                  const checked = selectedAmigos.has(email);
+                  return (
+                    <label key={a.id} className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${checked ? 'bg-secondary/10 border-secondary' : 'hover:bg-muted/50'}`}>
+                      <input type="checkbox" checked={checked} onChange={() => toggleAmigo(email)} disabled={!email} className="rounded" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{a.other_nome_criadouro || email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{email}{a.other_codigo_criadouro ? ` · ${a.other_codigo_criadouro}` : ''}</p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )
+          ) : tipo === 'email' ? (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">E-mails (vírgula ou linha)</label>
+              <textarea value={emails} onChange={e => setEmails(e.target.value)} rows={5} className="mt-1 input-field" placeholder="joao@exemplo.com, maria@exemplo.com" />
+            </div>
+          ) : linkGerado ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Link de convite (qualquer pessoa logada pode aceitar):</p>
+              <div className="flex gap-2">
+                <input readOnly value={linkGerado} className="input-field text-xs flex-1" />
+                <button onClick={() => navigator.clipboard.writeText(linkGerado).then(() => toast.success('Copiado!'))} className="btn-primary text-xs">Copiar</button>
+              </div>
+              <a target="_blank" rel="noreferrer"
+                href={`https://wa.me/?text=${encodeURIComponent('Você foi convidado(a) para um torneio: ' + linkGerado)}`}
+                className="btn-ghost text-xs w-full justify-center">Compartilhar via WhatsApp</a>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Clique em "Gerar link" para criar um link público que qualquer pessoa logada pode usar.</p>
+          )}
         </div>
 
-        {tipo === 'email' ? (
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">E-mails (vírgula ou linha)</label>
-            <textarea value={emails} onChange={e => setEmails(e.target.value)} rows={5} className="mt-1 input-field" placeholder="joao@exemplo.com, maria@exemplo.com" />
-          </div>
-        ) : linkGerado ? (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Link de convite (qualquer pessoa logada pode aceitar):</p>
-            <div className="flex gap-2">
-              <input readOnly value={linkGerado} className="input-field text-xs flex-1" />
-              <button onClick={() => navigator.clipboard.writeText(linkGerado).then(() => toast.success('Copiado!'))} className="btn-primary text-xs">Copiar</button>
-            </div>
-            <a target="_blank" rel="noreferrer"
-              href={`https://wa.me/?text=${encodeURIComponent('Você foi convidado(a) para um torneio: ' + linkGerado)}`}
-              className="btn-ghost text-xs w-full justify-center">Compartilhar via WhatsApp</a>
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">Clique em "Gerar link" para criar um link público que qualquer pessoa logada pode usar.</p>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="p-6 pt-3 flex justify-end gap-2 border-t flex-shrink-0 bg-card">
           <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted">Fechar</button>
           {!linkGerado && (
             <button onClick={gerar} disabled={saving} className="btn-primary">
-              {tipo === 'email' ? 'Enviar convites' : 'Gerar link'}
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+              {tipo === 'amigos' ? `Convidar ${selectedAmigos.size > 0 ? `(${selectedAmigos.size})` : ''}` : tipo === 'email' ? 'Enviar convites' : 'Gerar link'}
             </button>
           )}
         </div>
