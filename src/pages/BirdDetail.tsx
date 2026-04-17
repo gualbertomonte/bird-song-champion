@@ -570,3 +570,12 @@ export default function BirdDetail() {
     </div>
   );
 }
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col leading-tight">
+      <span className="text-[9px] uppercase tracking-wider" style={{ color: 'rgba(212,175,55,0.6)' }}>{label}</span>
+      <span className="text-[12px] font-medium truncate" style={{ color: 'rgba(255,255,255,0.92)' }}>{value}</span>
+    </div>
+  );
+}
