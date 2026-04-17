@@ -59,7 +59,7 @@ export default function TorneioNovo() {
             <input type="date" value={form.data} onChange={e => setForm({ ...form, data: e.target.value })} className="mt-1 input-field" />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Nº Estações</label>
+            <label className="text-xs font-medium text-muted-foreground">Nº Estacas</label>
             <input type="number" min={1} max={500} value={form.numero_estacoes} onChange={e => setForm({ ...form, numero_estacoes: Number(e.target.value) })} className="mt-1 input-field" />
           </div>
           <div>

@@ -283,7 +283,7 @@ export function gerarRelatorioTorneio(torneio: Torneio, classificacao: Classific
     startY: y,
     theme: 'grid',
     ...tableTheme,
-    head: [['Pos.', 'Ave', 'Anilha', 'Estação', 'Total']],
+    head: [['Pos.', 'Ave', 'Anilha', 'Estaca', 'Total']],
     body: classificacao.map(c => [
       `${c.posicao}º`,
       c.inscricao.bird_snapshot?.nome || '—',
