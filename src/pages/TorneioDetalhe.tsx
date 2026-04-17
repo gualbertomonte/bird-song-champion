@@ -304,24 +304,26 @@ function SorteioTab({ inscricoes, torneio }: any) {
   }
   return (
     <div className="card-premium overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/20">
-          <tr>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground w-24">Estaca</th>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Anilha</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorteadas.map((ins: any) => (
-            <tr key={ins.id} className="border-t border-border/30">
-              <td className="p-3 font-bold text-secondary text-lg">#{ins.estacao}</td>
-              <td className="p-3">{ins.bird_snapshot?.nome}</td>
-              <td className="p-3 text-muted-foreground text-xs">{ins.bird_snapshot?.codigo_anilha}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[420px]">
+          <thead className="bg-muted/20">
+            <tr>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground w-24">Estaca</th>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Anilha</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorteadas.map((ins: any) => (
+              <tr key={ins.id} className="border-t border-border/30">
+                <td className="p-3 font-bold text-secondary text-lg">#{ins.estacao}</td>
+                <td className="p-3">{ins.bird_snapshot?.nome}</td>
+                <td className="p-3 text-muted-foreground text-xs">{ins.bird_snapshot?.codigo_anilha}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
