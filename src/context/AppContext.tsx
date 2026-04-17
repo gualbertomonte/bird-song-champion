@@ -168,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<CriadorProfile>(defaultProfile);
   const [loans, setLoansState] = useState<BirdLoan[]>([]);
   const [notifications, setNotificationsState] = useState<AppNotification[]>([]);
+  const [mobileNavConfig, setMobileNavConfigState] = useState<MobileNavItemConfig[]>(DEFAULT_MOBILE_NAV);
   const [loading, setLoading] = useState(true);
   const idMapRef = useRef<Map<string, string>>(new Map()); // localId -> cloudId during migration
 
