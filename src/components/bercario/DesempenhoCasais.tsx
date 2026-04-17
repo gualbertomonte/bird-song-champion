@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Trophy } from 'lucide-react';
+import { Trophy, Trash2 } from 'lucide-react';
 import { Bird, Nest } from '@/types/bird';
 import { countEclodidos } from '@/lib/bercario';
+import { useAppState } from '@/context/AppContext';
 
 interface Props {
   nests: Nest[];
@@ -52,11 +53,27 @@ function DesempenhoCasaisImpl({ nests, birds }: Props) {
     return 'bg-muted text-muted-foreground';
   };
 
+  const { clearNestsHistory } = useAppState();
+  const handleClear = () => {
+    if (confirm('Limpar histórico de desempenho? Isso remove todas as ninhadas finalizadas (Eclodidas, Encerradas e Perdidas). Filhotes já cadastrados no plantel NÃO serão afetados.')) {
+      clearNestsHistory();
+    }
+  };
+
   return (
     <div className="bg-card rounded-xl border p-4">
-      <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-        <Trophy className="w-4 h-4 text-secondary" /> Desempenho dos Casais
-      </h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-secondary" /> Desempenho dos Casais
+        </h3>
+        <button
+          onClick={handleClear}
+          className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-destructive/5"
+          title="Limpar histórico"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Limpar
+        </button>
+      </div>
       <div className="overflow-x-auto -mx-1">
         <table className="w-full text-xs">
           <thead>
