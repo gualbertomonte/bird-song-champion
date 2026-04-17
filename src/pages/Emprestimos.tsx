@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { Handshake, ArrowDownToLine, ArrowUpFromLine, History, Send, Plus, X, Calendar, Loader2, AlertCircle, Check } from 'lucide-react';
+import { Handshake, ArrowDownToLine, ArrowUpFromLine, History, Send, Plus, X, Calendar, Loader2, AlertCircle, Check, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { generateLoanReceiptPDF } from '@/lib/pdf';
 
 export default function Emprestimos() {
-  const { birds, loans, createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan } = useAppState();
+  const { birds, loans, profile, createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan } = useAppState();
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
