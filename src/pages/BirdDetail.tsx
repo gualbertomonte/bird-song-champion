@@ -50,16 +50,45 @@ export default function BirdDetail() {
     ? Math.round(birdTournaments.reduce((s, t) => s + t.pontuacao, 0) / birdTournaments.length)
     : 0;
 
+  // Converte a foto para data URL para evitar problemas CORS no html2canvas
+  const openCracha = async () => {
+    setShowCracha(true);
+    if (photo && !photoDataUrl) {
+      try {
+        const res = await fetch(photo, { mode: 'cors' });
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => setPhotoDataUrl(reader.result as string);
+        reader.readAsDataURL(blob);
+      } catch {
+        // Fallback: usa URL direta (pode funcionar se CORS estiver habilitado no bucket)
+        setPhotoDataUrl(photo);
+      }
+    }
+  };
+
   const downloadCracha = async () => {
     if (!crachaRef.current) return;
+    setDownloadingCracha(true);
     try {
-      const canvas = await html2canvas(crachaRef.current, { backgroundColor: '#0A0F0D', scale: 2 });
+      const canvas = await html2canvas(crachaRef.current, {
+        backgroundColor: null,
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+      });
       const link = document.createElement('a');
       link.download = `cracha_${bird.codigo_anilha.replace(/\s/g, '_')}.png`;
-      link.href = canvas.toDataURL();
+      link.href = canvas.toDataURL('image/png');
       link.click();
       toast.success('Crachá baixado!');
-    } catch { toast.error('Erro ao gerar crachá'); }
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar crachá');
+    } finally {
+      setDownloadingCracha(false);
+    }
   };
 
   const handleTransfer = async () => {
