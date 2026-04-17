@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import LoanBadge from '@/components/LoanBadge';
 
 const Mars = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="10" cy="14" r="5"/><path d="M19 5l-5.4 5.4"/><path d="M19 5h-5"/><path d="M19 5v5"/></svg>
@@ -62,6 +63,11 @@ function BirdCard({ bird, role }: { bird: Bird; role?: 'self' | 'father' | 'moth
           </span>
         )}
       </div>
+      {bird.loan_status && bird.loan_status !== 'proprio' && (
+        <div className="mt-1.5">
+          <LoanBadge status={bird.loan_status} iconOnly />
+        </div>
+      )}
     </div>
   );
 }
