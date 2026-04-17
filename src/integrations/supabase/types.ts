@@ -1037,26 +1037,7 @@ export type Database = {
       }
     }
     Views: {
-      ranking_acumulado_grupo: {
-        Row: {
-          baterias_disputadas: number | null
-          bird_id: string | null
-          bird_nome: string | null
-          codigo_anilha: string | null
-          grupo_id: string | null
-          membro_user_id: string | null
-          total_pontos: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "torneio_baterias_grupo_id_fkey"
-            columns: ["grupo_id"]
-            isOneToOne: false
-            referencedRelation: "torneio_grupos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       aceitar_convite_torneio: { Args: { _token: string }; Returns: Json }
@@ -1115,6 +1096,18 @@ export type Database = {
       encerrar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
       enviar_pedido_amizade: { Args: { _destinatario: string }; Returns: Json }
       generate_codigo_criadouro: { Args: never; Returns: string }
+      get_ranking_acumulado_grupo: {
+        Args: { _grupo_id: string }
+        Returns: {
+          baterias_disputadas: number
+          bird_id: string
+          bird_nome: string
+          codigo_anilha: string
+          grupo_id: string
+          membro_user_id: string
+          total_pontos: number
+        }[]
+      }
       inscrever_ave_bateria: {
         Args: { _bateria_id: string; _bird_id: string }
         Returns: string
