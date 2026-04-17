@@ -221,8 +221,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           logo_url: p.data.logo_url ?? undefined,
           codigo_criadouro: (p.data as any).codigo_criadouro ?? undefined,
         });
+        setMobileNavConfigState(sanitizeMobileNavConfig((p.data as any).mobile_nav_config));
       } else {
         setProfileState(defaultProfile);
+        setMobileNavConfigState(DEFAULT_MOBILE_NAV);
       }
     } catch (err) {
       console.error('Load error', err);
