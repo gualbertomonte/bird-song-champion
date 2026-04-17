@@ -1,26 +1,83 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppState } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Trophy, Plus, X, Check, Medal, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+
+type HistItem = {
+  id: string;
+  bird_id: string;
+  data: string;
+  nome_torneio: string;
+  clube?: string | null;
+  pontuacao: number;
+  classificacao?: string | null;
+  origem: 'manual' | 'colaborativo';
+};
 
 export default function Torneios() {
   const { tournaments, birds, addTournament, deleteTournament } = useAppState();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [filterBird, setFilterBird] = useState('');
+  const [colab, setColab] = useState<HistItem[]>([]);
   const [form, setForm] = useState({ bird_id: '', data: '', nome_torneio: '', clube: '', pontuacao: 500, classificacao: '' });
 
   useEffect(() => { if (searchParams.get('new') === '1') setShowForm(true); }, [searchParams]);
 
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: ins } = await supabase
+        .from('torneio_inscricoes')
+        .select('id, bird_id, torneio_id, status')
+        .eq('participante_user_id', user.id)
+        .eq('status', 'Aprovada');
+      if (!ins?.length) { setColab([]); return; }
+      const torneioIds = [...new Set(ins.map(i => i.torneio_id))];
+      const inscricaoIds = ins.map(i => i.id);
+      const [{ data: torneios }, { data: pts }] = await Promise.all([
+        supabase.from('torneios').select('id, nome, data, status').in('id', torneioIds).eq('status', 'Encerrado'),
+        supabase.from('torneio_pontuacoes').select('inscricao_id, pontos').in('inscricao_id', inscricaoIds),
+      ]);
+      const tMap = new Map((torneios || []).map(t => [t.id, t]));
+      const items: HistItem[] = ins
+        .filter(i => tMap.has(i.torneio_id))
+        .map(i => {
+          const t = tMap.get(i.torneio_id)!;
+          const total = (pts || [])
+            .filter(p => p.inscricao_id === i.id)
+            .reduce((s, p) => s + Number(p.pontos || 0), 0);
+          return {
+            id: `colab-${i.id}`,
+            bird_id: i.bird_id,
+            data: t.data,
+            nome_torneio: t.nome,
+            clube: null,
+            pontuacao: total,
+            classificacao: null,
+            origem: 'colaborativo' as const,
+          };
+        });
+      setColab(items);
+    })();
+  }, [user]);
+
   const activeBirds = birds.filter(b => (b.status === 'Ativo' || b.status === 'Berçário') && b.sexo === 'M');
 
+  const allItems: HistItem[] = useMemo(() => [
+    ...tournaments.map(t => ({ ...t, origem: 'manual' as const })),
+    ...colab,
+  ], [tournaments, colab]);
+
   const filtered = useMemo(() => {
-    let result = [...tournaments];
+    let result = [...allItems];
     if (filterBird) result = result.filter(t => t.bird_id === filterBird);
     return result.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-  }, [tournaments, filterBird]);
+  }, [allItems, filterBird]);
 
   const ranking = useMemo(() => {
     const map = new Map<string, { total: number; count: number; best: number }>();
