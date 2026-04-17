@@ -232,7 +232,7 @@ export default function Saude() {
                 </p>
               )}
             </div>
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3 p-4 sm:p-5 border-t border-border/60 flex-shrink-0 bg-card">
               <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
               <button onClick={save} className="btn-primary"><Check className="w-4 h-4" /> Salvar</button>
             </div>
