@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, GitBranch, Instagram, LogOut, Loader2, Handshake
+  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState, MobileNavKey } from '@/context/AppContext';
@@ -11,7 +11,7 @@ import NotificationBell from '@/components/NotificationBell';
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/plantel', icon: Bird, label: 'Plantel' },
-  { to: '/arvore', icon: GitBranch, label: 'Árvore Genealógica' },
+  { to: '/arvore', icon: Sprout, label: 'Árvore Genealógica' },
   { to: '/bercario', icon: Egg, label: 'Berçário' },
   { to: '/emprestimos', icon: Handshake, label: 'Empréstimos' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
@@ -22,7 +22,7 @@ const navItems = [
 const ALL_MOBILE_ITEMS: Record<MobileNavKey, { to: string; icon: any; label: string }> = {
   dashboard: { to: '/', icon: LayoutDashboard, label: 'Home' },
   plantel: { to: '/plantel', icon: Bird, label: 'Plantel' },
-  arvore: { to: '/arvore', icon: GitBranch, label: 'Árvore' },
+  arvore: { to: '/arvore', icon: Sprout, label: 'Árvore' },
   bercario: { to: '/bercario', icon: Egg, label: 'Berçário' },
   emprestimos: { to: '/emprestimos', icon: Handshake, label: 'Emprést.' },
   torneios: { to: '/torneios', icon: Trophy, label: 'Torneios' },
