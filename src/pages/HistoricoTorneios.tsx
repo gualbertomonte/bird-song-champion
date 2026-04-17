@@ -81,7 +81,7 @@ export default function Torneios() {
 
   const ranking = useMemo(() => {
     const map = new Map<string, { total: number; count: number; best: number }>();
-    tournaments.forEach(t => {
+    allItems.forEach(t => {
       const existing = map.get(t.bird_id) || { total: 0, count: 0, best: 0 };
       map.set(t.bird_id, {
         total: existing.total + Number(t.pontuacao || 0),
@@ -100,7 +100,7 @@ export default function Torneios() {
       .filter(r => r.bird)
       .sort((a, b) => b.avg - a.avg)
       .slice(0, 10);
-  }, [tournaments, birds]);
+  }, [allItems, birds]);
 
   const save = () => {
     if (!form.bird_id || !form.data || !form.nome_torneio) {
