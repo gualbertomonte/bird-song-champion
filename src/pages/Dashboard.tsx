@@ -49,12 +49,16 @@ export default function Dashboard() {
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 5);
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+
   return (
     <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="page-title">Olá, {profile.nome_criadouro}! 👋</h1>
-          <p className="page-subtitle">Aqui está o resumo do seu plantel</p>
+          <p className="label-eyebrow mb-1">{greeting}</p>
+          <h1 className="page-title">{profile.nome_criadouro}</h1>
+          <p className="page-subtitle">Aqui está o resumo do seu plantel hoje.</p>
         </div>
       </div>
 
@@ -62,18 +66,20 @@ export default function Dashboard() {
         {stats.map((s, i) => (
           <div key={s.label} className="stat-card animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
             <div className="flex items-center justify-between mb-3">
-              <s.icon className={`w-5 h-5 ${s.color}`} />
-              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+              <div className="w-9 h-9 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center">
+                <s.icon className={`w-4 h-4 ${s.color}`} />
+              </div>
+              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground/60" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold tracking-tight">{s.value}</p>
-            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{s.label}</p>
+            <p className="number-serif text-3xl sm:text-4xl font-semibold text-foreground">{s.value}</p>
+            <p className="label-eyebrow mt-1.5">{s.label}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <h2 className="font-semibold text-lg mb-4">Distribuição do Plantel</h2>
+        <div className="card-premium p-5 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <h2 className="heading-serif font-semibold text-lg mb-4">Distribuição do Plantel</h2>
           {pieData.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <ResponsiveContainer width={160} height={160}>
@@ -98,8 +104,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+        <div className="card-premium p-5 animate-fade-in" style={{ animationDelay: '300ms' }}>
+          <h2 className="heading-serif font-semibold text-lg mb-4 flex items-center gap-2">
             <Heart className="w-4 h-4 text-destructive" /> Alertas de Saúde
             <Link to="/saude" className="ml-auto text-xs text-secondary hover:underline font-normal">Ver todos</Link>
           </h2>
@@ -146,9 +152,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '400ms' }}>
+      <div className="card-premium p-5 animate-fade-in" style={{ animationDelay: '400ms' }}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold text-lg flex items-center gap-2">
+          <h2 className="heading-serif font-semibold text-lg flex items-center gap-2">
             <Trophy className="w-4 h-4 text-secondary" /> Ranking Interno
           </h2>
           <Link to="/torneios" className="text-sm text-secondary hover:underline flex items-center gap-1">

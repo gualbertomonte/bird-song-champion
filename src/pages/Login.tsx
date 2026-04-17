@@ -28,63 +28,69 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-secondary/30 flex items-center justify-center">
-            <Bird className="w-8 h-8 text-secondary" />
+    <div className="min-h-screen auth-backdrop flex items-center justify-center p-4">
+      <div className="w-full max-w-sm space-y-6 animate-fade-in">
+        <div className="text-center space-y-3">
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-secondary/20 via-card to-card flex items-center justify-center ring-gold">
+            <Bird className="w-9 h-9 text-secondary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Plantel Pro+</h1>
-          <p className="text-sm text-muted-foreground">Acesse sua conta</p>
+          <h1 className="heading-serif text-3xl font-semibold text-foreground">Plantel Pro+</h1>
+          <p className="text-sm text-muted-foreground heading-serif italic px-4">
+            Cuide do seu plantel com a tranquilidade que ele merece.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="input-field pl-10"
-                placeholder="seu@email.com"
-                required
-              />
+        <div className="auth-card space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="label-eyebrow">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="input-field pl-10"
+                  placeholder="seu@email.com"
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Senha</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="input-field pl-10 pr-10"
-                placeholder="••••••••"
-                required
-              />
-              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+            <div className="space-y-1.5">
+              <label className="label-eyebrow">Senha</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="input-field pl-10 pr-10"
+                  placeholder="••••••••"
+                  required
+                />
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
+
+            <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
+              {loading ? 'Entrando…' : 'Entrar'}
+            </button>
+          </form>
+
+          <div className="divider-gold" />
+
+          <div className="text-center space-y-2 text-sm">
+            <Link to="/forgot-password" className="text-secondary hover:underline block">
+              Esqueci minha senha
+            </Link>
+            <p className="text-muted-foreground">
+              Não tem conta?{' '}
+              <Link to="/signup" className="text-secondary hover:underline font-medium">Criar conta</Link>
+            </p>
           </div>
-
-          <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-
-        <div className="text-center space-y-2 text-sm">
-          <Link to="/forgot-password" className="text-secondary hover:underline block">
-            Esqueci minha senha
-          </Link>
-          <p className="text-muted-foreground">
-            Não tem conta?{' '}
-            <Link to="/signup" className="text-secondary hover:underline">Criar conta</Link>
-          </p>
         </div>
       </div>
     </div>

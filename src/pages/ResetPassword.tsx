@@ -13,7 +13,6 @@ export default function ResetPassword() {
   const [valid, setValid] = useState(false);
 
   useEffect(() => {
-    // Check for recovery token in URL hash
     const hash = window.location.hash;
     if (hash.includes('type=recovery')) {
       setValid(true);
@@ -47,54 +46,56 @@ export default function ResetPassword() {
   if (!valid) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-secondary/30 flex items-center justify-center">
-            <Bird className="w-8 h-8 text-secondary" />
+    <div className="min-h-screen auth-backdrop flex items-center justify-center p-4">
+      <div className="w-full max-w-sm space-y-6 animate-fade-in">
+        <div className="text-center space-y-3">
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-secondary/20 via-card to-card flex items-center justify-center ring-gold">
+            <Bird className="w-9 h-9 text-secondary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Nova Senha</h1>
-          <p className="text-sm text-muted-foreground">Defina sua nova senha</p>
+          <h1 className="heading-serif text-3xl font-semibold text-foreground">Nova Senha</h1>
+          <p className="text-sm text-muted-foreground heading-serif italic">Defina sua nova senha</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Nova Senha</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="input-field pl-10 pr-10"
-                placeholder="Mínimo 6 caracteres"
-                required
-              />
-              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+        <div className="auth-card">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="label-eyebrow">Nova Senha</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="input-field pl-10 pr-10"
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                />
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Confirmar Senha</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type={showPw ? 'text' : 'password'}
-                value={confirmPw}
-                onChange={e => setConfirmPw(e.target.value)}
-                className="input-field pl-10"
-                placeholder="Repita a nova senha"
-                required
-              />
+            <div className="space-y-1.5">
+              <label className="label-eyebrow">Confirmar Senha</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={confirmPw}
+                  onChange={e => setConfirmPw(e.target.value)}
+                  className="input-field pl-10"
+                  placeholder="Repita a nova senha"
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
-            {loading ? 'Atualizando...' : 'Atualizar Senha'}
-          </button>
-        </form>
+            <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
+              {loading ? 'Atualizando…' : 'Atualizar Senha'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
