@@ -262,7 +262,12 @@ export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile)
 }
 
 /* ─────────── Relatório de Torneio ─────────── */
-export function gerarRelatorioTorneio(torneio: Torneio, classificacao: ClassificacaoItem[], profile: CriadorProfile) {
+export function gerarRelatorioTorneio(
+  torneio: Torneio,
+  classificacao: ClassificacaoItem[],
+  profile: CriadorProfile,
+  criadores?: Record<string, string>,
+) {
   const doc = new jsPDF();
   header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
 
@@ -283,15 +288,16 @@ export function gerarRelatorioTorneio(torneio: Torneio, classificacao: Classific
     startY: y,
     theme: 'grid',
     ...tableTheme,
-    head: [['Pos.', 'Ave', 'Anilha', 'Estaca', 'Total']],
+    head: [['Pos.', 'Ave', 'Proprietário', 'Anilha', 'Estaca', 'Total']],
     body: classificacao.map(c => [
       `${c.posicao}º`,
       c.inscricao.bird_snapshot?.nome || '—',
+      criadores?.[c.inscricao.participante_user_id] || '—',
       c.inscricao.bird_snapshot?.codigo_anilha || '—',
       c.inscricao.estacao ? `#${c.inscricao.estacao}` : '—',
       c.totalPontos.toFixed(2),
     ]),
-    columnStyles: { 0: { cellWidth: 18, fontStyle: 'bold' }, 4: { halign: 'right', fontStyle: 'bold' } },
+    columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 5: { halign: 'right', fontStyle: 'bold' } },
   });
 
   footer(doc);
