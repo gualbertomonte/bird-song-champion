@@ -125,7 +125,7 @@ export default function Torneios() {
         <div>
           <p className="label-eyebrow mb-1">Competição</p>
           <h1 className="page-title">Torneios</h1>
-          <p className="page-subtitle">{tournaments.length} participações registradas</p>
+          <p className="page-subtitle">{allItems.length} {allItems.length === 1 ? 'participação registrada' : 'participações registradas'}</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary self-start">
           <Plus className="w-4 h-4" /> Registrar Torneio
