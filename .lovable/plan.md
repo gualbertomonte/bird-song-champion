@@ -1,41 +1,39 @@
 
 
-## Plano
+## Objetivo
+Permitir que cada usuário personalize a barra de navegação inferior do mobile (escolher quais itens aparecem e em que ordem).
 
-### 1. Filhotes do berçário — bloquear edição manual de parentesco
+## Proposta
 
-**Marcador:** adicionar coluna `birds.gerado_no_bercario boolean default false`. O `Bercario.tsx` (função `registrarEclosao`) passa a inserir os filhotes com `gerado_no_bercario = true` (além de `pai_id`/`mae_id` que já preenche). Filhotes antigos cuja origem é o berçário podem ser detectados por `nests.quantidade_filhotes > 0` + filhos referenciando esse casal — vou rodar um data-fix marcando como `true` qualquer ave cujo `(pai_id, mae_id)` corresponda a um `nest` com `status='Eclodida'` do mesmo `user_id`.
+### UX
+- Nova seção em **Perfil** → "Barra de Navegação Mobile":
+  - Lista de todos os 8 itens disponíveis (Dashboard, Plantel, Árvore, Berçário, Empréstimos, Torneios, Saúde, Perfil) com checkbox de visibilidade.
+  - Recomendação visual: 4–6 itens (acima disso fica apertado em telas pequenas).
+  - Botão "Restaurar padrão".
+  - Preview em tempo real (opcional simples: só salvar e mostrar toast).
+- Reordenação: setas ↑ ↓ ao lado de cada item habilitado (drag-and-drop seria overkill agora).
 
-**UI (`Plantel.tsx` form de edição):** quando `editId` corresponde a uma ave com `gerado_no_bercario=true`, os selects de **Pai** e **Mãe** ficam `disabled` com aviso "Parentesco definido pelo berçário e não pode ser alterado." Os outros campos continuam editáveis.
+### Persistência
+- Coluna nova em `criador_profile`: `mobile_nav_config jsonb` — array de `{ key: string, visible: boolean }` na ordem desejada.
+- Carregar junto com o resto do perfil em `AppContext` (já busca `criador_profile`).
+- Salvar via update normal do perfil (sem RPC nova; RLS de update do próprio perfil já existe).
 
-**Defesa em backend:** trigger `BEFORE UPDATE` em `birds` que rejeita alteração de `pai_id`/`mae_id` quando `OLD.gerado_no_bercario = true` (mensagem clara). Garante que mesmo via API direta o vínculo é preservado.
+### Frontend
+- `src/types/bird.ts` ou no `AppContext`: tipo `MobileNavItem = { key: NavKey; visible: boolean }`.
+- `AppContext`: expor `mobileNavConfig` + `setMobileNavConfig` (persiste no banco).
+- `AppLayout.tsx`: substituir o array hardcoded `mobileNavItems` por `useAppState().mobileNavConfig`, fazendo merge com a definição completa (label/icon/to) e filtrando `visible`. Fallback para padrão se vazio.
+- `Perfil.tsx`: novo card "Barra de Navegação Mobile" com lista reordenável + checkboxes + botão restaurar.
 
-### 2. Transferência de ave — por e-mail OU código de criadouro
+### Migration
+- `ALTER TABLE criador_profile ADD COLUMN mobile_nav_config jsonb DEFAULT NULL;`
+- Sem trigger, sem RLS extra (já protegido).
 
-**UI (`BirdDetail.tsx`, modal "Transferir Ave"):**
-- Manter um único campo de input "E-mail ou Código do Criadouro", com texto auxiliar explicando ambas as opções.
-- Detecção automática: se contém `@` → trata como e-mail; senão → trata como código (uppercase, trim).
+## Arquivos afetados
+- 1 migration (coluna `mobile_nav_config`)
+- `src/context/AppContext.tsx` (carregar/salvar config)
+- `src/components/AppLayout.tsx` (renderizar dinamicamente)
+- `src/pages/Perfil.tsx` (UI de personalização)
 
-**Backend — nova RPC `transfer_bird(_bird_id uuid, _destinatario text)` (SECURITY DEFINER):**
-- Valida que o chamador é dono e que `loan_status='proprio'`.
-- Se `_destinatario` contém `@`: usa como `recipient_email` (mantém fluxo atual via `pending_transfers`, recebedor reclama no próximo login).
-- Se não contém `@`: faz lookup em `criador_profile.codigo_criadouro` → pega `user_id` → pega `email` em `profiles`. Se não achar, erro "Código de criadouro não encontrado". Usa esse e-mail como `recipient_email`.
-- Insere em `pending_transfers` com `recipient_email`, `bird_data` (snapshot), `sender_email`, `transferido_por_user_id`.
-- Remove a ave do plantel do remetente (`DELETE FROM birds WHERE id = _bird_id`).
-- Retorna `{ recipient_email, recipient_nome }` para o frontend exibir confirmação clara.
-
-**Frontend `handleTransfer`:** substitui o insert direto + `deleteBird` por uma única chamada `supabase.rpc('transfer_bird', ...)`. Em seguida dispara `send-transfer-email` (não-bloqueante) com o e-mail retornado pela RPC. Toast de sucesso mostra para quem foi (e-mail + nome do criadouro quando código foi usado).
-
-### Arquivos afetados
-- 1 migration: coluna `gerado_no_bercario`, trigger de proteção, RPC `transfer_bird`
-- 1 data-fix (insert tool): marcar filhotes existentes do berçário como `gerado_no_bercario=true`
-- `src/pages/Bercario.tsx` (passar `gerado_no_bercario:true` ao criar filhotes)
-- `src/pages/Plantel.tsx` (desabilitar selects de pai/mãe quando aplicável)
-- `src/pages/BirdDetail.tsx` (campo único e-mail/código + chamada à RPC)
-- `src/types/bird.ts` (campo opcional `gerado_no_bercario?: boolean`)
-- `src/context/AppContext.tsx` (mapear coluna nova nos rows)
-
-### Resultado esperado
-- Filhotes nascidos no berçário têm pai/mãe travados na UI e no banco — vínculo genealógico íntegro.
-- Transferência aceita e-mail diretamente OU código de criadouro (resolve internamente para e-mail), com mensagem de sucesso clara em ambos os casos.
+## Resultado
+Cada usuário vê só os atalhos que escolheu, na ordem que preferir, no menu inferior do celular. Configuração salva na nuvem e sincroniza entre dispositivos.
 
