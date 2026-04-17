@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Trophy } from 'lucide-react';
 import { Bird, Nest } from '@/types/bird';
+import { countEclodidos } from '@/lib/bercario';
 
 interface Props {
   nests: Nest[];
@@ -33,7 +34,8 @@ function DesempenhoCasaisImpl({ nests, birds }: Props) {
     };
     cur.ninhadas += 1;
     cur.ovos += n.quantidade_ovos || 0;
-    if (n.status === 'Eclodida') cur.filhotes += n.quantidade_filhotes || 0;
+    // Usa contagem real de filhotes registrados (suporta eclosão parcial)
+    cur.filhotes += countEclodidos(n, birds);
     map.set(key, cur);
   }
 
@@ -92,4 +94,3 @@ function DesempenhoCasaisImpl({ nests, birds }: Props) {
 }
 
 export const DesempenhoCasais = React.memo(DesempenhoCasaisImpl);
-

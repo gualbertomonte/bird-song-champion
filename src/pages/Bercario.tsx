@@ -1,11 +1,12 @@
 import { useAppState } from '@/context/AppContext';
-import { Egg, Bird as BirdIcon, Plus, X, Check } from 'lucide-react';
+import { Egg, Bird as BirdIcon, Plus, X, Check, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
-import { EclosaoLoteModal } from '@/components/bercario/EclosaoLoteModal';
+import { EclosaoParcialModal, FilhoteParcialForm } from '@/components/bercario/EclosaoParcialModal';
 import { CalendarioEclosoes } from '@/components/bercario/CalendarioEclosoes';
 import { DesempenhoCasais } from '@/components/bercario/DesempenhoCasais';
+import { countEclodidos, isAtivo } from '@/lib/bercario';
 
 export default function Bercario() {
   const { birds, nests, addNest, updateNest, addBird } = useAppState();
@@ -18,7 +19,7 @@ export default function Bercario() {
 
   const femeasBercario = birds.filter(b => b.sexo === 'F' && b.status === 'Berçário');
   const machos = birds.filter(b => b.sexo === 'M' && (b.status === 'Ativo' || b.status === 'Berçário'));
-  const ninhadasIncubando = nests.filter(n => n.status === 'Incubando');
+  const ninhadasAtivas = nests.filter(isAtivo);
   const filhotesRecentes = birds.filter(b => {
     if (!b.data_nascimento) return false;
     const dias = (Date.now() - new Date(b.data_nascimento).getTime()) / 86400000;
@@ -27,6 +28,7 @@ export default function Bercario() {
 
   const getBird = (id: string) => birds.find(b => b.id === id);
   const eclosaoNest = eclosaoNestId ? nests.find(n => n.id === eclosaoNestId) : null;
+  const eclosaoJaCount = eclosaoNest ? countEclodidos(eclosaoNest, birds) : 0;
 
   const criarNinhada = () => {
     if (!form.femea_id || !form.macho_id || !form.data_postura) {
@@ -48,24 +50,23 @@ export default function Bercario() {
     toast.success('Ninhada registrada!');
   };
 
-  const confirmarEclosao = async (filhotes: Array<{ nome: string; codigo_anilha: string; sexo: 'M' | 'F' | 'I'; tipo_anilha: 'Fechada' | 'Aberta'; diametro_anilha: string }>) => {
+  const registrarNascimento = async (filhotes: FilhoteParcialForm[], dataNasc: string) => {
     if (!eclosaoNest) return;
     const mae = getBird(eclosaoNest.femea_id);
     const pai = getBird(eclosaoNest.macho_id);
-    const hoje = new Date().toISOString().split('T')[0];
 
     for (let i = 0; i < filhotes.length; i++) {
       const f = filhotes[i];
       addBird({
         id: `${Date.now()}-${i}`,
         codigo_anilha: f.codigo_anilha,
-        nome: f.nome || `Filhote ${i + 1}`,
+        nome: f.nome || `Filhote ${eclosaoJaCount + i + 1}`,
         nome_cientifico: mae?.nome_cientifico || pai?.nome_cientifico || '',
         nome_comum_especie: mae?.nome_comum_especie || pai?.nome_comum_especie || '',
         sexo: f.sexo,
         tipo_anilha: f.tipo_anilha,
         diametro_anilha: f.diametro_anilha,
-        data_nascimento: hoje,
+        data_nascimento: dataNasc,
         status: 'Berçário',
         pai_id: eclosaoNest.macho_id,
         mae_id: eclosaoNest.femea_id,
@@ -75,14 +76,30 @@ export default function Bercario() {
       });
     }
 
+    const totalEclodidos = eclosaoJaCount + filhotes.length;
+    const completou = totalEclodidos >= eclosaoNest.quantidade_ovos;
+
     updateNest(eclosaoNest.id, {
-      status: 'Eclodida',
-      data_eclosao: hoje,
-      quantidade_filhotes: filhotes.length,
+      status: completou ? 'Eclodida' : 'Eclosao Parcial',
+      data_eclosao: completou ? dataNasc : eclosaoNest.data_eclosao,
+      quantidade_filhotes: totalEclodidos,
     });
 
     setEclosaoNestId(null);
-    toast.success(`${filhotes.length} filhote(s) registrados!`);
+    toast.success(`${filhotes.length} nascimento(s) registrado(s)!`);
+  };
+
+  const encerrarNinhada = (nestId: string) => {
+    const nest = nests.find(n => n.id === nestId);
+    if (!nest) return;
+    const eclodidos = countEclodidos(nest, birds);
+    if (!confirm(`Encerrar esta ninhada? ${eclodidos} de ${nest.quantidade_ovos} ovos eclodiram. Os ovos restantes serão considerados não eclodidos.`)) return;
+    updateNest(nestId, {
+      status: 'Encerrada',
+      quantidade_filhotes: eclodidos,
+      data_eclosao: nest.data_eclosao || new Date().toISOString().split('T')[0],
+    });
+    toast.success('Ninhada encerrada');
   };
 
   return (
@@ -115,28 +132,49 @@ export default function Bercario() {
 
         <div className="bg-card rounded-xl border p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <Egg className="w-4 h-4 text-secondary" /> Incubando ({ninhadasIncubando.length})
+            <Egg className="w-4 h-4 text-secondary" /> Em incubação ({ninhadasAtivas.length})
           </h3>
           <div className="space-y-2">
-            {ninhadasIncubando.map(n => {
+            {ninhadasAtivas.map(n => {
               const mae = getBird(n.femea_id);
               const pai = getBird(n.macho_id);
+              const eclodidos = countEclodidos(n, birds);
+              const parcial = n.status === 'Eclosao Parcial' || eclodidos > 0;
               return (
                 <div key={n.id} className="p-3 rounded-lg bg-secondary/5 border border-secondary/15 space-y-2">
                   <div>
-                    <p className="text-sm font-medium">{mae?.nome} × {pai?.nome}</p>
-                    <p className="text-xs text-muted-foreground">{n.quantidade_ovos} ovos · {new Date(n.data_postura).toLocaleDateString('pt-BR')}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium truncate">{mae?.nome} × {pai?.nome}</p>
+                      {parcial && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-semibold whitespace-nowrap">
+                          {eclodidos}/{n.quantidade_ovos}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {n.quantidade_ovos} ovos · postura {new Date(n.data_postura).toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
-                  <button
-                    onClick={() => setEclosaoNestId(n.id)}
-                    className="w-full text-xs py-1.5 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors flex items-center justify-center gap-1"
-                  >
-                    <Check className="w-3 h-3" /> Registrar Eclosão
-                  </button>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => setEclosaoNestId(n.id)}
+                      disabled={eclodidos >= n.quantidade_ovos}
+                      className="flex-1 text-xs py-1.5 rounded-md bg-success/10 text-success hover:bg-success/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Nascimento
+                    </button>
+                    <button
+                      onClick={() => encerrarNinhada(n.id)}
+                      className="text-xs py-1.5 px-2 rounded-md bg-muted hover:bg-muted/70 text-muted-foreground transition-colors flex items-center gap-1"
+                      title="Encerrar ninhada"
+                    >
+                      <XCircle className="w-3 h-3" /> Encerrar
+                    </button>
+                  </div>
                 </div>
               );
             })}
-            {ninhadasIncubando.length === 0 && <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma ninhada incubando</p>}
+            {ninhadasAtivas.length === 0 && <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma ninhada ativa</p>}
           </div>
         </div>
 
@@ -158,7 +196,7 @@ export default function Bercario() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <CalendarioEclosoes ninhadas={ninhadasIncubando} birds={birds} />
+        <CalendarioEclosoes ninhadas={ninhadasAtivas} birds={birds} />
         <DesempenhoCasais nests={nests} birds={birds} />
       </div>
 
@@ -208,12 +246,13 @@ export default function Bercario() {
       )}
 
       {eclosaoNest && (
-        <EclosaoLoteModal
+        <EclosaoParcialModal
           nest={eclosaoNest}
           mae={getBird(eclosaoNest.femea_id)}
           pai={getBird(eclosaoNest.macho_id)}
+          jaEclodidos={eclosaoJaCount}
           onCancel={() => setEclosaoNestId(null)}
-          onConfirm={confirmarEclosao}
+          onConfirm={registrarNascimento}
         />
       )}
     </div>

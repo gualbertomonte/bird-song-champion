@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { CalendarDays } from 'lucide-react';
 import { Bird, Nest } from '@/types/bird';
+import { countEclodidos } from '@/lib/bercario';
 
 const PERIODO_INCUBACAO_DIAS = 14; // padrão para passeriformes
 
@@ -17,7 +18,8 @@ function CalendarioEclosoesImpl({ ninhadas, birds }: Props) {
       const diasRest = Math.ceil((previsao.getTime() - Date.now()) / 86400000);
       const mae = birds.find(b => b.id === n.femea_id);
       const pai = birds.find(b => b.id === n.macho_id);
-      return { nest: n, previsao, diasRest, mae, pai };
+      const eclodidos = countEclodidos(n, birds);
+      return { nest: n, previsao, diasRest, mae, pai, eclodidos };
     })
     .sort((a, b) => a.previsao.getTime() - b.previsao.getTime());
 
@@ -48,7 +50,7 @@ function CalendarioEclosoesImpl({ ninhadas, birds }: Props) {
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{p.mae?.nome} × {p.pai?.nome}</p>
               <p className="text-xs text-muted-foreground">
-                {p.previsao.toLocaleDateString('pt-BR')} · {p.nest.quantidade_ovos} ovos
+                {p.previsao.toLocaleDateString('pt-BR')} · {p.eclodidos}/{p.nest.quantidade_ovos} já nasceram
               </p>
             </div>
             <span className={`text-xs font-semibold whitespace-nowrap ml-2 ${corDias(p.diasRest)}`}>
@@ -62,4 +64,3 @@ function CalendarioEclosoesImpl({ ninhadas, birds }: Props) {
 }
 
 export const CalendarioEclosoes = React.memo(CalendarioEclosoesImpl);
-
