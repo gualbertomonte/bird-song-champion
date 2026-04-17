@@ -104,8 +104,8 @@ export default function Plantel() {
     return result;
   }, [birds, search, filterEspecie, filterStatus, filterSexo, filterEstado, sortKey, sortAsc]);
 
-  const openNew = () => { setForm(emptyForm()); setEditId(null); setShowForm(true); };
-  const openEdit = (b: BirdType) => { setForm({ ...b }); setEditId(b.id); setShowForm(true); };
+  const openNew = () => { prevSciRef.current = null; setForm(emptyForm()); setEditId(null); setShowForm(true); };
+  const openEdit = (b: BirdType) => { prevSciRef.current = (b.nome_cientifico || '').trim(); setForm({ ...b }); setEditId(b.id); setShowForm(true); };
 
   const save = async () => {
     if (!form.codigo_anilha?.trim() || !form.nome?.trim() || !form.nome_cientifico?.trim()) {
