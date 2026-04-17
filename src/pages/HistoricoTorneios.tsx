@@ -23,13 +23,23 @@ export default function Torneios() {
   }, [tournaments, filterBird]);
 
   const ranking = useMemo(() => {
-    const map = new Map<string, { total: number; count: number }>();
+    const map = new Map<string, { total: number; count: number; best: number }>();
     tournaments.forEach(t => {
-      const existing = map.get(t.bird_id) || { total: 0, count: 0 };
-      map.set(t.bird_id, { total: existing.total + t.pontuacao, count: existing.count + 1 });
+      const existing = map.get(t.bird_id) || { total: 0, count: 0, best: 0 };
+      map.set(t.bird_id, {
+        total: existing.total + Number(t.pontuacao || 0),
+        count: existing.count + 1,
+        best: Math.max(existing.best, Number(t.pontuacao || 0)),
+      });
     });
     return Array.from(map.entries())
-      .map(([id, data]) => ({ bird: birds.find(b => b.id === id), avg: Math.round(data.total / data.count), count: data.count }))
+      .map(([id, data]) => ({
+        bird: birds.find(b => b.id === id),
+        avg: data.count > 0 ? data.total / data.count : 0,
+        total: data.total,
+        best: data.best,
+        count: data.count,
+      }))
       .filter(r => r.bird)
       .sort((a, b) => b.avg - a.avg)
       .slice(0, 10);
