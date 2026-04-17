@@ -71,12 +71,17 @@ export default function BirdDetail() {
     if (!crachaRef.current) return;
     setDownloadingCracha(true);
     try {
-      const canvas = await html2canvas(crachaRef.current, {
+      const el = crachaRef.current;
+      const canvas = await html2canvas(el, {
         backgroundColor: null,
         scale: 3,
         useCORS: true,
         allowTaint: false,
         logging: false,
+        width: el.offsetWidth,
+        height: el.scrollHeight,
+        windowWidth: el.offsetWidth,
+        windowHeight: el.scrollHeight,
       });
       const link = document.createElement('a');
       link.download = `cracha_${bird.codigo_anilha.replace(/\s/g, '_')}.png`;
