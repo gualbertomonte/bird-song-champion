@@ -499,9 +499,9 @@ export default function BirdDetail() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
-                    <h3 className="font-bold text-2xl leading-tight truncate" style={{ fontFamily: 'Fraunces, Georgia, serif', color: '#F5F1E8', letterSpacing: '-0.02em' }}>{bird.nome}</h3>
-                    <p className="text-[11px] italic truncate" style={{ color: 'rgba(245,241,232,0.6)', fontFamily: 'Fraunces, Georgia, serif' }}>{bird.nome_cientifico || '—'}</p>
-                    <div className="inline-block px-2.5 py-1 rounded-md font-mono text-xs font-bold mt-1.5" style={{ background: 'rgba(201,169,97,0.15)', color: '#C9A961', border: '1px dashed rgba(201,169,97,0.45)', letterSpacing: '0.1em' }}>
+                    <h3 className="font-bold text-2xl break-words" style={{ fontFamily: 'Fraunces, Georgia, serif', color: '#F5F1E8', letterSpacing: '-0.02em', lineHeight: 1.15, paddingBottom: '2px' }}>{bird.nome}</h3>
+                    <p className="text-[11px] italic break-words" style={{ color: 'rgba(245,241,232,0.6)', fontFamily: 'Fraunces, Georgia, serif', lineHeight: 1.4, paddingBottom: '2px' }}>{bird.nome_cientifico || '—'}</p>
+                    <div className="inline-block px-2.5 py-1 rounded-md font-mono text-xs font-bold mt-1.5" style={{ background: 'rgba(201,169,97,0.15)', color: '#C9A961', border: '1px dashed rgba(201,169,97,0.45)', letterSpacing: '0.1em', lineHeight: 1.3 }}>
                       {bird.codigo_anilha}
                     </div>
                   </div>
