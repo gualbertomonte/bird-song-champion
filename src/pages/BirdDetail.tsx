@@ -58,32 +58,33 @@ export default function BirdDetail() {
   };
 
   const handleTransfer = async () => {
-    if (!transferTo.trim()) {
-      toast.error('Informe o email do destinatário');
+    const input = transferTo.trim();
+    if (!input) {
+      toast.error('Informe o e-mail ou código do criadouro');
       return;
     }
     if (sending) return;
     setSending(true);
     try {
-      // Save to pending_transfers table (registra remetente)
-      const { error: dbError } = await supabase.from('pending_transfers').insert({
-        recipient_email: transferTo.trim().toLowerCase(),
-        bird_data: bird as any,
-        sender_email: (user?.email || '').toLowerCase(),
-        transferido_por_user_id: user?.id ?? null,
-        transferido_por_email: (user?.email || '').toLowerCase(),
-      } as any);
-      if (dbError) {
-        console.error('DB transfer error:', dbError);
-        toast.error('Erro ao registrar transferência no banco de dados. Tente novamente.');
+      const { data, error } = await supabase.rpc('transfer_bird', {
+        _bird_id: bird.id,
+        _destinatario: input,
+      });
+      if (error) {
+        console.error('Transfer RPC error:', error);
+        toast.error(error.message || 'Erro ao transferir ave.');
         setSending(false);
         return;
       }
 
+      const result = (data || {}) as { recipient_email?: string; recipient_nome?: string };
+      const recipientEmail = result.recipient_email || input;
+      const recipientNome = result.recipient_nome || '';
+
       // Send email notification (non-blocking — transfer is already saved)
       supabase.functions.invoke('send-transfer-email', {
         body: {
-          recipientEmail: transferTo.trim(),
+          recipientEmail,
           birdName: bird.nome,
           birdSpecies: bird.nome_cientifico,
           birdCode: bird.codigo_anilha,
@@ -91,14 +92,15 @@ export default function BirdDetail() {
         },
       }).catch(err => console.error('Email error:', err));
 
-      // Remove bird from current user's plantel
+      // Remove from local state (DB delete already done by RPC)
       deleteBird(bird.id);
-      toast.success(`Ave "${bird.nome}" transferida para "${transferTo}"! E-mail enviado ao destinatário.`);
+      const destino = recipientNome ? `${recipientNome} (${recipientEmail})` : recipientEmail;
+      toast.success(`Ave "${bird.nome}" transferida para ${destino}!`);
       setShowTransfer(false);
       setTransferTo('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Transfer error:', err);
-      toast.error('Erro ao processar transferência.');
+      toast.error(err?.message || 'Erro ao processar transferência.');
     } finally {
       setSending(false);
     }
@@ -414,8 +416,16 @@ export default function BirdDetail() {
               Ao transferir, todos os dados da ave (histórico de saúde, torneios, observações) serão enviados ao novo proprietário.
             </p>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Email ou ID do destinatário *</label>
-              <input value={transferTo} onChange={e => setTransferTo(e.target.value)} className="mt-1 input-field" placeholder="email@exemplo.com" />
+              <label className="text-xs font-medium text-muted-foreground">E-mail ou Código do Criadouro *</label>
+              <input
+                value={transferTo}
+                onChange={e => setTransferTo(e.target.value)}
+                className="mt-1 input-field"
+                placeholder="email@exemplo.com  ou  ABC123"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Informe o e-mail OU o código de 6 caracteres do criadouro destinatário.
+              </p>
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowTransfer(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>

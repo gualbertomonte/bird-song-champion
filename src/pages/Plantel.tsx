@@ -410,9 +410,20 @@ export default function Plantel() {
                   {ESTADOS_BR.map(uf => <option key={uf} value={uf}>{uf}</option>)}
                 </select>
               </div>
+              {form.gerado_no_bercario && (
+                <div className="sm:col-span-2 p-3 rounded-lg bg-info/10 border border-info/30 text-xs text-info flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>Parentesco definido pelo berçário e não pode ser alterado.</span>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Pai</label>
-                <select value={form.pai_id || ''} onChange={e => setForm({ ...form, pai_id: e.target.value || undefined })} className="mt-1 input-field">
+                <select
+                  value={form.pai_id || ''}
+                  onChange={e => setForm({ ...form, pai_id: e.target.value || undefined })}
+                  disabled={!!form.gerado_no_bercario}
+                  className="mt-1 input-field disabled:opacity-60 disabled:cursor-not-allowed"
+                >
                   <option value="">Sem pai cadastrado</option>
                   {birds.filter(b => b.sexo === 'M' && b.id !== editId).map(b => (
                     <option key={b.id} value={b.id}>{b.codigo_anilha} – {b.nome}</option>
@@ -421,7 +432,12 @@ export default function Plantel() {
               </div>
               <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Mãe</label>
-                <select value={form.mae_id || ''} onChange={e => setForm({ ...form, mae_id: e.target.value || undefined })} className="mt-1 input-field">
+                <select
+                  value={form.mae_id || ''}
+                  onChange={e => setForm({ ...form, mae_id: e.target.value || undefined })}
+                  disabled={!!form.gerado_no_bercario}
+                  className="mt-1 input-field disabled:opacity-60 disabled:cursor-not-allowed"
+                >
                   <option value="">Sem mãe cadastrada</option>
                   {birds.filter(b => b.sexo === 'F' && b.id !== editId).map(b => (
                     <option key={b.id} value={b.id}>{b.codigo_anilha} – {b.nome}</option>

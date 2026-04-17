@@ -86,6 +86,7 @@ export type Database = {
           estado: string | null
           foto_url: string | null
           fotos: Json | null
+          gerado_no_bercario: boolean
           id: string
           loan_id: string | null
           loan_status: string
@@ -114,6 +115,7 @@ export type Database = {
           estado?: string | null
           foto_url?: string | null
           fotos?: Json | null
+          gerado_no_bercario?: boolean
           id?: string
           loan_id?: string | null
           loan_status?: string
@@ -142,6 +144,7 @@ export type Database = {
           estado?: string | null
           foto_url?: string | null
           fotos?: Json | null
+          gerado_no_bercario?: boolean
           id?: string
           loan_id?: string | null
           loan_status?: string
@@ -424,6 +427,10 @@ export type Database = {
         Returns: Json
       }
       generate_codigo_criadouro: { Args: never; Returns: string }
+      transfer_bird: {
+        Args: { _bird_id: string; _destinatario: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
