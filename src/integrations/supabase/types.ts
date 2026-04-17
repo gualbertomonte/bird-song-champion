@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      bateria_inscricoes: {
+        Row: {
+          bateria_id: string
+          bird_id: string
+          bird_snapshot: Json
+          created_at: string
+          estacao: number | null
+          id: string
+          membro_user_id: string
+          motivo_rejeicao: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bateria_id: string
+          bird_id: string
+          bird_snapshot?: Json
+          created_at?: string
+          estacao?: number | null
+          id?: string
+          membro_user_id: string
+          motivo_rejeicao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bateria_id?: string
+          bird_id?: string
+          bird_snapshot?: Json
+          created_at?: string
+          estacao?: number | null
+          id?: string
+          membro_user_id?: string
+          motivo_rejeicao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bateria_inscricoes_bateria_id_fkey"
+            columns: ["bateria_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_baterias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bateria_pontuacoes: {
+        Row: {
+          bateria_id: string
+          created_at: string
+          id: string
+          inscricao_id: string
+          pontos: number
+          registrado_por: string
+          updated_at: string
+        }
+        Insert: {
+          bateria_id: string
+          created_at?: string
+          id?: string
+          inscricao_id: string
+          pontos?: number
+          registrado_por: string
+          updated_at?: string
+        }
+        Update: {
+          bateria_id?: string
+          created_at?: string
+          id?: string
+          inscricao_id?: string
+          pontos?: number
+          registrado_por?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bateria_pontuacoes_bateria_id_fkey"
+            columns: ["bateria_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_baterias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bateria_pontuacoes_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: true
+            referencedRelation: "bateria_inscricoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bird_loans: {
         Row: {
           bird_id: string
@@ -449,6 +541,56 @@ export type Database = {
         }
         Relationships: []
       }
+      torneio_baterias: {
+        Row: {
+          created_at: string
+          criado_por: string
+          data: string
+          encerrado_em: string | null
+          grupo_id: string
+          id: string
+          nome: string
+          numero_estacoes: number
+          regulamento: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por: string
+          data: string
+          encerrado_em?: string | null
+          grupo_id: string
+          id?: string
+          nome: string
+          numero_estacoes?: number
+          regulamento?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string
+          data?: string
+          encerrado_em?: string | null
+          grupo_id?: string
+          id?: string
+          nome?: string
+          numero_estacoes?: number
+          regulamento?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_baterias_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       torneio_convites: {
         Row: {
           accepted_at: string | null
@@ -492,6 +634,109 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      torneio_grupo_convites: {
+        Row: {
+          convidado_por: string
+          convidado_user_id: string
+          created_at: string
+          grupo_id: string
+          id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          convidado_por: string
+          convidado_user_id: string
+          created_at?: string
+          grupo_id: string
+          id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          convidado_por?: string
+          convidado_user_id?: string
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_grupo_convites_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torneio_grupo_membros: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          papel: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          papel?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          papel?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_grupo_membros_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torneio_grupos: {
+        Row: {
+          admin_user_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          regulamento_padrao: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          regulamento_padrao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          regulamento_padrao?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       torneio_inscricoes: {
         Row: {
@@ -792,7 +1037,26 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ranking_acumulado_grupo: {
+        Row: {
+          baterias_disputadas: number | null
+          bird_id: string | null
+          bird_nome: string | null
+          codigo_anilha: string | null
+          grupo_id: string | null
+          membro_user_id: string | null
+          total_pontos: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_baterias_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       aceitar_convite_torneio: { Args: { _token: string }; Returns: Json }
@@ -800,8 +1064,16 @@ export type Database = {
         Args: { _aprovar: boolean; _inscricao_id: string; _motivo?: string }
         Returns: undefined
       }
+      aprovar_inscricao_bateria: {
+        Args: { _aprovar: boolean; _inscricao_id: string; _motivo?: string }
+        Returns: undefined
+      }
       cancel_loan: { Args: { _loan_id: string }; Returns: undefined }
       confirm_loan_return: { Args: { _loan_id: string }; Returns: undefined }
+      convidar_membro_grupo: {
+        Args: { _grupo_id: string; _user_id: string }
+        Returns: string
+      }
       create_loan: {
         Args: {
           _bird_id: string
@@ -810,6 +1082,20 @@ export type Database = {
           _prazo?: string
         }
         Returns: Json
+      }
+      criar_bateria: {
+        Args: {
+          _data: string
+          _grupo_id: string
+          _nome: string
+          _numero_estacoes: number
+          _regulamento?: string
+        }
+        Returns: string
+      }
+      criar_grupo_torneio: {
+        Args: { _descricao?: string; _nome: string; _regulamento?: string }
+        Returns: string
       }
       criar_tratamento: {
         Args: {
@@ -825,13 +1111,22 @@ export type Database = {
         }
         Returns: string
       }
+      encerrar_bateria: { Args: { _bateria_id: string }; Returns: undefined }
       encerrar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
       enviar_pedido_amizade: { Args: { _destinatario: string }; Returns: Json }
       generate_codigo_criadouro: { Args: never; Returns: string }
+      inscrever_ave_bateria: {
+        Args: { _bateria_id: string; _bird_id: string }
+        Returns: string
+      }
       inscrever_ave_torneio: {
         Args: { _bird_id: string; _torneio_id: string }
         Returns: string
       }
+      is_bateria_admin: { Args: { _bateria_id: string }; Returns: boolean }
+      is_bateria_membro: { Args: { _bateria_id: string }; Returns: boolean }
+      is_grupo_admin: { Args: { _grupo_id: string }; Returns: boolean }
+      is_grupo_membro: { Args: { _grupo_id: string }; Returns: boolean }
       is_torneio_organizer: { Args: { _torneio_id: string }; Returns: boolean }
       is_torneio_participante: {
         Args: { _torneio_id: string }
@@ -845,12 +1140,25 @@ export type Database = {
         Args: { _bateria: number; _inscricao_id: string; _pontos: number }
         Returns: undefined
       }
+      registrar_pontuacao_bateria: {
+        Args: { _inscricao_id: string; _pontos: number }
+        Returns: undefined
+      }
       remover_amizade: { Args: { _friendship_id: string }; Returns: undefined }
+      responder_convite_grupo: {
+        Args: { _aceitar: boolean; _convite_id: string }
+        Returns: undefined
+      }
       responder_pedido_amizade: {
         Args: { _aceitar: boolean; _friendship_id: string }
         Returns: undefined
       }
+      sair_do_grupo: { Args: { _grupo_id: string }; Returns: undefined }
       sortear_estacoes: { Args: { _torneio_id: string }; Returns: undefined }
+      sortear_estacoes_bateria: {
+        Args: { _bateria_id: string }
+        Returns: undefined
+      }
       transfer_bird: {
         Args: { _bird_id: string; _destinatario: string }
         Returns: Json
