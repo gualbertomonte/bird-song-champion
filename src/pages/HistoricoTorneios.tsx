@@ -184,16 +184,25 @@ export default function Torneios() {
                 const bird = birds.find(b => b.id === t.bird_id);
                 return (
                   <tr key={t.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
-                    <td className="p-3 text-muted-foreground text-xs sm:text-sm">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
-                    <td className="p-3 font-medium text-xs sm:text-sm">{t.nome_torneio}</td>
+                    <td className="p-3 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
+                    <td className="p-3 font-medium text-xs sm:text-sm">
+                      {t.nome_torneio}
+                      {t.origem === 'colaborativo' && (
+                        <span className="ml-2 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/15 text-secondary font-semibold">Colab</span>
+                      )}
+                    </td>
                     <td className="p-3 text-xs sm:text-sm">{bird?.nome || '—'}</td>
                     <td className="p-3 text-muted-foreground hidden sm:table-cell">{t.clube || '—'}</td>
-                    <td className="p-3 font-bold text-secondary">{t.pontuacao}</td>
+                    <td className="p-3 font-bold text-secondary">{Number(t.pontuacao).toFixed(t.origem === 'colaborativo' ? 2 : 0)}</td>
                     <td className="p-3 hidden sm:table-cell">{t.classificacao || '—'}</td>
                     <td className="p-3 text-right">
-                      <button onClick={() => { deleteTournament(t.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                      {t.origem === 'manual' ? (
+                        <button onClick={() => { deleteTournament(t.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">auto</span>
+                      )}
                     </td>
                   </tr>
                 );
