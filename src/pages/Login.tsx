@@ -18,7 +18,12 @@ export default function Login() {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      toast.error('Email ou senha inválidos');
+      const msg = (error as any)?.message?.toLowerCase?.() || '';
+      if (msg.includes('not confirmed') || msg.includes('email_not_confirmed')) {
+        toast.error('Email ainda não confirmado. Entre em contato com o suporte.');
+      } else {
+        toast.error('Email ou senha inválidos');
+      }
     }
   };
 
