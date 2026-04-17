@@ -79,6 +79,7 @@ export type Database = {
       }
       birds: {
         Row: {
+          anilha_sispass: boolean
           codigo_anilha: string
           created_at: string
           data_nascimento: string | null
@@ -108,6 +109,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anilha_sispass?: boolean
           codigo_anilha?: string
           created_at?: string
           data_nascimento?: string | null
@@ -137,6 +139,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anilha_sispass?: boolean
           codigo_anilha?: string
           created_at?: string
           data_nascimento?: string | null
