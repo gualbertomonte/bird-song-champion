@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Bird as BirdType, BirdStatus, ESTADOS_BR } from '@/types/bird';
 import { DIAMETROS_PADRAO, DIAMETRO_POR_ESPECIE } from '@/data/anilhas';
@@ -7,7 +7,7 @@ import PhotoUploader from '@/components/PhotoUploader';
 import NomeCientificoCombobox from '@/components/NomeCientificoCombobox';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+
 import { supabase } from '@/integrations/supabase/client';
 
 const statusLabels: Record<BirdStatus, string> = { Ativo: 'Ativo', 'Berçário': 'Berçário', Vendido: 'Vendido', Falecido: 'Falecido' };
@@ -64,13 +64,23 @@ export default function Plantel() {
     setAnilhaCheck({ status: 'available' });
   }, [form.codigo_anilha, birds, editId, showForm]);
 
-  // Auto-preencher diâmetro com base no nome científico (se ainda não escolhido manualmente)
+  // Auto-preencher diâmetro ao mudar a espécie (funciona em criação e edição)
+  const prevSciRef = useRef<string>('');
   useEffect(() => {
-    if (!showForm) return;
-    const sci = form.nome_cientifico?.trim();
-    if (!sci) return;
+    if (!showForm) {
+      prevSciRef.current = '';
+      return;
+    }
+    const sci = form.nome_cientifico?.trim() || '';
+    // Primeira renderização do form: registra valor inicial sem sobrescrever diâmetro existente
+    if (prevSciRef.current === '') {
+      prevSciRef.current = sci;
+      return;
+    }
+    if (sci === prevSciRef.current) return;
+    prevSciRef.current = sci;
     const sugerido = DIAMETRO_POR_ESPECIE[sci];
-    if (sugerido && !form.diametro_anilha) {
+    if (sugerido) {
       setForm(prev => ({ ...prev, diametro_anilha: sugerido }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
