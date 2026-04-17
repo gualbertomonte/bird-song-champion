@@ -1,55 +1,46 @@
 
 
 ## Objetivo
-Melhorar o formulário de cadastro/edição de aves no `Plantel.tsx` (e onde aplicável) com regras de validação e automações baseadas na tabela oficial de anilhas da Federação dos Criadores.
+Atualizar a tabela oficial de diâmetros + nomes comuns conforme lista do usuário, e garantir que ao selecionar o nome científico, o **nome comum** e o **diâmetro** sejam preenchidos automaticamente.
 
-## Investigação rápida
-Preciso confirmar a estrutura atual do form e a tabela oficial de diâmetros por espécie.
+## Mapeamento (nome comum → científico → diâmetro)
 
-### Tabela de diâmetros (Federação dos Criadores — referência)
-Vou embutir um mapa `ESPECIE → DIAMETRO` no código com as principais espécies já presentes em `NomeCientificoCombobox.tsx` (Curió, Bicudo, Trinca-ferro, Coleirinho, Azulão, Cardeal, Pintassilgo, Canário, Canário-da-terra, Pixoxó, Chorão, Baiano). Diâmetros comuns: 2,4mm / 2,6mm / 2,8mm / 3,0mm / 3,5mm / 4,0mm conforme espécie. Vou consultar a página oficial para garantir exatidão antes de implementar.
+| Nome comum | Nome científico | Diâmetro |
+|---|---|---|
+| Trinca-ferro | Saltator similis | 3.5mm |
+| Coleiro (Coleirinho) | Sporophila caerulescens | 2.2mm |
+| Papa-capim (Baiano) | Sporophila nigricollis | 2.2mm |
+| Curió | Sporophila angolensis | 2.6mm |
+| Bicudo | Sporophila maximiliani | 3.0mm |
+| Canário-da-terra-verdadeiro | Sicalis flaveola | 2.8mm |
+| Azulão | Cyanoloxia brissonii | 2.8mm |
+| Sabiá-laranjeira | Turdus rufiventris | 4.0mm |
+| Cardeal | Paroaria dominicana | 3.5mm |
+| Pintassilgo | Spinus magellanicus | 2.5mm |
+| Sanhaço-frade | Stephanophorus diadematus | 2.8mm |
 
-## Mudanças propostas
+> Observação: troco `Carduelis magellanica` → `Spinus magellanicus` (nomenclatura atual). Adiciono Sabiá-laranjeira e Sanhaço-frade que não existiam.
 
-### 1. Código de anilha — somente números, ~6 dígitos
-- Input com `inputMode="numeric"`, `pattern="[0-9]*"`, `maxLength={6}`.
-- Validação ao salvar: se preenchido, deve conter apenas dígitos (1–6). Toast de erro caso contrário.
-- Filtra entrada em tempo real (`replace(/\D/g, '')`).
+## Mudanças
 
-### 2. Anilha SISPASS — Sim/Não
-- Nova coluna `birds.anilha_sispass boolean default false` (migration).
-- Adicionar `RadioGroup` "Anilha SISPASS?" com Sim/Não no form.
-- Refletir em `Bird` type e mapeamento no `AppContext`.
+### 1. `src/data/anilhas.ts`
+- Atualizar `DIAMETROS_PADRAO` para incluir `2.2mm` e `2.5mm` (remover os que não estão na lista oficial: 4.5mm, 5.0mm — manter para fallback genérico opcional, mas priorizar os reais).
+- Reescrever `DIAMETRO_POR_ESPECIE` com os 11 valores corrigidos acima.
+- Adicionar novo export `NOME_COMUM_POR_ESPECIE: Record<string, string>` com os nomes comuns.
 
-### 3 + 4. Diâmetros auto-selecionáveis vinculados à espécie
-- Criar `src/data/anilhas.ts` exportando:
-  - `DIAMETROS_PADRAO: string[]` (lista completa para fallback no select)
-  - `DIAMETRO_POR_ESPECIE: Record<string, string>` (chave = nome científico)
-- Substituir o input de texto de `diametro_anilha` por um `<Select>` populado com `DIAMETROS_PADRAO`.
-- Ao mudar `nome_cientifico` (via `NomeCientificoCombobox`), se `DIAMETRO_POR_ESPECIE[nome]` existir e o usuário ainda não escolheu manualmente, preencher automaticamente. (Adicionar callback `onDiametroSugerido` no combobox OU lógica no parent via `useEffect` observando `nome_cientifico`.)
-- Mostrar dica visual quando o diâmetro foi auto-preenchido ("Sugerido pela federação — você pode alterar").
+### 2. `src/components/NomeCientificoCombobox.tsx`
+- Importar `NOME_COMUM_POR_ESPECIE` de `@/data/anilhas` e fazer merge com o `SPECIES_MAP` interno (a fonte oficial passa a ser `anilhas.ts`; o map local vira fallback/legado).
+- Garantir que `select(name)` continue chamando `onNomeComumChange` com o nome comum oficial — já faz isso.
 
-### 5. Renomear label "Estado (UF)" → "Estado do SISPASS (UF)"
-- Apenas troca de label nos forms (`Plantel.tsx`, e onde mais aparecer). Sem mudança de coluna no banco.
-
-### 6. Renomear label "Nome" → "Nome (apelido)"
-- Apenas troca de label nos forms. Sem mudança de coluna.
+### 3. `src/pages/Plantel.tsx`
+- O `useEffect` que sugere diâmetro já existe — só precisa ler o mapa atualizado (sem mudança de código).
+- Adicionar (se ainda não há) lógica que, ao selecionar nome científico, também preenche `nome_comum_especie` automaticamente. O `NomeCientificoCombobox` já expõe `onNomeComumChange` — confirmar que o parent passa essa prop e atualiza o estado.
 
 ## Arquivos afetados
-- 1 migration (coluna `anilha_sispass`)
-- `src/data/anilhas.ts` (novo — tabela de diâmetros oficiais)
-- `src/types/bird.ts` (campo `anilha_sispass?: boolean`)
-- `src/context/AppContext.tsx` (mapear nova coluna)
-- `src/pages/Plantel.tsx` (form: validação numérica do código, radio SISPASS, select de diâmetro com auto-preenchimento, novos labels)
-- `src/components/NomeCientificoCombobox.tsx` (opcional: emitir callback com diâmetro sugerido) — ou tratar via `useEffect` no parent
-- `src/integrations/supabase/types.ts` (auto-atualiza)
-
-## Validação antes de implementar
-Vou abrir a página da Federação para confirmar os diâmetros oficiais por espécie e ajustar o mapa antes de codar.
+- `src/data/anilhas.ts` (atualizar diâmetros + adicionar mapa de nomes comuns)
+- `src/components/NomeCientificoCombobox.tsx` (consumir nomes comuns oficiais)
+- `src/pages/Plantel.tsx` (verificar/garantir que `onNomeComumChange` está conectado ao form)
 
 ## Resultado esperado
-- Código de anilha aceita apenas números (até 6 dígitos).
-- Pergunta SISPASS clara como Sim/Não.
-- Diâmetro vira select com opções padronizadas e auto-preenche conforme a espécie escolhida (com possibilidade de override manual).
-- Labels mais claros e alinhados ao vocabulário do criador.
+Selecionar "Sporophila angolensis" no combobox → nome comum "Curió" e diâmetro "2.6mm" aparecem automaticamente nos respectivos campos, com possibilidade de override manual.
 
