@@ -121,6 +121,9 @@ export default function Emprestimos() {
                     <AlertCircle className="w-3.5 h-3.5" /> Aguardando confirmação do recebedor
                   </span>
                 )}
+                <button onClick={() => generateLoanReceiptPDF(loan, profile)} className="text-xs text-secondary hover:underline px-2 inline-flex items-center gap-1">
+                  <FileDown className="w-3.5 h-3.5" /> Recibo PDF
+                </button>
                 <button onClick={() => { if (confirm('Cancelar este empréstimo? A ave voltará ao seu plantel.')) cancelLoan(loan.id); }} className="text-xs text-destructive hover:underline px-2">
                   Cancelar
                 </button>
@@ -147,6 +150,9 @@ export default function Emprestimos() {
                 {loan.status === 'Emprestada' && (
                   <span className="text-xs text-muted-foreground">Use a ave normalmente no Berçário. Filhotes ficam em seu cadastro.</span>
                 )}
+                <button onClick={() => generateLoanReceiptPDF(loan, profile)} className="text-xs text-secondary hover:underline px-2 inline-flex items-center gap-1">
+                  <FileDown className="w-3.5 h-3.5" /> Recibo PDF
+                </button>
               </div>
             </LoanCard>
           ))}
