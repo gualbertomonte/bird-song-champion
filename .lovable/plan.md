@@ -1,53 +1,41 @@
 
 
-## Diagnóstico
+## Plano
 
-Investiguei o banco e a causa raiz dos dois sintomas é a **mesma**: a função `createLoan` no frontend tenta INSERIR a "ave clone" no plantel do recebedor usando `user_id = destProfile.user_id`. Mas a RLS da tabela `birds` (`birds_insert_own`) exige `auth.uid() = user_id` — ou seja, o dono **não tem permissão** para criar uma linha em nome de outro usuário. O insert falha silenciosamente (apenas `console.warn`).
+### 1. Filhotes do berçário — bloquear edição manual de parentesco
 
-**Confirmado no banco**:
-- Empréstimo novo da LOIRINHA (id `d92f77c2`, criado 23:48): `borrower_bird_id = NULL` → clone nunca foi criado.
-- Plantel do recebedor `96CCCE`: só tem o "fire" (clone antigo, criado antes da RLS atual). Nenhuma LOIRINHA.
-- Ave LOIRINHA do dono: marcada como `emprestada_saida` mesmo sem clone do outro lado.
+**Marcador:** adicionar coluna `birds.gerado_no_bercario boolean default false`. O `Bercario.tsx` (função `registrarEclosao`) passa a inserir os filhotes com `gerado_no_bercario = true` (além de `pai_id`/`mae_id` que já preenche). Filhotes antigos cuja origem é o berçário podem ser detectados por `nests.quantidade_filhotes > 0` + filhos referenciando esse casal — vou rodar um data-fix marcando como `true` qualquer ave cujo `(pai_id, mae_id)` corresponda a um `nest` com `status='Eclodida'` do mesmo `user_id`.
 
-### Sintoma 1 — "aparece como saiu duas"
-O dono `04BB49` tem **2 empréstimos ativos** legítimos no banco (fire + LOIRINHA). A aba "Saída" mostra 2 corretamente, mas como a LOIRINHA foi emprestada de novo e o clone não chegou ao recebedor, parece que "saiu duas vezes" sem efeito no destino. O problema é a inconsistência (loan criado mas clone faltando), não duplicação real.
+**UI (`Plantel.tsx` form de edição):** quando `editId` corresponde a uma ave com `gerado_no_bercario=true`, os selects de **Pai** e **Mãe** ficam `disabled` com aviso "Parentesco definido pelo berçário e não pode ser alterado." Os outros campos continuam editáveis.
 
-### Sintoma 2 — "recebedor não consegue adicionar a fêmea na nova ninhada"
-A LOIRINHA nunca foi inserida no plantel do recebedor (clone falhou por RLS). Por isso ela não aparece no select de fêmeas da Nova Ninhada.
+**Defesa em backend:** trigger `BEFORE UPDATE` em `birds` que rejeita alteração de `pai_id`/`mae_id` quando `OLD.gerado_no_bercario = true` (mensagem clara). Garante que mesmo via API direta o vínculo é preservado.
 
-## Plano de correção
+### 2. Transferência de ave — por e-mail OU código de criadouro
 
-### 1. Nova RPC `create_loan` (SECURITY DEFINER) — migration
-Substitui a lógica multi-passo do frontend por uma transação atômica no servidor:
-- Valida que a ave pertence ao chamador e está com `loan_status='proprio'`.
-- Resolve `borrower_user_id` e `borrower_email` via `criador_profile` + `profiles` (já com SECURITY DEFINER, sem depender de RLS).
-- Cria o registro em `bird_loans`.
-- Marca a ave do dono como `emprestada_saida` com o `loan_id`.
-- **Insere o clone no plantel do recebedor** (bypass de RLS porque é SECURITY DEFINER).
-- Atualiza `borrower_bird_id` no loan.
-- Retorna `loan_id` + dados do destinatário.
+**UI (`BirdDetail.tsx`, modal "Transferir Ave"):**
+- Manter um único campo de input "E-mail ou Código do Criadouro", com texto auxiliar explicando ambas as opções.
+- Detecção automática: se contém `@` → trata como e-mail; senão → trata como código (uppercase, trim).
 
-Trata edge cases:
-- Se já existe clone órfão do recebedor (mesmo `original_bird_id` + `loan_status='emprestada_entrada'`), reaproveita em vez de duplicar.
-- Se a anilha da ave já existir no plantel do recebedor com `loan_status='proprio'`, retorna erro claro ("Recebedor já possui ave com essa anilha").
+**Backend — nova RPC `transfer_bird(_bird_id uuid, _destinatario text)` (SECURITY DEFINER):**
+- Valida que o chamador é dono e que `loan_status='proprio'`.
+- Se `_destinatario` contém `@`: usa como `recipient_email` (mantém fluxo atual via `pending_transfers`, recebedor reclama no próximo login).
+- Se não contém `@`: faz lookup em `criador_profile.codigo_criadouro` → pega `user_id` → pega `email` em `profiles`. Se não achar, erro "Código de criadouro não encontrado". Usa esse e-mail como `recipient_email`.
+- Insere em `pending_transfers` com `recipient_email`, `bird_data` (snapshot), `sender_email`, `transferido_por_user_id`.
+- Remove a ave do plantel do remetente (`DELETE FROM birds WHERE id = _bird_id`).
+- Retorna `{ recipient_email, recipient_nome }` para o frontend exibir confirmação clara.
 
-### 2. Reparo de dados existentes (insert tool)
-- Para o loan `d92f77c2` (LOIRINHA, atualmente Emprestada, sem clone): criar manualmente o clone no plantel de `b219f742-…` e setar `borrower_bird_id` no loan. Assim o recebedor passa a ter a fêmea disponível imediatamente.
+**Frontend `handleTransfer`:** substitui o insert direto + `deleteBird` por uma única chamada `supabase.rpc('transfer_bird', ...)`. Em seguida dispara `send-transfer-email` (não-bloqueante) com o e-mail retornado pela RPC. Toast de sucesso mostra para quem foi (e-mail + nome do criadouro quando código foi usado).
 
-### 3. Frontend (`src/context/AppContext.tsx`)
-- Reescrever `createLoan` para chamar `supabase.rpc('create_loan', { … })` em vez de fazer os 5 passos manuais. Mantém: notificação ao recebedor, envio de e-mail, atualização do estado local (`birds`, `loans`).
-- Remover o `console.warn` que mascarava o erro de clone — agora qualquer erro retorna ao usuário com toast.
+### Arquivos afetados
+- 1 migration: coluna `gerado_no_bercario`, trigger de proteção, RPC `transfer_bird`
+- 1 data-fix (insert tool): marcar filhotes existentes do berçário como `gerado_no_bercario=true`
+- `src/pages/Bercario.tsx` (passar `gerado_no_bercario:true` ao criar filhotes)
+- `src/pages/Plantel.tsx` (desabilitar selects de pai/mãe quando aplicável)
+- `src/pages/BirdDetail.tsx` (campo único e-mail/código + chamada à RPC)
+- `src/types/bird.ts` (campo opcional `gerado_no_bercario?: boolean`)
+- `src/context/AppContext.tsx` (mapear coluna nova nos rows)
 
-### 4. (Opcional, defesa em profundidade)
-Adicionar índice `birds(original_bird_id, loan_status)` para acelerar a limpeza no trigger `ensure_loan_return_cleanup` (já existe).
-
-## Arquivos afetados
-- 1 nova migration (função `create_loan` SECURITY DEFINER)
-- 1 operação de data-fix via insert tool (cria clone faltante da LOIRINHA + atualiza loan)
-- `src/context/AppContext.tsx` (refatora `createLoan` para usar RPC)
-
-## Resultado esperado
-- Empréstimos novos criam corretamente o clone no plantel do recebedor.
-- Recebedor passa a ver a ave (incl. fêmeas) e pode usá-la em Nova Ninhada.
-- Erros de duplicidade ou permissão aparecem como toast claro em vez de "sumir" silenciosamente.
+### Resultado esperado
+- Filhotes nascidos no berçário têm pai/mãe travados na UI e no banco — vínculo genealógico íntegro.
+- Transferência aceita e-mail diretamente OU código de criadouro (resolve internamente para e-mail), com mensagem de sucesso clara em ambos os casos.
 
