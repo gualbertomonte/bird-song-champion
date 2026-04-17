@@ -107,6 +107,7 @@ function rowToBird(r: any): Bird {
     original_owner_email: r.original_owner_email ?? undefined,
     original_bird_id: r.original_bird_id ?? undefined,
     gerado_no_bercario: r.gerado_no_bercario ?? false,
+    anilha_sispass: r.anilha_sispass ?? false,
   };
 }
 
@@ -153,6 +154,7 @@ function birdToRow(b: Partial<Bird>, userId: string) {
     fotos: b.fotos ?? [],
     estado: b.estado ?? null,
     gerado_no_bercario: b.gerado_no_bercario ?? false,
+    anilha_sispass: b.anilha_sispass ?? false,
   };
 }
 
