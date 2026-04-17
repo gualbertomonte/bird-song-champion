@@ -621,7 +621,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  // ============ Loans ============
+  const setMobileNavConfig = useCallback(async (config: MobileNavItemConfig[]) => {
+    if (!user) return;
+    const sanitized = sanitizeMobileNavConfig(config);
+    setMobileNavConfigState(sanitized);
+    const { error } = await supabase.from('criador_profile').upsert({
+      user_id: user.id,
+      nome_criadouro: profile.nome_criadouro || '',
+      mobile_nav_config: sanitized as any,
+    });
+    if (error) { toast.error('Erro ao salvar barra de navegação'); console.error(error); }
+  }, [user, profile.nome_criadouro]);
   const sendLoanEmail = useCallback(async (payload: any) => {
     try {
       await supabase.functions.invoke('send-loan-email', { body: payload });
