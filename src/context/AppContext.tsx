@@ -642,7 +642,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNestsState(prev => prev.map(n => n.id === id ? rowToNest(row) : n));
   }, []);
 
-  // ============ Profile ============
+  const deleteNest = useCallback(async (id: string) => {
+    const { error } = await supabase.from('nests').delete().eq('id', id);
+    if (error) { toast.error('Erro ao excluir ninhada'); console.error(error); return; }
+    setNestsState(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  const clearNestsHistory = useCallback(async () => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('nests')
+      .delete()
+      .eq('user_id', user.id)
+      .in('status', ['Eclodida', 'Encerrada', 'Perdida']);
+    if (error) { toast.error('Erro ao limpar histórico'); console.error(error); return; }
+    setNestsState(prev => prev.filter(n => !['Eclodida', 'Encerrada', 'Perdida'].includes(n.status)));
+    toast.success('Histórico de desempenho limpo');
+  }, [user]);
   const setProfile = useCallback(async (p: CriadorProfile) => {
     if (!user) return;
     setProfileState(prev => ({ ...p, codigo_criadouro: prev.codigo_criadouro ?? p.codigo_criadouro }));
