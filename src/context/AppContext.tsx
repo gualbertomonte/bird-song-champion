@@ -451,7 +451,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           endereco: p.endereco ?? undefined,
           telefone: p.telefone ?? undefined,
           logo_url: p.logo_url ?? undefined,
+          codigo_criadouro: p.codigo_criadouro ?? undefined,
         });
+        setMobileNavConfigState(sanitizeMobileNavConfig(p.mobile_nav_config));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bird_loans' }, (payload) => {
         const isMine = (row: any) => row && (row.owner_user_id === uid || row.borrower_user_id === uid);
