@@ -22,7 +22,6 @@ export default function Bercario() {
   const femeaIdsAtivas = new Set(ninhadasAtivas.map(n => n.femea_id));
   const femeasBercario = birds.filter(b => b.sexo === 'F' && (b.status === 'Berçário' || femeaIdsAtivas.has(b.id)));
   const machos = birds.filter(b => b.sexo === 'M' && (b.status === 'Ativo' || b.status === 'Berçário'));
-  const ninhadasAtivas = nests.filter(isAtivo);
   const filhotesRecentes = birds.filter(b => {
     if (!b.data_nascimento) return false;
     const dias = (Date.now() - new Date(b.data_nascimento).getTime()) / 86400000;
