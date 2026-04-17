@@ -10,10 +10,12 @@ import { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 import LoanBadge from '@/components/LoanBadge';
+import { generateLoanReceiptPDF } from '@/lib/pdf';
+import { FileDown } from 'lucide-react';
 
 export default function BirdDetail() {
   const { id } = useParams<{ id: string }>();
-  const { birds, tournaments, healthRecords, deleteBird } = useAppState();
+  const { birds, tournaments, healthRecords, loans, profile, deleteBird } = useAppState();
   const { user } = useAuth();
   const bird = birds.find(b => b.id === id);
   const crachaRef = useRef<HTMLDivElement>(null);
@@ -219,17 +221,44 @@ export default function BirdDetail() {
               </div>
             </div>
           </div>
-          {bird.transferido_por_email && (
+          {(bird.transferido_por_email || loans.some(l => l.bird_id === bird.id || l.borrower_bird_id === bird.id)) && (
             <div className="bg-card rounded-xl border p-5 mt-4">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Send className="w-4 h-4 text-secondary" /> Origem da Transferência
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Send className="w-4 h-4 text-secondary" /> Histórico de Movimentações
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Esta ave foi transferida por <span className="font-medium text-foreground">{bird.transferido_por_email}</span>
-                {bird.transferido_em && (
-                  <> em <span className="font-medium text-foreground">{new Date(bird.transferido_em).toLocaleString('pt-BR')}</span></>
-                )}.
-              </p>
+              <ul className="space-y-2.5 text-sm">
+                {bird.transferido_por_email && (
+                  <li className="flex items-start gap-2 pb-2 border-b border-border/40">
+                    <span className="mt-0.5 w-2 h-2 rounded-full bg-info shrink-0" />
+                    <div className="flex-1">
+                      <p>
+                        Transferida por <span className="font-medium text-foreground">{bird.transferido_por_email}</span>
+                        {bird.transferido_em && <> em <span className="font-medium">{new Date(bird.transferido_em).toLocaleString('pt-BR')}</span></>}
+                      </p>
+                    </div>
+                  </li>
+                )}
+                {loans
+                  .filter(l => l.bird_id === bird.id || l.borrower_bird_id === bird.id)
+                  .sort((a, b) => new Date(b.data_emprestimo).getTime() - new Date(a.data_emprestimo).getTime())
+                  .map(l => (
+                    <li key={l.id} className="flex items-start gap-2 pb-2 last:border-0 border-b border-border/40">
+                      <span className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${l.status === 'Devolvida' ? 'bg-success' : 'bg-warning'}`} />
+                      <div className="flex-1 space-y-0.5">
+                        <p>
+                          <span className="font-medium">Empréstimo</span> · {l.status === 'Devolvida' ? 'Devolvida' : l.status === 'Devolucao_Solicitada' ? 'Devolução solicitada' : 'Em curso'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          De {l.owner_email || '—'} para {l.borrower_email} · {new Date(l.data_emprestimo).toLocaleDateString('pt-BR')}
+                          {l.data_devolucao && <> · devolvida em {new Date(l.data_devolucao).toLocaleDateString('pt-BR')}</>}
+                        </p>
+                        <button onClick={() => generateLoanReceiptPDF(l, profile)} className="text-xs text-secondary hover:underline inline-flex items-center gap-1 mt-0.5">
+                          <FileDown className="w-3 h-3" /> Baixar recibo
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+              </ul>
             </div>
           )}
           {bird.observacoes && (

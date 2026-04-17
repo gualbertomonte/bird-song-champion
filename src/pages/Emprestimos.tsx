@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { Handshake, ArrowDownToLine, ArrowUpFromLine, History, Send, Plus, X, Calendar, Loader2, AlertCircle, Check } from 'lucide-react';
+import { Handshake, ArrowDownToLine, ArrowUpFromLine, History, Send, Plus, X, Calendar, Loader2, AlertCircle, Check, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { generateLoanReceiptPDF } from '@/lib/pdf';
 
 export default function Emprestimos() {
-  const { birds, loans, createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan } = useAppState();
+  const { birds, loans, profile, createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan } = useAppState();
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -120,6 +121,9 @@ export default function Emprestimos() {
                     <AlertCircle className="w-3.5 h-3.5" /> Aguardando confirmação do recebedor
                   </span>
                 )}
+                <button onClick={() => generateLoanReceiptPDF(loan, profile)} className="text-xs text-secondary hover:underline px-2 inline-flex items-center gap-1">
+                  <FileDown className="w-3.5 h-3.5" /> Recibo PDF
+                </button>
                 <button onClick={() => { if (confirm('Cancelar este empréstimo? A ave voltará ao seu plantel.')) cancelLoan(loan.id); }} className="text-xs text-destructive hover:underline px-2">
                   Cancelar
                 </button>
@@ -146,6 +150,9 @@ export default function Emprestimos() {
                 {loan.status === 'Emprestada' && (
                   <span className="text-xs text-muted-foreground">Use a ave normalmente no Berçário. Filhotes ficam em seu cadastro.</span>
                 )}
+                <button onClick={() => generateLoanReceiptPDF(loan, profile)} className="text-xs text-secondary hover:underline px-2 inline-flex items-center gap-1">
+                  <FileDown className="w-3.5 h-3.5" /> Recibo PDF
+                </button>
               </div>
             </LoanCard>
           ))}
@@ -163,6 +170,9 @@ export default function Emprestimos() {
                 <div>Devolvida em: {fmtDate(loan.data_devolucao)}</div>
                 {loan.filhotes_gerados > 0 && <div>Filhotes gerados: {loan.filhotes_gerados}</div>}
               </div>
+              <button onClick={() => generateLoanReceiptPDF(loan, profile)} className="text-xs text-secondary hover:underline mt-2 inline-flex items-center gap-1">
+                <FileDown className="w-3.5 h-3.5" /> Recibo PDF
+              </button>
             </LoanCard>
           ))}
         </TabsContent>
