@@ -416,8 +416,16 @@ export default function BirdDetail() {
               Ao transferir, todos os dados da ave (histórico de saúde, torneios, observações) serão enviados ao novo proprietário.
             </p>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Email ou ID do destinatário *</label>
-              <input value={transferTo} onChange={e => setTransferTo(e.target.value)} className="mt-1 input-field" placeholder="email@exemplo.com" />
+              <label className="text-xs font-medium text-muted-foreground">E-mail ou Código do Criadouro *</label>
+              <input
+                value={transferTo}
+                onChange={e => setTransferTo(e.target.value)}
+                className="mt-1 input-field"
+                placeholder="email@exemplo.com  ou  ABC123"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Informe o e-mail OU o código de 6 caracteres do criadouro destinatário.
+              </p>
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowTransfer(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
