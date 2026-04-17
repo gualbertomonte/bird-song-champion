@@ -80,7 +80,7 @@ export default function Torneios() {
               <h3 className="heading-serif font-semibold text-lg mb-2 line-clamp-1">{t.nome}</h3>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(t.data).toLocaleDateString('pt-BR')}</span>
-                <span className="flex items-center gap-1"><Users className="w-3 h-3" />{t.numero_estacoes} estações</span>
+                <span className="flex items-center gap-1"><Users className="w-3 h-3" />{t.numero_estacoes} estacas</span>
               </div>
               {t.organizer_user_id === user?.id && (
                 <p className="text-[10px] uppercase tracking-wider mt-3 text-secondary font-semibold">Organizando</p>

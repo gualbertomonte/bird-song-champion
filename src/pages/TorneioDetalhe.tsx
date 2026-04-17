@@ -46,7 +46,7 @@ export default function TorneioDetalhe() {
   ];
 
   const sortear = async () => {
-    if (!confirm('Sortear estações? Isto vai redistribuir todas as aves aprovadas.')) return;
+    if (!confirm('Sortear estacas? Isto vai redistribuir todas as aves aprovadas.')) return;
     const { error } = await supabase.rpc('sortear_estacoes', { _torneio_id: torneio.id });
     if (error) toast.error(error.message);
     else toast.success('Sorteio realizado!');
@@ -89,7 +89,7 @@ export default function TorneioDetalhe() {
             <h1 className="heading-serif text-2xl font-semibold">{torneio.nome}</h1>
             <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(torneio.data).toLocaleDateString('pt-BR')}</span>
-              <span className="flex items-center gap-1"><Users className="w-4 h-4" />{torneio.numero_estacoes} estações</span>
+              <span className="flex items-center gap-1"><Users className="w-4 h-4" />{torneio.numero_estacoes} estacas</span>
               <span>{torneio.numero_baterias} {torneio.numero_baterias === 1 ? 'bateria' : 'baterias'}</span>
             </div>
           </div>
@@ -304,7 +304,7 @@ function SorteioTab({ inscricoes, torneio }: any) {
       <table className="w-full text-sm">
         <thead className="bg-muted/20">
           <tr>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground w-24">Estação</th>
+            <th className="text-left p-3 text-xs font-medium text-muted-foreground w-24">Estaca</th>
             <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
             <th className="text-left p-3 text-xs font-medium text-muted-foreground">Anilha</th>
           </tr>
@@ -351,7 +351,7 @@ function PontuacaoTab({ torneio, inscricoes, pontuacoes, onChange }: any) {
       <table className="w-full text-sm">
         <thead className="bg-muted/20">
           <tr>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Estação</th>
+            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Estaca</th>
             <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
             {baterias.map(b => <th key={b} className="text-center p-3 text-xs font-medium text-muted-foreground">B{b}</th>)}
             <th className="text-right p-3 text-xs font-medium text-muted-foreground">Total</th>
