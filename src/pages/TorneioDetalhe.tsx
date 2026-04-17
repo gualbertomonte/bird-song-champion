@@ -160,14 +160,17 @@ export default function TorneioDetalhe() {
               )}
             </div>
           )}
-          {!isOrganizer && (
-            <div className="card-premium p-5 space-y-3">
-              <h2 className="heading-serif font-semibold text-base">Inscrever minhas aves</h2>
-              <button onClick={() => setInscreverOpen(true)} className="btn-primary text-sm" disabled={!['Rascunho','Inscricoes'].includes(torneio.status)}>
-                <Plus className="w-4 h-4" /> Inscrever ave
-              </button>
-            </div>
-          )}
+          <div className="card-premium p-5 space-y-3">
+            <h2 className="heading-serif font-semibold text-base">
+              {isOrganizer ? 'Inscrever minhas aves (organizador)' : 'Inscrever minhas aves'}
+            </h2>
+            {isOrganizer && (
+              <p className="text-xs text-muted-foreground">Como organizador, você também pode inscrever suas próprias aves no torneio.</p>
+            )}
+            <button onClick={() => setInscreverOpen(true)} className="btn-primary text-sm" disabled={!['Rascunho','Inscricoes'].includes(torneio.status)}>
+              <Plus className="w-4 h-4" /> Inscrever ave
+            </button>
+          </div>
         </div>
       )}
 
@@ -242,7 +245,7 @@ function InscricoesTab({ isOrganizer, inscricoes, torneio, userId, onInscrever, 
 
   return (
     <div className="card-premium overflow-hidden">
-      {!isOrganizer && ['Rascunho','Inscricoes'].includes(torneio.status) && (
+      {['Rascunho','Inscricoes'].includes(torneio.status) && (
         <div className="p-3 border-b">
           <button onClick={onInscrever} className="btn-primary text-xs"><Plus className="w-3.5 h-3.5" /> Inscrever ave</button>
         </div>
