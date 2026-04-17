@@ -508,7 +508,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateBird = useCallback(async (id: string, data: Partial<Bird>) => {
     if (!user) return;
     const patch: any = {};
-    const allowed: (keyof Bird)[] = ['nome','nome_cientifico','nome_comum_especie','sexo','data_nascimento','tipo_anilha','diametro_anilha','codigo_anilha','status','observacoes','pai_id','mae_id','foto_url','fotos','estado'];
+    const allowed: (keyof Bird)[] = ['nome','nome_cientifico','nome_comum_especie','sexo','data_nascimento','tipo_anilha','diametro_anilha','codigo_anilha','status','observacoes','pai_id','mae_id','foto_url','fotos','estado','anilha_sispass'];
     allowed.forEach(k => { if (k in data) patch[k] = (data as any)[k] ?? null; });
     if (patch.data_nascimento === '') patch.data_nascimento = null;
     const { data: row, error } = await supabase.from('birds').update(patch).eq('id', id).select('*').single();
