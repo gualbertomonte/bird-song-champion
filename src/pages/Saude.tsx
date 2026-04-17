@@ -1,20 +1,29 @@
 import { useAppState } from '@/context/AppContext';
-import { Heart, Plus, Pill, Calendar, AlertCircle, X, Check, Syringe, FlaskConical } from 'lucide-react';
+import { Heart, Plus, Pill, Calendar, AlertCircle, X, Check, CheckCircle2, Repeat } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 const tiposOptions = ['Vermifugação', 'Vacina', 'Exame', 'Vitamina', 'Tratamento', 'Cirurgia', 'Outro'];
+const recorrenciaOptions = [
+  { value: 0, label: 'Sem recorrência' },
+  { value: 1, label: 'Mensal' },
+  { value: 2, label: 'A cada 2 meses' },
+  { value: 3, label: 'A cada 3 meses' },
+  { value: 6, label: 'A cada 6 meses' },
+  { value: 12, label: 'Anual' },
+];
 
 export default function Saude() {
-  const { healthRecords, birds, addHealthRecord, deleteHealthRecord } = useAppState();
+  const { healthRecords, birds, addHealthRecord, deleteHealthRecord, markHealthApplied } = useAppState();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ bird_id: '', data: '', tipo: 'Vermifugação', descricao: '', proxima_dose: '' });
+  const [form, setForm] = useState({ bird_id: '', data: '', tipo: 'Vermifugação', descricao: '', proxima_dose: '', recorrencia_meses: 0 });
 
   const activeBirds = birds.filter(b => b.status === 'Ativo' || b.status === 'Berçário');
   const today = new Date();
 
+  // Próximas/vencidas (não aplicadas)
   const upcoming = healthRecords
-    .filter(h => h.proxima_dose && new Date(h.proxima_dose) > today)
+    .filter(h => h.proxima_dose && !h.aplicada_em)
     .sort((a, b) => new Date(a.proxima_dose!).getTime() - new Date(b.proxima_dose!).getTime());
 
   const recent = [...healthRecords].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
@@ -33,8 +42,9 @@ export default function Saude() {
       tipo: form.tipo,
       descricao: form.descricao || undefined,
       proxima_dose: form.proxima_dose || undefined,
+      recorrencia_meses: form.recorrencia_meses || undefined,
     });
-    setForm({ bird_id: '', data: '', tipo: 'Vermifugação', descricao: '', proxima_dose: '' });
+    setForm({ bird_id: '', data: '', tipo: 'Vermifugação', descricao: '', proxima_dose: '', recorrencia_meses: 0 });
     setShowForm(false);
     toast.success('Registro de saúde adicionado!');
   };
@@ -54,23 +64,42 @@ export default function Saude() {
       {upcoming.length > 0 && (
         <div className="bg-card rounded-xl border p-5 animate-fade-in">
           <h2 className="font-semibold text-lg mb-3 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-secondary" /> Próximas Doses
+            <AlertCircle className="w-4 h-4 text-secondary" /> Doses Pendentes
           </h2>
           <div className="space-y-2">
             {upcoming.map(h => {
               const bird = getBird(h.bird_id);
               const days = Math.ceil((new Date(h.proxima_dose!).getTime() - today.getTime()) / 86400000);
+              const isOverdue = days < 0;
+              const isSoon = days >= 0 && days <= 7;
+              const tone = isOverdue
+                ? 'bg-destructive/10 border-destructive/30'
+                : isSoon ? 'bg-destructive/5 border-destructive/15'
+                : 'bg-secondary/5 border-secondary/10';
+              const iconTone = isOverdue || isSoon ? 'text-destructive' : 'text-secondary';
               return (
-                <div key={h.id} className={`flex items-center gap-3 p-3 rounded-lg ${days <= 7 ? 'bg-destructive/5 border border-destructive/15' : 'bg-secondary/5 border border-secondary/10'}`}>
-                  <Pill className={`w-4 h-4 ${days <= 7 ? 'text-destructive' : 'text-secondary'} flex-shrink-0`} />
+                <div key={h.id} className={`flex items-center gap-3 p-3 rounded-lg border ${tone}`}>
+                  <Pill className={`w-4 h-4 ${iconTone} flex-shrink-0`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{bird?.nome} — {h.tipo}</p>
+                    <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                      {bird?.nome} — {h.tipo}
+                      {h.recorrencia_meses ? <Repeat className="w-3 h-3 text-muted-foreground" /> : null}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">{h.descricao}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs font-medium">{new Date(h.proxima_dose!).toLocaleDateString('pt-BR')}</p>
-                    <p className={`text-xs ${days <= 7 ? 'text-destructive' : 'text-secondary'}`}>em {days} dias</p>
+                    <p className={`text-xs ${iconTone}`}>
+                      {isOverdue ? `vencida há ${Math.abs(days)}d` : days === 0 ? 'hoje' : `em ${days}d`}
+                    </p>
                   </div>
+                  <button
+                    onClick={() => markHealthApplied(h.id)}
+                    className="flex-shrink-0 inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-success/15 text-success hover:bg-success/25 transition-colors font-medium"
+                    title="Marcar como aplicada"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Aplicar
+                  </button>
                 </div>
               );
             })}
@@ -91,6 +120,7 @@ export default function Saude() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Tipo</th>
                 <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Descrição</th>
                 <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Próx. Dose</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Status</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
@@ -101,13 +131,40 @@ export default function Saude() {
                   <tr key={h.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
                     <td className="p-3 text-muted-foreground text-xs sm:text-sm">{new Date(h.data).toLocaleDateString('pt-BR')}</td>
                     <td className="p-3 font-medium text-xs sm:text-sm">{bird?.nome || '—'}</td>
-                    <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">{h.tipo}</span></td>
+                    <td className="p-3">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary inline-flex items-center gap-1">
+                        {h.tipo}
+                        {h.recorrencia_meses ? <Repeat className="w-3 h-3" /> : null}
+                      </span>
+                    </td>
                     <td className="p-3 text-muted-foreground text-xs hidden sm:table-cell">{h.descricao || '—'}</td>
                     <td className="p-3 text-xs hidden sm:table-cell">{h.proxima_dose ? new Date(h.proxima_dose).toLocaleDateString('pt-BR') : '—'}</td>
+                    <td className="p-3 hidden md:table-cell">
+                      {h.aplicada_em ? (
+                        <span className="text-xs text-success inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> {new Date(h.aplicada_em).toLocaleDateString('pt-BR')}
+                        </span>
+                      ) : h.proxima_dose ? (
+                        <span className="text-xs text-muted-foreground">Pendente</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="p-3 text-right">
-                      <button onClick={() => { deleteHealthRecord(h.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="inline-flex items-center gap-1">
+                        {h.proxima_dose && !h.aplicada_em && (
+                          <button
+                            onClick={() => markHealthApplied(h.id)}
+                            className="btn-ghost p-1.5 text-success"
+                            title="Marcar como aplicada"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button onClick={() => { deleteHealthRecord(h.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -149,10 +206,29 @@ export default function Saude() {
                 <label className="text-xs font-medium text-muted-foreground">Descrição</label>
                 <textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} rows={2} className="mt-1 input-field resize-none" />
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Próxima Dose</label>
-                <input type="date" value={form.proxima_dose} onChange={e => setForm({ ...form, proxima_dose: e.target.value })} className="mt-1 input-field" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Próxima Dose</label>
+                  <input type="date" value={form.proxima_dose} onChange={e => setForm({ ...form, proxima_dose: e.target.value })} className="mt-1 input-field" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Repeat className="w-3 h-3" /> Repetir
+                  </label>
+                  <select
+                    value={form.recorrencia_meses}
+                    onChange={e => setForm({ ...form, recorrencia_meses: parseInt(e.target.value) })}
+                    className="mt-1 input-field"
+                  >
+                    {recorrenciaOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
               </div>
+              {form.recorrencia_meses > 0 && (
+                <p className="text-xs text-muted-foreground bg-info/5 border border-info/15 rounded-lg p-2">
+                  💡 Ao marcar como aplicada, criaremos automaticamente a próxima dose em {form.recorrencia_meses} {form.recorrencia_meses === 1 ? 'mês' : 'meses'}.
+                </p>
+              )}
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
