@@ -64,13 +64,23 @@ export default function Plantel() {
     setAnilhaCheck({ status: 'available' });
   }, [form.codigo_anilha, birds, editId, showForm]);
 
-  // Auto-preencher diâmetro com base no nome científico (se ainda não escolhido manualmente)
+  // Auto-preencher diâmetro ao mudar a espécie (funciona em criação e edição)
+  const prevSciRef = useRef<string>('');
   useEffect(() => {
-    if (!showForm) return;
-    const sci = form.nome_cientifico?.trim();
-    if (!sci) return;
+    if (!showForm) {
+      prevSciRef.current = '';
+      return;
+    }
+    const sci = form.nome_cientifico?.trim() || '';
+    // Primeira renderização do form: registra valor inicial sem sobrescrever diâmetro existente
+    if (prevSciRef.current === '') {
+      prevSciRef.current = sci;
+      return;
+    }
+    if (sci === prevSciRef.current) return;
+    prevSciRef.current = sci;
     const sugerido = DIAMETRO_POR_ESPECIE[sci];
-    if (sugerido && !form.diametro_anilha) {
+    if (sugerido) {
       setForm(prev => ({ ...prev, diametro_anilha: sugerido }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
