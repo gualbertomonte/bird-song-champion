@@ -403,29 +403,35 @@ function ClassificacaoTab({ classificacao, torneio, userId }: any) {
   const medal = (i: number) => i === 1 ? '🥇' : i === 2 ? '🥈' : i === 3 ? '🥉' : '';
   return (
     <div className="card-premium overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/20">
-          <tr>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground w-16">Pos.</th>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
-            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Anilha</th>
-            <th className="text-right p-3 text-xs font-medium text-muted-foreground">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {classificacao.map((c: any) => {
-            const minha = c.inscricao.participante_user_id === userId;
-            return (
-              <tr key={c.inscricao.id} className={`border-t border-border/30 ${minha ? 'bg-secondary/10 ring-1 ring-secondary/30' : ''}`}>
-                <td className="p-3 font-bold">{medal(c.posicao)} {c.posicao}º</td>
-                <td className="p-3">{c.inscricao.bird_snapshot?.nome} {minha && <span className="text-[10px] text-secondary uppercase ml-2">minha ave</span>}</td>
-                <td className="p-3 text-muted-foreground text-xs">{c.inscricao.bird_snapshot?.codigo_anilha}</td>
-                <td className="p-3 text-right font-bold text-secondary text-base">{c.totalPontos.toFixed(2)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[480px]">
+          <thead className="bg-muted/20">
+            <tr>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground w-16">Pos.</th>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Anilha</th>
+              <th className="text-right p-3 text-xs font-medium text-muted-foreground">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {classificacao.map((c: any) => {
+              const minha = c.inscricao.participante_user_id === userId;
+              return (
+                <tr key={c.inscricao.id} className={`border-t border-border/30 ${minha ? 'bg-secondary/10 ring-1 ring-secondary/30' : ''}`}>
+                  <td className="p-3 font-bold whitespace-nowrap">{medal(c.posicao)} {c.posicao}º</td>
+                  <td className="p-3">
+                    <p className="truncate max-w-[140px] sm:max-w-none">{c.inscricao.bird_snapshot?.nome}</p>
+                    <p className="text-[10px] text-muted-foreground sm:hidden">{c.inscricao.bird_snapshot?.codigo_anilha}</p>
+                    {minha && <span className="text-[10px] text-secondary uppercase">minha ave</span>}
+                  </td>
+                  <td className="p-3 text-muted-foreground text-xs hidden sm:table-cell">{c.inscricao.bird_snapshot?.codigo_anilha}</td>
+                  <td className="p-3 text-right font-bold text-secondary text-base whitespace-nowrap">{c.totalPontos.toFixed(2)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
