@@ -817,6 +817,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       birds, tournaments, healthRecords, nests, profile, loans, notifications, loading,
+      mobileNavConfig, setMobileNavConfig,
       setBirds, setTournaments, setHealthRecords, setNests, setProfile,
       addBird, updateBird, deleteBird,
       addTournament, updateTournament, deleteTournament,
