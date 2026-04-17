@@ -5,6 +5,19 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type MobileNavKey = 'dashboard' | 'plantel' | 'arvore' | 'bercario' | 'emprestimos' | 'torneios' | 'saude' | 'perfil';
+export interface MobileNavItemConfig { key: MobileNavKey; visible: boolean; }
+export const DEFAULT_MOBILE_NAV: MobileNavItemConfig[] = [
+  { key: 'dashboard', visible: true },
+  { key: 'plantel', visible: true },
+  { key: 'arvore', visible: true },
+  { key: 'bercario', visible: true },
+  { key: 'emprestimos', visible: true },
+  { key: 'torneios', visible: true },
+  { key: 'saude', visible: true },
+  { key: 'perfil', visible: true },
+];
+
 interface AppState {
   birds: Bird[];
   tournaments: Tournament[];
@@ -14,6 +27,8 @@ interface AppState {
   loans: BirdLoan[];
   notifications: AppNotification[];
   loading: boolean;
+  mobileNavConfig: MobileNavItemConfig[];
+  setMobileNavConfig: (config: MobileNavItemConfig[]) => Promise<void>;
   setBirds: (birds: Bird[]) => void;
   setTournaments: (t: Tournament[]) => void;
   setHealthRecords: (h: HealthRecord[]) => void;
