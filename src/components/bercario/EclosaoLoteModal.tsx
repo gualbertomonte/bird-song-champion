@@ -20,7 +20,7 @@ interface Props {
   onConfirm: (filhotes: FilhoteForm[]) => Promise<void>;
 }
 
-export function EclosaoLoteModal({ nest, mae, pai, onCancel, onConfirm }: Props) {
+function EclosaoLoteModalImpl({ nest, mae, pai, onCancel, onConfirm }: Props) {
   const especie = mae?.nome_cientifico || pai?.nome_cientifico || '';
   const diametroPadrao = DIAMETRO_POR_ESPECIE[especie] || '3.0mm';
 
