@@ -888,7 +888,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addBird, updateBird, deleteBird,
       addTournament, updateTournament, deleteTournament,
       addHealthRecord, deleteHealthRecord, markHealthApplied,
-      addNest, updateNest,
+      addNest, updateNest, deleteNest, clearNestsHistory,
       createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan,
       markNotificationRead, markAllNotificationsRead, deleteNotification,
     }}>
