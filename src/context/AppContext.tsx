@@ -117,6 +117,7 @@ function birdToRow(b: Partial<Bird>, userId: string) {
     foto_url: b.foto_url ?? null,
     fotos: b.fotos ?? [],
     estado: b.estado ?? null,
+    gerado_no_bercario: b.gerado_no_bercario ?? false,
   };
 }
 

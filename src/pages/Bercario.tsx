@@ -67,6 +67,7 @@ export default function Bercario() {
         pai_id: nest.macho_id,
         mae_id: nest.femea_id,
         estado: mae?.estado || pai?.estado,
+        gerado_no_bercario: true,
         created_at: new Date().toISOString(),
       });
     }

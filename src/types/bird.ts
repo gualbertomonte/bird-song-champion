@@ -34,6 +34,7 @@ export interface Bird {
   original_owner_user_id?: string;
   original_owner_email?: string;
   original_bird_id?: string;
+  gerado_no_bercario?: boolean;
 }
 
 export interface Nest {
