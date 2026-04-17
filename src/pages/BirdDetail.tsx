@@ -23,6 +23,8 @@ export default function BirdDetail() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [sending, setSending] = useState(false);
   const [transferTo, setTransferTo] = useState('');
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [downloadingCracha, setDownloadingCracha] = useState(false);
 
   if (!bird) return (
     <div className="text-center py-20">
