@@ -66,11 +66,12 @@ export default function Emprestimos() {
     <div className="max-w-5xl mx-auto space-y-6 pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
+          <p className="label-eyebrow mb-1">Cessão entre criadores</p>
           <h1 className="page-title flex items-center gap-2">
             <Handshake className="w-6 h-6 text-secondary" />
             Empréstimos para Reprodução
           </h1>
-          <p className="page-subtitle">Empreste suas aves a outros criadores ou gerencie aves recebidas</p>
+          <p className="page-subtitle">Empreste suas aves ou gerencie aves recebidas</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary">
           <Plus className="w-4 h-4" /> Novo Empréstimo
@@ -79,17 +80,17 @@ export default function Emprestimos() {
 
       {/* Resumo */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card rounded-xl border p-4">
+        <div className="stat-card">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowUpFromLine className="w-3.5 h-3.5" /> Saída</div>
-          <p className="text-2xl font-bold mt-1">{outgoing.length}</p>
+          <p className="number-serif text-3xl font-semibold mt-1">{outgoing.length}</p>
         </div>
-        <div className="bg-card rounded-xl border p-4">
+        <div className="stat-card">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowDownToLine className="w-3.5 h-3.5" /> Entrada</div>
-          <p className="text-2xl font-bold mt-1">{incoming.length}</p>
+          <p className="number-serif text-3xl font-semibold mt-1">{incoming.length}</p>
         </div>
-        <div className="bg-card rounded-xl border p-4">
+        <div className="stat-card">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><History className="w-3.5 h-3.5" /> Histórico</div>
-          <p className="text-2xl font-bold mt-1">{history.length}</p>
+          <p className="number-serif text-3xl font-semibold mt-1">{history.length}</p>
         </div>
       </div>
 
@@ -270,7 +271,7 @@ function EmptyState({ icon: Icon, text }: { icon: any; text: string }) {
 function LoanCard({ loan, statusBadge, fmtDate, children }: any) {
   const snap = loan.bird_snapshot || {};
   return (
-    <div className="bg-card rounded-xl border p-4 hover:border-secondary/30 transition-colors animate-fade-in">
+    <div className="card-hover p-4 animate-fade-in">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-3 min-w-0">
           {snap.foto_url ? (

@@ -53,8 +53,9 @@ export default function Saude() {
     <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
+          <p className="label-eyebrow mb-1">Bem-estar</p>
           <h1 className="page-title">Saúde</h1>
-          <p className="page-subtitle">{healthRecords.length} registros</p>
+          <p className="page-subtitle">{healthRecords.length} registros · cuide do que é seu</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary self-start">
           <Plus className="w-4 h-4" /> Novo Registro
@@ -62,8 +63,8 @@ export default function Saude() {
       </div>
 
       {upcoming.length > 0 && (
-        <div className="bg-card rounded-xl border p-5 animate-fade-in">
-          <h2 className="font-semibold text-lg mb-3 flex items-center gap-2">
+        <div className="card-premium p-5 animate-fade-in">
+          <h2 className="heading-serif font-semibold text-lg mb-3 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-secondary" /> Doses Pendentes
           </h2>
           <div className="space-y-2">
@@ -107,9 +108,9 @@ export default function Saude() {
         </div>
       )}
 
-      <div className="bg-card rounded-xl border overflow-hidden animate-fade-in">
-        <div className="p-4 border-b bg-muted/10">
-          <h2 className="font-semibold flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> Histórico Completo</h2>
+      <div className="card-premium overflow-hidden animate-fade-in">
+        <div className="p-4 border-b border-border/60 bg-muted/10">
+          <h2 className="heading-serif font-semibold text-lg flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> Histórico Completo</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

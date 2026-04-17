@@ -150,15 +150,16 @@ export default function Plantel() {
     <div className="space-y-5 pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
+          <p className="label-eyebrow mb-1">Coleção</p>
           <h1 className="page-title">Meu Plantel</h1>
-          <p className="page-subtitle">{birds.length} aves · {filtered.length} exibidas</p>
+          <p className="page-subtitle">{birds.length} aves cadastradas · {filtered.length} exibidas</p>
         </div>
         <div className="flex gap-2 self-start">
-          <div className="flex rounded-lg border overflow-hidden">
-            <button onClick={() => setViewMode('cards')} className={`p-2 ${viewMode === 'cards' ? 'bg-secondary text-secondary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'} transition-colors`}>
+          <div className="flex rounded-xl border border-border/60 overflow-hidden bg-card">
+            <button onClick={() => setViewMode('cards')} className={`p-2 ${viewMode === 'cards' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>
               <LayoutGrid className="w-4 h-4" />
             </button>
-            <button onClick={() => setViewMode('table')} className={`p-2 ${viewMode === 'table' ? 'bg-secondary text-secondary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'} transition-colors`}>
+            <button onClick={() => setViewMode('table')} className={`p-2 ${viewMode === 'table' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>
               <List className="w-4 h-4" />
             </button>
           </div>
@@ -207,27 +208,27 @@ export default function Plantel() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((bird, i) => (
             <div key={bird.id} className="card-hover group animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-              <div className="h-32 bg-gradient-to-br from-primary/20 to-muted/30 flex items-center justify-center relative overflow-hidden">
+              <div className="h-40 bg-gradient-to-br from-primary/30 via-muted/20 to-card flex items-center justify-center relative overflow-hidden">
                 {getPhoto(bird) ? (
                   <img src={getPhoto(bird)!} alt={bird.nome} className="w-full h-full object-cover" />
                 ) : (
-                  <Bird className="w-10 h-10 text-primary/30" />
+                  <Bird className="w-12 h-12 text-secondary/20" />
                 )}
-                <span className={`absolute top-2 right-2 ${statusClass[bird.status]}`}>{statusLabels[bird.status]}</span>
+                <span className={`absolute top-2.5 right-2.5 ${statusClass[bird.status]}`}>{statusLabels[bird.status]}</span>
                 {bird.sexo === 'M' ? (
-                  <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-primary/60 text-primary-foreground text-xs flex items-center justify-center font-bold">♂</span>
+                  <span className="absolute top-2.5 left-2.5 w-6 h-6 rounded-full bg-info/80 text-info-foreground text-xs flex items-center justify-center font-bold backdrop-blur-sm">♂</span>
                 ) : bird.sexo === 'F' ? (
-                  <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-secondary/60 text-secondary-foreground text-xs flex items-center justify-center font-bold">♀</span>
+                  <span className="absolute top-2.5 left-2.5 w-6 h-6 rounded-full bg-secondary/80 text-secondary-foreground text-xs flex items-center justify-center font-bold backdrop-blur-sm">♀</span>
                 ) : (
-                  <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-muted/60 text-foreground text-xs flex items-center justify-center font-bold">?</span>
+                  <span className="absolute top-2.5 left-2.5 w-6 h-6 rounded-full bg-muted/80 text-foreground text-xs flex items-center justify-center font-bold backdrop-blur-sm">?</span>
                 )}
               </div>
-              <div className="p-3 space-y-1.5">
+              <div className="p-3.5 space-y-2">
                 <div>
-                  <h3 className="font-semibold text-sm leading-tight">{bird.nome}</h3>
+                  <h3 className="heading-serif font-semibold text-base leading-tight">{bird.nome}</h3>
                   <p className="text-xs text-muted-foreground italic">{bird.nome_cientifico}</p>
                 </div>
-                <p className="text-xs text-muted-foreground font-mono">{bird.codigo_anilha}</p>
+                <p className="text-xs text-secondary font-mono tracking-wider">{bird.codigo_anilha}</p>
                 {bird.loan_status && bird.loan_status !== 'proprio' && (
                   <LoanBadge status={bird.loan_status} />
                 )}
@@ -260,7 +261,7 @@ export default function Plantel() {
 
       {/* Table View */}
       {viewMode === 'table' && (
-        <div className="bg-card rounded-xl border overflow-hidden">
+        <div className="card-premium overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

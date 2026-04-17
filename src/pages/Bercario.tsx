@@ -108,8 +108,9 @@ export default function Bercario() {
     <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
+          <p className="label-eyebrow mb-1">Reprodução</p>
           <h1 className="page-title">Berçário</h1>
-          <p className="page-subtitle">Gestão de reprodução e filhotes</p>
+          <p className="page-subtitle">Acompanhe ninhadas, eclosões e filhotes</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary self-start">
           <Plus className="w-4 h-4" /> Nova Ninhada
@@ -117,8 +118,8 @@ export default function Bercario() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+        <div className="card-premium p-4">
+          <h3 className="heading-serif font-semibold text-base mb-3 flex items-center gap-2">
             <BirdIcon className="w-4 h-4 text-info" /> Fêmeas no Berçário ({femeasBercario.length})
           </h3>
           <div className="space-y-2">
@@ -132,8 +133,8 @@ export default function Bercario() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+        <div className="card-premium p-4">
+          <h3 className="heading-serif font-semibold text-base mb-3 flex items-center gap-2">
             <Egg className="w-4 h-4 text-secondary" /> Em incubação ({ninhadasAtivas.length})
           </h3>
           <div className="space-y-2">
@@ -180,8 +181,8 @@ export default function Bercario() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+        <div className="card-premium p-4">
+          <h3 className="heading-serif font-semibold text-base mb-3 flex items-center gap-2">
             <BirdIcon className="w-4 h-4 text-success" /> Filhotes Recentes ({filhotesRecentes.length})
           </h3>
           <div className="space-y-2">

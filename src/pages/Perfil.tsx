@@ -93,15 +93,16 @@ export default function Perfil() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-20 md:pb-0">
       <div>
+        <p className="label-eyebrow mb-1">Identidade</p>
         <h1 className="page-title">Perfil do Criador</h1>
         <p className="page-subtitle">Dados oficiais do criadouro</p>
       </div>
 
       {/* Profile strength */}
-      <div className="bg-card rounded-xl border p-5 animate-fade-in">
+      <div className="card-premium p-5 animate-fade-in">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium">Força do Perfil</span>
-          <span className="text-sm font-bold text-secondary">{progress}%</span>
+          <span className="number-serif text-lg font-semibold text-secondary">{progress}%</span>
         </div>
         <Progress value={progress} className="h-2" />
         <p className="text-xs text-muted-foreground mt-2">
@@ -111,10 +112,10 @@ export default function Perfil() {
 
       {/* Código do Criadouro */}
       {profile.codigo_criadouro && (
-        <div className="bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent rounded-xl border border-secondary/20 p-5 animate-fade-in" style={{ animationDelay: '50ms' }}>
+        <div className="card-premium bg-gradient-to-br from-secondary/10 via-card to-card border-secondary/30 p-5 animate-fade-in glow-gold" style={{ animationDelay: '50ms' }}>
           <div className="flex items-center gap-2 mb-2">
             <Hash className="w-4 h-4 text-secondary" />
-            <h3 className="font-semibold text-sm">Código do Criadouro</h3>
+            <h3 className="heading-serif font-semibold text-base">Código do Criadouro</h3>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
             Compartilhe este código com outros criadores para receber aves emprestadas para reprodução.
@@ -138,8 +139,8 @@ export default function Perfil() {
       )}
 
       {/* Logo */}
-      <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '100ms' }}>
-        <h3 className="font-semibold mb-3">Logo do Criadouro</h3>
+      <div className="card-premium p-5 animate-fade-in" style={{ animationDelay: '100ms' }}>
+        <h3 className="heading-serif font-semibold text-base mb-3">Logo do Criadouro</h3>
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-xl bg-muted/30 border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
             {form.logo_url ? (
@@ -160,8 +161,8 @@ export default function Perfil() {
       </div>
 
       {/* Form */}
-      <div className="bg-card rounded-xl border p-5 space-y-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
-        <h3 className="font-semibold">Dados Oficiais</h3>
+      <div className="card-premium p-5 space-y-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+        <h3 className="heading-serif font-semibold text-base">Dados Oficiais</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {fields.map(f => (
             <div key={f.key} className={f.key === 'endereco' ? 'sm:col-span-2' : ''}>
@@ -187,10 +188,10 @@ export default function Perfil() {
       </div>
 
       {/* Barra de Navegação Mobile */}
-      <div className="bg-card rounded-xl border p-5 space-y-4 animate-fade-in" style={{ animationDelay: '250ms' }}>
+      <div className="card-premium p-5 space-y-4 animate-fade-in" style={{ animationDelay: '250ms' }}>
         <div className="flex items-center gap-2">
           <Smartphone className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold">Barra de Navegação Mobile</h3>
+          <h3 className="heading-serif font-semibold text-base">Barra de Navegação Mobile</h3>
         </div>
         <p className="text-xs text-muted-foreground">
           Escolha quais atalhos aparecem na barra inferior do celular e em que ordem. Recomendado: 4 a 6 itens visíveis.
@@ -253,10 +254,10 @@ export default function Perfil() {
       </div>
 
       {/* Alterar Senha */}
-      <div className="bg-card rounded-xl border p-5 space-y-4 animate-fade-in" style={{ animationDelay: '300ms' }}>
+      <div className="card-premium p-5 space-y-4 animate-fade-in" style={{ animationDelay: '300ms' }}>
         <div className="flex items-center gap-2">
           <Lock className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold">Alterar Senha</h3>
+          <h3 className="heading-serif font-semibold text-base">Alterar Senha</h3>
         </div>
         {user?.email && (
           <p className="text-xs text-muted-foreground">Conta: {user.email}</p>
