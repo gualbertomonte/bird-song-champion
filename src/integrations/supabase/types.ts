@@ -386,6 +386,252 @@ export type Database = {
         }
         Relationships: []
       }
+      torneio_audit_log: {
+        Row: {
+          acao: string
+          bateria: number | null
+          created_at: string
+          id: string
+          inscricao_id: string | null
+          pontos_anterior: number | null
+          pontos_novo: number | null
+          torneio_id: string
+          user_id: string
+        }
+        Insert: {
+          acao: string
+          bateria?: number | null
+          created_at?: string
+          id?: string
+          inscricao_id?: string | null
+          pontos_anterior?: number | null
+          pontos_novo?: number | null
+          torneio_id: string
+          user_id: string
+        }
+        Update: {
+          acao?: string
+          bateria?: number | null
+          created_at?: string
+          id?: string
+          inscricao_id?: string | null
+          pontos_anterior?: number | null
+          pontos_novo?: number | null
+          torneio_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      torneio_convites: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email_convidado: string | null
+          id: string
+          status: string
+          tipo: string
+          token: string
+          torneio_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email_convidado?: string | null
+          id?: string
+          status?: string
+          tipo: string
+          token?: string
+          torneio_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email_convidado?: string | null
+          id?: string
+          status?: string
+          tipo?: string
+          token?: string
+          torneio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_convites_torneio_id_fkey"
+            columns: ["torneio_id"]
+            isOneToOne: false
+            referencedRelation: "torneios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torneio_inscricoes: {
+        Row: {
+          bird_id: string
+          bird_snapshot: Json
+          created_at: string
+          estacao: number | null
+          id: string
+          motivo_rejeicao: string | null
+          participante_user_id: string
+          status: string
+          torneio_id: string
+          updated_at: string
+        }
+        Insert: {
+          bird_id: string
+          bird_snapshot?: Json
+          created_at?: string
+          estacao?: number | null
+          id?: string
+          motivo_rejeicao?: string | null
+          participante_user_id: string
+          status?: string
+          torneio_id: string
+          updated_at?: string
+        }
+        Update: {
+          bird_id?: string
+          bird_snapshot?: Json
+          created_at?: string
+          estacao?: number | null
+          id?: string
+          motivo_rejeicao?: string | null
+          participante_user_id?: string
+          status?: string
+          torneio_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_inscricoes_torneio_id_fkey"
+            columns: ["torneio_id"]
+            isOneToOne: false
+            referencedRelation: "torneios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torneio_participantes: {
+        Row: {
+          created_at: string
+          id: string
+          torneio_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          torneio_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          torneio_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_participantes_torneio_id_fkey"
+            columns: ["torneio_id"]
+            isOneToOne: false
+            referencedRelation: "torneios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torneio_pontuacoes: {
+        Row: {
+          bateria: number
+          created_at: string
+          created_by_user_id: string
+          id: string
+          inscricao_id: string
+          pontos: number
+          torneio_id: string
+          updated_at: string
+        }
+        Insert: {
+          bateria?: number
+          created_at?: string
+          created_by_user_id: string
+          id?: string
+          inscricao_id: string
+          pontos?: number
+          torneio_id: string
+          updated_at?: string
+        }
+        Update: {
+          bateria?: number
+          created_at?: string
+          created_by_user_id?: string
+          id?: string
+          inscricao_id?: string
+          pontos?: number
+          torneio_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_pontuacoes_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_inscricoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "torneio_pontuacoes_torneio_id_fkey"
+            columns: ["torneio_id"]
+            isOneToOne: false
+            referencedRelation: "torneios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torneios: {
+        Row: {
+          created_at: string
+          data: string
+          encerrado_em: string | null
+          id: string
+          nome: string
+          numero_baterias: number
+          numero_estacoes: number
+          organizer_user_id: string
+          regulamento: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          encerrado_em?: string | null
+          id?: string
+          nome: string
+          numero_baterias?: number
+          numero_estacoes?: number
+          organizer_user_id: string
+          regulamento?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          encerrado_em?: string | null
+          id?: string
+          nome?: string
+          numero_baterias?: number
+          numero_estacoes?: number
+          organizer_user_id?: string
+          regulamento?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tournaments: {
         Row: {
           bird_id: string
@@ -427,6 +673,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aceitar_convite_torneio: { Args: { _token: string }; Returns: Json }
+      aprovar_inscricao: {
+        Args: { _aprovar: boolean; _inscricao_id: string; _motivo?: string }
+        Returns: undefined
+      }
       cancel_loan: { Args: { _loan_id: string }; Returns: undefined }
       confirm_loan_return: { Args: { _loan_id: string }; Returns: undefined }
       create_loan: {
@@ -438,7 +689,22 @@ export type Database = {
         }
         Returns: Json
       }
+      encerrar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
       generate_codigo_criadouro: { Args: never; Returns: string }
+      inscrever_ave_torneio: {
+        Args: { _bird_id: string; _torneio_id: string }
+        Returns: string
+      }
+      is_torneio_organizer: { Args: { _torneio_id: string }; Returns: boolean }
+      is_torneio_participante: {
+        Args: { _torneio_id: string }
+        Returns: boolean
+      }
+      registrar_pontuacao: {
+        Args: { _bateria: number; _inscricao_id: string; _pontos: number }
+        Returns: undefined
+      }
+      sortear_estacoes: { Args: { _torneio_id: string }; Returns: undefined }
       transfer_bird: {
         Args: { _bird_id: string; _destinatario: string }
         Returns: Json
