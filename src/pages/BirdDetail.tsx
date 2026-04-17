@@ -548,25 +548,25 @@ export default function BirdDetail() {
 
       {/* Transfer Modal */}
       {showTransfer && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowTransfer(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-sm p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <h2 className="font-bold text-lg">Transferir Ave</h2>
-            <p className="text-sm text-muted-foreground">
-              Ao transferir, todos os dados da ave (histórico de saúde, torneios, observações) serão enviados ao novo proprietário.
-            </p>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">E-mail ou Código do Criadouro *</label>
-              <input
-                value={transferTo}
-                onChange={e => setTransferTo(e.target.value)}
-                className="mt-1 input-field"
-                placeholder="email@exemplo.com  ou  ABC123"
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Informe o e-mail OU o código de 6 caracteres do criadouro destinatário.
-              </p>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowTransfer(false)}>
+          <div className="bg-card rounded-t-2xl sm:rounded-2xl border shadow-xl w-full max-w-sm max-h-[92vh] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="p-6 pb-3 flex-shrink-0">
+              <h2 className="font-bold text-lg">Transferir Ave</h2>
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="px-6 space-y-4 overflow-y-auto flex-1">
+              <p className="text-sm text-muted-foreground">
+                Ao transferir, todos os dados da ave (histórico de saúde, torneios, observações) serão enviados ao novo proprietário.
+              </p>
+              <AmigoSelector
+                label="Destinatário *"
+                value={transferTo}
+                onChange={setTransferTo}
+                preferEmail={true}
+                placeholder="email@exemplo.com ou ABC123"
+                help="Selecione um amigo ou digite o e-mail / código de 6 caracteres do criadouro."
+              />
+            </div>
+            <div className="p-6 pt-3 flex justify-end gap-3 border-t flex-shrink-0 bg-card sticky bottom-0">
               <button onClick={() => setShowTransfer(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
               <button onClick={handleTransfer} disabled={sending} className="btn-primary text-sm disabled:opacity-50"><Send className="w-3.5 h-3.5" /> {sending ? 'Enviando...' : 'Transferir'}</button>
             </div>
