@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Bird, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Signup() {
   const { signUp } = useAuth();
+  const [params] = useSearchParams();
+  const redirect = params.get('redirect') || '';
+  const loginHref = redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -117,7 +120,7 @@ export default function Signup() {
 
           <p className="text-center text-sm text-muted-foreground">
             Já tem conta?{' '}
-            <Link to="/login" className="text-secondary hover:underline font-medium">Entrar</Link>
+            <Link to={loginHref} className="text-secondary hover:underline font-medium">Entrar</Link>
           </p>
         </div>
       </div>
