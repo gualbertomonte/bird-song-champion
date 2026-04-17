@@ -22,38 +22,42 @@ export default function ConviteTorneio() {
     ranRef.current = true;
 
     (async () => {
-      // 1. Look up the invite to find the tournament
-      const { data: convite, error: convErr } = await supabase
-        .from('torneio_convites')
-        .select('torneio_id, tipo, email_convidado, status')
-        .eq('token', token)
-        .maybeSingle();
-
-      if (convErr || !convite) {
-        setError('Convite inválido ou expirado.');
-        return;
-      }
-
-      // 2. If user is already organizer, just go to the tournament
-      const { data: torneio } = await supabase
-        .from('torneios')
-        .select('organizer_user_id')
-        .eq('id', convite.torneio_id)
-        .maybeSingle();
-
-      if (torneio?.organizer_user_id === user.id) {
-        toast.info('Você é o organizador deste torneio.');
-        navigate(`/torneios/${convite.torneio_id}`, { replace: true });
-        return;
-      }
-
-      // 3. Try to accept the invite
+      // Call the SECURITY DEFINER RPC directly — it handles all validation
+      // (including organizer redirect) and bypasses RLS issues.
       const { data, error: rpcErr } = await supabase.rpc('aceitar_convite_torneio', { _token: token });
+
       if (rpcErr) {
-        setError(rpcErr.message);
+        // If user is already organizer or participant, try to find the tournament
+        // via the convite to redirect them anyway.
+        const { data: convite } = await supabase
+          .from('torneio_convites')
+          .select('torneio_id')
+          .eq('token', token)
+          .maybeSingle();
+
+        if (convite?.torneio_id) {
+          // Check if user already has access
+          const { data: torneio } = await supabase
+            .from('torneios')
+            .select('id')
+            .eq('id', convite.torneio_id)
+            .maybeSingle();
+          if (torneio) {
+            toast.info('Você já participa deste torneio.');
+            navigate(`/torneios/${convite.torneio_id}`, { replace: true });
+            return;
+          }
+        }
+
+        setError(rpcErr.message || 'Convite inválido ou expirado.');
         return;
       }
-      const torneioId = (data as any)?.torneio_id ?? convite.torneio_id;
+
+      const torneioId = (data as any)?.torneio_id;
+      if (!torneioId) {
+        setError('Resposta inesperada do servidor.');
+        return;
+      }
       toast.success('Convite aceito! Bem-vindo ao torneio.');
       navigate(`/torneios/${torneioId}`, { replace: true });
     })();
