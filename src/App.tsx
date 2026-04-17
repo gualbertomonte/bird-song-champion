@@ -10,6 +10,10 @@ import Dashboard from "@/pages/Dashboard";
 import Plantel from "@/pages/Plantel";
 import BirdDetail from "@/pages/BirdDetail";
 import Torneios from "@/pages/Torneios";
+import TorneioNovo from "@/pages/TorneioNovo";
+import TorneioDetalhe from "@/pages/TorneioDetalhe";
+import ConviteTorneio from "@/pages/ConviteTorneio";
+import HistoricoTorneios from "@/pages/HistoricoTorneios";
 import Saude from "@/pages/Saude";
 import Bercario from "@/pages/Bercario";
 import Perfil from "@/pages/Perfil";
@@ -62,6 +66,7 @@ const App = () => (
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
 
             {/* Protected routes */}
             <Route path="/*" element={
@@ -74,6 +79,9 @@ const App = () => (
                       <Route path="/ave/:id" element={<BirdDetail />} />
                       <Route path="/arvore" element={<ArvoreGenealogica />} />
                       <Route path="/torneios" element={<Torneios />} />
+                      <Route path="/torneios/novo" element={<TorneioNovo />} />
+                      <Route path="/torneios/:id" element={<TorneioDetalhe />} />
+                      <Route path="/historico-torneios" element={<HistoricoTorneios />} />
                       <Route path="/saude" element={<Saude />} />
                       <Route path="/bercario" element={<Bercario />} />
                       <Route path="/emprestimos" element={<Emprestimos />} />
