@@ -619,24 +619,26 @@ function InscreverModal({ torneioId, birds, onClose }: { torneioId: string; bird
   };
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <div className="bg-card rounded-t-2xl sm:rounded-2xl border shadow-xl w-full max-w-md max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="p-6 pb-3 flex justify-between items-center flex-shrink-0">
           <h2 className="font-bold text-xl">Inscrever aves</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
-        <p className="text-xs text-muted-foreground">Apenas machos podem participar de torneios.</p>
-        <div className="max-h-80 overflow-y-auto space-y-1">
-          {birds.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum macho disponível para inscrição.</p>}
-          {birds.map(b => (
-            <label key={b.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/30 cursor-pointer">
-              <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggle(b.id)} />
-              <span className="text-sm flex-1">{b.nome}</span>
-              <span className="text-xs text-muted-foreground">{b.codigo_anilha}</span>
-            </label>
-          ))}
+        <div className="px-6 space-y-3 overflow-y-auto flex-1">
+          <p className="text-xs text-muted-foreground">Apenas machos podem participar de torneios.</p>
+          <div className="space-y-1">
+            {birds.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum macho disponível para inscrição.</p>}
+            {birds.map(b => (
+              <label key={b.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/30 cursor-pointer">
+                <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggle(b.id)} />
+                <span className="text-sm flex-1">{b.nome}</span>
+                <span className="text-xs text-muted-foreground">{b.codigo_anilha}</span>
+              </label>
+            ))}
+          </div>
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="p-6 pt-3 flex justify-end gap-2 border-t flex-shrink-0 bg-card">
           <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted">Cancelar</button>
           <button onClick={inscrever} disabled={saving || selected.size === 0} className="btn-primary">
             <Check className="w-4 h-4" /> Inscrever ({selected.size})
