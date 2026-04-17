@@ -486,7 +486,7 @@ export default function BirdDetail() {
                       <img src={photoDataUrl} alt={bird.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
                     ) : photo ? (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Loader2Spin />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       </div>
                     ) : (
                       <BirdIcon className="w-10 h-10" style={{ color: 'rgba(255,255,255,0.15)' }} />
@@ -532,7 +532,7 @@ export default function BirdDetail() {
             </div>
 
             <button onClick={downloadCracha} disabled={downloadingCracha} className="w-full btn-primary justify-center disabled:opacity-50">
-              {downloadingCracha ? <Loader2Spin /> : <Download className="w-4 h-4" />}
+              {downloadingCracha ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {downloadingCracha ? 'Gerando...' : 'Baixar como Imagem'}
             </button>
             <button onClick={() => setShowCracha(false)} className="w-full px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors text-center">Fechar</button>
