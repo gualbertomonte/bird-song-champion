@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Bird, CriadorProfile } from '@/types/bird';
 import type { BirdLoan } from '@/types/loan';
+import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
@@ -258,4 +259,41 @@ export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile)
 
   footer(doc);
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+/* ─────────── Relatório de Torneio ─────────── */
+export function gerarRelatorioTorneio(torneio: Torneio, classificacao: ClassificacaoItem[], profile: CriadorProfile) {
+  const doc = new jsPDF();
+  header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
+
+  let y = 56;
+  if (torneio.regulamento) {
+    sectionTitle(doc, 'Regulamento', y); y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...C_TEXT);
+    const lines = doc.splitTextToSize(torneio.regulamento, 180);
+    doc.text(lines, 14, y);
+    y += lines.length * 4 + 6;
+  }
+
+  sectionTitle(doc, 'Classificação Final', y); y += 4;
+
+  autoTable(doc, {
+    startY: y,
+    theme: 'grid',
+    ...tableTheme,
+    head: [['Pos.', 'Ave', 'Anilha', 'Estação', 'Total']],
+    body: classificacao.map(c => [
+      `${c.posicao}º`,
+      c.inscricao.bird_snapshot?.nome || '—',
+      c.inscricao.bird_snapshot?.codigo_anilha || '—',
+      c.inscricao.estacao ? `#${c.inscricao.estacao}` : '—',
+      c.totalPontos.toFixed(2),
+    ]),
+    columnStyles: { 0: { cellWidth: 18, fontStyle: 'bold' }, 4: { halign: 'right', fontStyle: 'bold' } },
+  });
+
+  footer(doc);
+  doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }

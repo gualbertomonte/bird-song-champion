@@ -1,186 +1,92 @@
-import { useState, useMemo } from 'react';
-import { useAppState } from '@/context/AppContext';
-import { Trophy, Plus, X, Check, Medal, Filter } from 'lucide-react';
-import { toast } from 'sonner';
-import { useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Trophy, Plus, Calendar, Users, History } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useTorneiosList } from '@/hooks/useTorneios';
+import type { TorneioStatus } from '@/types/torneio';
+
+const statusColors: Record<TorneioStatus, string> = {
+  'Rascunho': 'bg-muted text-muted-foreground',
+  'Inscricoes': 'bg-secondary/15 text-secondary',
+  'Sorteado': 'bg-accent/15 text-accent',
+  'Em andamento': 'bg-primary/15 text-primary',
+  'Encerrado': 'bg-foreground/10 text-foreground',
+};
 
 export default function Torneios() {
-  const { tournaments, birds, addTournament, deleteTournament } = useAppState();
-  const [searchParams] = useSearchParams();
-  const [showForm, setShowForm] = useState(false);
-  const [filterBird, setFilterBird] = useState('');
-  const [form, setForm] = useState({ bird_id: '', data: '', nome_torneio: '', clube: '', pontuacao: 500, classificacao: '' });
-
-  useEffect(() => { if (searchParams.get('new') === '1') setShowForm(true); }, [searchParams]);
-
-  const activeBirds = birds.filter(b => (b.status === 'Ativo' || b.status === 'Berçário') && b.sexo === 'M');
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { torneios, loading } = useTorneiosList();
+  const [filter, setFilter] = useState<'todos' | 'organizando' | 'participando' | 'encerrados'>('todos');
 
   const filtered = useMemo(() => {
-    let result = [...tournaments];
-    if (filterBird) result = result.filter(t => t.bird_id === filterBird);
-    return result.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-  }, [tournaments, filterBird]);
-
-  const ranking = useMemo(() => {
-    const map = new Map<string, { total: number; count: number }>();
-    tournaments.forEach(t => {
-      const existing = map.get(t.bird_id) || { total: 0, count: 0 };
-      map.set(t.bird_id, { total: existing.total + t.pontuacao, count: existing.count + 1 });
+    return torneios.filter(t => {
+      if (filter === 'organizando') return t.organizer_user_id === user?.id;
+      if (filter === 'participando') return t.organizer_user_id !== user?.id;
+      if (filter === 'encerrados') return t.status === 'Encerrado';
+      return true;
     });
-    return Array.from(map.entries())
-      .map(([id, data]) => ({ bird: birds.find(b => b.id === id), avg: Math.round(data.total / data.count), count: data.count }))
-      .filter(r => r.bird)
-      .sort((a, b) => b.avg - a.avg)
-      .slice(0, 10);
-  }, [tournaments, birds]);
-
-  const save = () => {
-    if (!form.bird_id || !form.data || !form.nome_torneio) {
-      toast.error('Preencha ave, data e nome do torneio');
-      return;
-    }
-    if (form.pontuacao < 1 || form.pontuacao > 1000) {
-      toast.error('Pontuação deve ser entre 1 e 1000');
-      return;
-    }
-    addTournament({ ...form, id: Date.now().toString(), created_at: new Date().toISOString() });
-    setForm({ bird_id: '', data: '', nome_torneio: '', clube: '', pontuacao: 500, classificacao: '' });
-    setShowForm(false);
-    toast.success('Torneio registrado!');
-  };
-
-  const medalColor = (i: number) => i === 0 ? 'text-secondary' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-orange-400' : 'text-muted-foreground';
+  }, [torneios, filter, user?.id]);
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <p className="label-eyebrow mb-1">Competição</p>
+          <p className="label-eyebrow mb-1">Competição colaborativa</p>
           <h1 className="page-title">Torneios</h1>
-          <p className="page-subtitle">{tournaments.length} participações registradas</p>
+          <p className="page-subtitle">{torneios.length} torneios · organizador ou participante</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary self-start">
-          <Plus className="w-4 h-4" /> Registrar Torneio
-        </button>
+        <div className="flex gap-2 self-start">
+          <Link to="/historico-torneios" className="btn-ghost">
+            <History className="w-4 h-4" /> Histórico
+          </Link>
+          <button onClick={() => navigate('/torneios/novo')} className="btn-primary">
+            <Plus className="w-4 h-4" /> Novo Torneio
+          </button>
+        </div>
       </div>
 
-      {ranking.length > 0 && (
-        <div className="card-premium p-5 animate-fade-in">
-          <h2 className="heading-serif font-semibold text-lg mb-4 flex items-center gap-2">
-            <Medal className="w-4 h-4 text-secondary" /> Ranking Interno (Top 10)
-          </h2>
-          <div className="space-y-2">
-            {ranking.map((item, i) => (
-              <div key={item.bird!.id} className={`flex items-center gap-3 sm:gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
-                <span className={`text-lg font-bold w-8 text-center ${medalColor(i)}`}>{i + 1}º</span>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium text-sm">{item.bird!.nome}</span>
-                  <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">{item.bird!.codigo_anilha}</span>
-                </div>
-                <span className="text-xs text-muted-foreground hidden sm:inline">{item.count} torneios</span>
-                <span className="font-bold text-lg text-secondary">{item.avg}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-muted-foreground" />
-        <select value={filterBird} onChange={e => setFilterBird(e.target.value)} className="input-field w-auto min-w-[200px]">
-          <option value="">Todas as aves</option>
-          {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
-        </select>
+      <div className="flex gap-2 flex-wrap">
+        {(['todos', 'organizando', 'participando', 'encerrados'] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
+              filter === f ? 'bg-secondary text-secondary-foreground' : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
+            }`}
+          >
+            {f}
+          </button>
+        ))}
       </div>
 
-      <div className="card-premium overflow-hidden animate-fade-in">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/20">
-                <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Torneio</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Ave</th>
-                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Clube</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Pts</th>
-                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Classificação</th>
-                <th className="text-right p-3 font-medium text-muted-foreground">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(t => {
-                const bird = birds.find(b => b.id === t.bird_id);
-                return (
-                  <tr key={t.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
-                    <td className="p-3 text-muted-foreground text-xs sm:text-sm">{new Date(t.data).toLocaleDateString('pt-BR')}</td>
-                    <td className="p-3 font-medium text-xs sm:text-sm">{t.nome_torneio}</td>
-                    <td className="p-3 text-xs sm:text-sm">{bird?.nome || '—'}</td>
-                    <td className="p-3 text-muted-foreground hidden sm:table-cell">{t.clube || '—'}</td>
-                    <td className="p-3 font-bold text-secondary">{t.pontuacao}</td>
-                    <td className="p-3 hidden sm:table-cell">{t.classificacao || '—'}</td>
-                    <td className="p-3 text-right">
-                      <button onClick={() => { deleteTournament(t.id); toast.success('Removido'); }} className="btn-ghost p-1.5 text-destructive">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {loading ? (
+        <p className="text-center py-12 text-sm text-muted-foreground">Carregando…</p>
+      ) : filtered.length === 0 ? (
+        <div className="card-premium p-10 text-center">
+          <Trophy className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+          <p className="text-sm text-muted-foreground">Nenhum torneio ainda. Crie o primeiro!</p>
         </div>
-        {filtered.length === 0 && <p className="text-center py-8 text-sm text-muted-foreground">Nenhum torneio registrado</p>}
-      </div>
-
-      {showForm && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center">
-              <h2 className="font-bold text-xl">Registrar Torneio</h2>
-              <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Ave *</label>
-                <select value={form.bird_id} onChange={e => setForm({ ...form, bird_id: e.target.value })} className="mt-1 input-field">
-                  <option value="">Selecionar ave...</option>
-                  {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
-                </select>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(t => (
+            <Link key={t.id} to={`/torneios/${t.id}`} className="card-premium p-5 hover:border-secondary/40 transition-all group">
+              <div className="flex items-start justify-between mb-3">
+                <Trophy className="w-5 h-5 text-secondary group-hover:scale-110 transition-transform" />
+                <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-semibold ${statusColors[t.status]}`}>
+                  {t.status}
+                </span>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome do Torneio *</label>
-                <input value={form.nome_torneio} onChange={e => setForm({ ...form, nome_torneio: e.target.value })} className="mt-1 input-field" />
+              <h3 className="heading-serif font-semibold text-lg mb-2 line-clamp-1">{t.nome}</h3>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(t.data).toLocaleDateString('pt-BR')}</span>
+                <span className="flex items-center gap-1"><Users className="w-3 h-3" />{t.numero_estacoes} estações</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Data *</label>
-                  <input type="date" value={form.data} onChange={e => setForm({ ...form, data: e.target.value })} className="mt-1 input-field" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Clube</label>
-                  <input value={form.clube} onChange={e => setForm({ ...form, clube: e.target.value })} className="mt-1 input-field" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between">
-                  <label className="text-xs font-medium text-muted-foreground">Pontuação (1-1000)</label>
-                  <span className="text-sm font-bold text-secondary">{form.pontuacao}</span>
-                </div>
-                <input type="range" min={1} max={1000} step={1} value={form.pontuacao}
-                  onChange={e => setForm({ ...form, pontuacao: Number(e.target.value) })}
-                  className="w-full mt-1 accent-secondary" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Classificação</label>
-                <input value={form.classificacao} onChange={e => setForm({ ...form, classificacao: e.target.value })} className="mt-1 input-field" placeholder="1º Lugar, Finalista..." />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={save} className="btn-primary"><Check className="w-4 h-4" /> Registrar</button>
-            </div>
-          </div>
+              {t.organizer_user_id === user?.id && (
+                <p className="text-[10px] uppercase tracking-wider mt-3 text-secondary font-semibold">Organizando</p>
+              )}
+            </Link>
+          ))}
         </div>
       )}
     </div>
