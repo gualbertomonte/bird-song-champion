@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Bird as BirdIcon, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send } from 'lucide-react';
+import { Bird as BirdIcon, ChevronLeft, Trophy, Heart, Users, QrCode, Download, Send, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
@@ -23,6 +23,8 @@ export default function BirdDetail() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [sending, setSending] = useState(false);
   const [transferTo, setTransferTo] = useState('');
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [downloadingCracha, setDownloadingCracha] = useState(false);
 
   if (!bird) return (
     <div className="text-center py-20">
@@ -48,16 +50,45 @@ export default function BirdDetail() {
     ? Math.round(birdTournaments.reduce((s, t) => s + t.pontuacao, 0) / birdTournaments.length)
     : 0;
 
+  // Converte a foto para data URL para evitar problemas CORS no html2canvas
+  const openCracha = async () => {
+    setShowCracha(true);
+    if (photo && !photoDataUrl) {
+      try {
+        const res = await fetch(photo, { mode: 'cors' });
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => setPhotoDataUrl(reader.result as string);
+        reader.readAsDataURL(blob);
+      } catch {
+        // Fallback: usa URL direta (pode funcionar se CORS estiver habilitado no bucket)
+        setPhotoDataUrl(photo);
+      }
+    }
+  };
+
   const downloadCracha = async () => {
     if (!crachaRef.current) return;
+    setDownloadingCracha(true);
     try {
-      const canvas = await html2canvas(crachaRef.current, { backgroundColor: '#0A0F0D', scale: 2 });
+      const canvas = await html2canvas(crachaRef.current, {
+        backgroundColor: null,
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+      });
       const link = document.createElement('a');
       link.download = `cracha_${bird.codigo_anilha.replace(/\s/g, '_')}.png`;
-      link.href = canvas.toDataURL();
+      link.href = canvas.toDataURL('image/png');
       link.click();
       toast.success('Crachá baixado!');
-    } catch { toast.error('Erro ao gerar crachá'); }
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar crachá');
+    } finally {
+      setDownloadingCracha(false);
+    }
   };
 
   const handleTransfer = async () => {
@@ -134,7 +165,7 @@ export default function BirdDetail() {
             <LoanBadge status={bird.loan_status} size="sm" />
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
-            <button onClick={() => setShowCracha(true)} className="btn-primary text-xs">
+            <button onClick={openCracha} className="btn-primary text-xs">
               <QrCode className="w-3.5 h-3.5" /> Crachá Digital
             </button>
             <button
@@ -398,40 +429,111 @@ export default function BirdDetail() {
 
       {/* Crachá Modal */}
       {showCracha && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCracha(false)}>
-          <div className="space-y-4 animate-scale-in max-w-full" onClick={e => e.stopPropagation()}>
-            <div ref={crachaRef} className="w-[360px] sm:w-[400px] bg-gradient-to-br from-[#0B3B2A] to-[#0A0F0D] rounded-2xl p-5 sm:p-6 border border-secondary/20 text-white">
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
-                <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
-                  <BirdIcon className="w-5 h-5 text-secondary" />
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={() => setShowCracha(false)}>
+          <div className="space-y-4 animate-scale-in max-w-full my-auto" onClick={e => e.stopPropagation()}>
+            {/* Crachá premium — frente */}
+            <div
+              ref={crachaRef}
+              className="relative w-[360px] sm:w-[400px] rounded-2xl overflow-hidden text-white shadow-2xl"
+              style={{
+                background: 'linear-gradient(135deg, #0B3B2A 0%, #0E4A35 45%, #08251B 100%)',
+                border: '1px solid rgba(212,175,55,0.35)',
+              }}
+            >
+              {/* Marca d'água */}
+              <BirdIcon
+                className="absolute -right-6 -bottom-6 w-48 h-48 pointer-events-none"
+                style={{ color: 'rgba(212,175,55,0.06)' }}
+              />
+              {/* Faixa dourada superior */}
+              <div
+                className="h-1.5 w-full"
+                style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }}
+              />
+
+              <div className="relative p-5 sm:p-6">
+                {/* Cabeçalho */}
+                <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
+                      <BirdIcon className="w-4.5 h-4.5" style={{ color: '#D4AF37' }} />
+                    </div>
+                    <div className="leading-tight">
+                      <div className="font-bold text-[13px]" style={{ color: '#D4AF37' }}>{profile.nome_criadouro || 'Plantel Pro+'}</div>
+                      {profile.codigo_criadouro && (
+                        <div className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,0.5)' }}>COD {profile.codigo_criadouro}</div>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className="text-[9px] font-bold px-2 py-1 rounded uppercase tracking-wider"
+                    style={{
+                      background: bird.status === 'Ativo' ? 'rgba(34,197,94,0.18)' : bird.status === 'Berçário' ? 'rgba(59,130,246,0.18)' : bird.status === 'Vendido' ? 'rgba(212,175,55,0.18)' : 'rgba(239,68,68,0.18)',
+                      color: bird.status === 'Ativo' ? '#4ADE80' : bird.status === 'Berçário' ? '#60A5FA' : bird.status === 'Vendido' ? '#D4AF37' : '#F87171',
+                    }}
+                  >
+                    {bird.status}
+                  </span>
                 </div>
-                <span className="font-bold text-secondary text-sm">Plantel Pro+</span>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center">
-                  {photo ? <img src={photo} className="w-full h-full object-cover" /> : <BirdIcon className="w-8 h-8 text-white/20" />}
+
+                {/* Foto + nome */}
+                <div className="flex gap-4">
+                  <div
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '2px solid rgba(212,175,55,0.4)' }}
+                  >
+                    {photoDataUrl ? (
+                      <img src={photoDataUrl} alt={bird.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                    ) : photo ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      </div>
+                    ) : (
+                      <BirdIcon className="w-10 h-10" style={{ color: 'rgba(255,255,255,0.15)' }} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <h3 className="font-bold text-xl leading-tight truncate">{bird.nome}</h3>
+                    <p className="text-[11px] italic truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>{bird.nome_cientifico || '—'}</p>
+                    <div className="inline-block px-2.5 py-1 rounded-md font-mono text-xs font-bold mt-1" style={{ background: 'rgba(212,175,55,0.12)', color: '#D4AF37', border: '1px dashed rgba(212,175,55,0.4)' }}>
+                      {bird.codigo_anilha}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 space-y-1 min-w-0">
-                  <h3 className="font-bold text-lg leading-tight truncate">{bird.nome}</h3>
-                  <p className="text-xs italic text-white/60 truncate">{bird.nome_cientifico}</p>
-                  <p className="text-xs font-mono text-secondary truncate">{bird.codigo_anilha}</p>
+
+                {/* Dados */}
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-5 text-[11px]">
+                  <Field label="Sexo" value={bird.sexo === 'M' ? '♂ Macho' : bird.sexo === 'F' ? '♀ Fêmea' : 'A definir'} />
+                  <Field label="Nascimento" value={bird.data_nascimento ? new Date(bird.data_nascimento).toLocaleDateString('pt-BR') : '—'} />
+                  <Field label="Espécie" value={bird.nome_comum_especie || '—'} />
+                  <Field label="Estado" value={bird.estado || '—'} />
+                  {pai && <Field label="Pai" value={pai.nome} />}
+                  {mae && <Field label="Mãe" value={mae.nome} />}
+                </div>
+
+                {/* Rodapé com QR */}
+                <div className="flex justify-between items-end mt-5 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="space-y-0.5">
+                    <div className="text-[9px] uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.6)' }}>Documento Digital</div>
+                    <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>ID: {bird.id.slice(0, 8).toUpperCase()}</div>
+                    <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Emitido em {new Date().toLocaleDateString('pt-BR')}</div>
+                  </div>
+                  <div className="p-1.5 rounded-md" style={{ background: 'rgba(255,255,255,0.95)' }}>
+                    <QRCodeSVG value={`https://plantelpro.lovable.app/ave/${bird.id}`} size={56} bgColor="#FFFFFF" fgColor="#0B3B2A" level="M" />
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
-                <div><span className="text-white/40">Sexo:</span> <span>{bird.sexo === 'M' ? 'Macho' : bird.sexo === 'F' ? 'Fêmea' : 'A definir'}</span></div>
-                <div><span className="text-white/40">Espécie:</span> <span>{bird.nome_comum_especie || '—'}</span></div>
-                <div><span className="text-white/40">Nascimento:</span> <span>{bird.data_nascimento ? new Date(bird.data_nascimento).toLocaleDateString('pt-BR') : '—'}</span></div>
-                <div><span className="text-white/40">Status:</span> <span>{bird.status}</span></div>
-                {pai && <div><span className="text-white/40">Pai:</span> <span>{pai.nome}</span></div>}
-                {mae && <div><span className="text-white/40">Mãe:</span> <span>{mae.nome}</span></div>}
-              </div>
-              <div className="flex justify-between items-end mt-4 pt-3 border-t border-white/10">
-                <div className="text-[10px] text-white/30">Gerado por Plantel Pro+</div>
-                <QRCodeSVG value={`https://plantelproplus.app/ave/${bird.id}`} size={56} bgColor="transparent" fgColor="#D4AF37" level="L" />
-              </div>
+
+              {/* Faixa dourada inferior */}
+              <div
+                className="h-1.5 w-full"
+                style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }}
+              />
             </div>
-            <button onClick={downloadCracha} className="w-full btn-primary justify-center">
-              <Download className="w-4 h-4" /> Baixar como Imagem
+
+            <button onClick={downloadCracha} disabled={downloadingCracha} className="w-full btn-primary justify-center disabled:opacity-50">
+              {downloadingCracha ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {downloadingCracha ? 'Gerando...' : 'Baixar como Imagem'}
             </button>
             <button onClick={() => setShowCracha(false)} className="w-full px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors text-center">Fechar</button>
           </div>
@@ -465,6 +567,15 @@ export default function BirdDetail() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col leading-tight">
+      <span className="text-[9px] uppercase tracking-wider" style={{ color: 'rgba(212,175,55,0.6)' }}>{label}</span>
+      <span className="text-[12px] font-medium truncate" style={{ color: 'rgba(255,255,255,0.92)' }}>{value}</span>
     </div>
   );
 }
