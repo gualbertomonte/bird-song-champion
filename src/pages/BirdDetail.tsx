@@ -9,6 +9,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
+import LoanBadge from '@/components/LoanBadge';
 
 export default function BirdDetail() {
   const { id } = useParams<{ id: string }>();
@@ -122,12 +123,13 @@ export default function BirdDetail() {
             <h1 className="page-title">{bird.nome}</h1>
             <p className="text-muted-foreground italic">{bird.nome_cientifico}</p>
           </div>
-          <div className="flex flex-wrap gap-2 text-sm">
+          <div className="flex flex-wrap gap-2 text-sm items-center">
             <span className="px-3 py-1 rounded-full bg-muted/40 font-mono text-xs">{bird.codigo_anilha}</span>
             <span className={bird.sexo === 'M' ? 'badge-active' : bird.sexo === 'F' ? 'badge-sold' : 'px-3 py-1 rounded-full bg-muted/40 text-xs font-medium'}>{bird.sexo === 'M' ? '♂ Macho' : bird.sexo === 'F' ? '♀ Fêmea' : '? A definir'}</span>
             <span className={`badge-status ${bird.status === 'Ativo' ? 'bg-success/15 text-success' : bird.status === 'Berçário' ? 'bg-info/15 text-info' : bird.status === 'Vendido' ? 'bg-secondary/15 text-secondary' : 'bg-destructive/15 text-destructive'}`}>
               {bird.status}
             </span>
+            <LoanBadge status={bird.loan_status} size="sm" />
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
             <button onClick={() => setShowCracha(true)} className="btn-primary text-xs">
