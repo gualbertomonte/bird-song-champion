@@ -59,6 +59,25 @@ const defaultProfile: CriadorProfile = { nome_criadouro: '' };
 
 const MIGRATION_FLAG = 'ppp_migrated_to_cloud_v1';
 
+function sanitizeMobileNavConfig(raw: any): MobileNavItemConfig[] {
+  const validKeys = new Set(DEFAULT_MOBILE_NAV.map(d => d.key));
+  if (!Array.isArray(raw)) return DEFAULT_MOBILE_NAV;
+  const seen = new Set<string>();
+  const cleaned: MobileNavItemConfig[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const key = item.key as MobileNavKey;
+    if (!validKeys.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push({ key, visible: item.visible !== false });
+  }
+  // Append any missing keys (visible:true) so user always sees newly added screens
+  for (const def of DEFAULT_MOBILE_NAV) {
+    if (!seen.has(def.key)) cleaned.push({ ...def });
+  }
+  return cleaned;
+}
+
 // Map DB row -> Bird
 function rowToBird(r: any): Bird {
   return {
