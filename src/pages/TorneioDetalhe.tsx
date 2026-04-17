@@ -212,7 +212,7 @@ export default function TorneioDetalhe() {
       {inscreverOpen && (
         <InscreverModal
           torneioId={torneio.id}
-          birds={birds.filter(b => !inscricoes.some(i => i.bird_id === b.id))}
+          birds={birds.filter(b => b.sexo === 'M' && !inscricoes.some(i => i.bird_id === b.id))}
           onClose={() => { setInscreverOpen(false); refresh(); }}
         />
       )}
@@ -563,8 +563,9 @@ function InscreverModal({ torneioId, birds, onClose }: { torneioId: string; bird
           <h2 className="font-bold text-xl">Inscrever aves</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
+        <p className="text-xs text-muted-foreground">Apenas machos podem participar de torneios.</p>
         <div className="max-h-80 overflow-y-auto space-y-1">
-          {birds.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma ave disponível para inscrição.</p>}
+          {birds.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum macho disponível para inscrição.</p>}
           {birds.map(b => (
             <label key={b.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/30 cursor-pointer">
               <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggle(b.id)} />
