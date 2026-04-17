@@ -56,6 +56,7 @@ export default function Torneios() {
     <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
+          <p className="label-eyebrow mb-1">Competição</p>
           <h1 className="page-title">Torneios</h1>
           <p className="page-subtitle">{tournaments.length} participações registradas</p>
         </div>
@@ -65,8 +66,8 @@ export default function Torneios() {
       </div>
 
       {ranking.length > 0 && (
-        <div className="bg-card rounded-xl border p-5 animate-fade-in">
-          <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+        <div className="card-premium p-5 animate-fade-in">
+          <h2 className="heading-serif font-semibold text-lg mb-4 flex items-center gap-2">
             <Medal className="w-4 h-4 text-secondary" /> Ranking Interno (Top 10)
           </h2>
           <div className="space-y-2">
@@ -93,7 +94,7 @@ export default function Torneios() {
         </select>
       </div>
 
-      <div className="bg-card rounded-xl border overflow-hidden animate-fade-in">
+      <div className="card-premium overflow-hidden animate-fade-in">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

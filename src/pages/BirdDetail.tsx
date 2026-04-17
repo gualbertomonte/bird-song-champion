@@ -147,14 +147,15 @@ export default function BirdDetail() {
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-48 h-48 rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center flex-shrink-0">
-          {photo ? <img src={photo} alt={bird.nome} className="w-full h-full object-cover" /> : <BirdIcon className="w-16 h-16 text-muted-foreground/30" />}
+      <div className="flex flex-col md:flex-row gap-6 card-premium p-5">
+        <div className="w-full md:w-56 h-56 rounded-2xl overflow-hidden bg-gradient-to-br from-muted/40 to-card flex items-center justify-center flex-shrink-0 ring-gold">
+          {photo ? <img src={photo} alt={bird.nome} className="w-full h-full object-cover" /> : <BirdIcon className="w-20 h-20 text-secondary/20" />}
         </div>
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 space-y-3">
           <div>
+            <p className="label-eyebrow mb-1">Ficha da ave</p>
             <h1 className="page-title">{bird.nome}</h1>
-            <p className="text-muted-foreground italic">{bird.nome_cientifico}</p>
+            <p className="text-muted-foreground italic heading-serif">{bird.nome_cientifico}</p>
           </div>
           <div className="flex flex-wrap gap-2 text-sm items-center">
             <span className="px-3 py-1 rounded-full bg-muted/40 font-mono text-xs">{bird.codigo_anilha}</span>
@@ -213,8 +214,8 @@ export default function BirdDetail() {
 
         <TabsContent value="overview" className="animate-fade-in">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-card rounded-xl border p-5 space-y-3">
-              <h3 className="font-semibold">Dados Gerais</h3>
+            <div className="card-premium p-5 space-y-3">
+              <h3 className="heading-serif font-semibold text-base">Dados Gerais</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {[
                   ['Espécie', bird.nome_comum_especie || '—'],
@@ -224,30 +225,30 @@ export default function BirdDetail() {
                   ['Nascimento', bird.data_nascimento ? new Date(bird.data_nascimento).toLocaleDateString('pt-BR') : '—'],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <span className="text-muted-foreground text-xs">{label}</span>
-                    <p className="font-medium">{value}</p>
+                    <span className="label-eyebrow">{label}</span>
+                    <p className="font-medium mt-0.5">{value}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-card rounded-xl border p-5 space-y-3">
-              <h3 className="font-semibold">Estatísticas</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 rounded-lg bg-muted/30">
-                  <p className="text-2xl font-bold text-secondary">{birdTournaments.length}</p>
-                  <p className="text-xs text-muted-foreground">Torneios</p>
+            <div className="card-premium p-5 space-y-3">
+              <h3 className="heading-serif font-semibold text-base">Estatísticas</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 rounded-xl bg-secondary/5 border border-secondary/15">
+                  <p className="number-serif text-3xl font-semibold text-secondary">{birdTournaments.length}</p>
+                  <p className="label-eyebrow mt-1">Torneios</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-muted/30">
-                  <p className="text-2xl font-bold text-secondary">{avgPontuacao}</p>
-                  <p className="text-xs text-muted-foreground">Média pts</p>
+                <div className="text-center p-3 rounded-xl bg-secondary/5 border border-secondary/15">
+                  <p className="number-serif text-3xl font-semibold text-secondary">{avgPontuacao}</p>
+                  <p className="label-eyebrow mt-1">Média pts</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-muted/30">
-                  <p className="text-2xl font-bold">{filhotes.length}</p>
-                  <p className="text-xs text-muted-foreground">Filhotes</p>
+                <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/40">
+                  <p className="number-serif text-3xl font-semibold">{filhotes.length}</p>
+                  <p className="label-eyebrow mt-1">Filhotes</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-muted/30">
-                  <p className="text-2xl font-bold">{birdHealth.length}</p>
-                  <p className="text-xs text-muted-foreground">Reg. Saúde</p>
+                <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/40">
+                  <p className="number-serif text-3xl font-semibold">{birdHealth.length}</p>
+                  <p className="label-eyebrow mt-1">Reg. Saúde</p>
                 </div>
               </div>
             </div>
@@ -436,40 +437,40 @@ export default function BirdDetail() {
               ref={crachaRef}
               className="relative w-[360px] sm:w-[400px] rounded-2xl overflow-hidden text-white shadow-2xl"
               style={{
-                background: 'linear-gradient(135deg, #0B3B2A 0%, #0E4A35 45%, #08251B 100%)',
-                border: '1px solid rgba(212,175,55,0.35)',
+                background: 'linear-gradient(140deg, #0A2E22 0%, #0F3A2C 50%, #082118 100%)',
+                border: '1px solid rgba(201,169,97,0.4)',
               }}
             >
               {/* Marca d'água */}
               <BirdIcon
-                className="absolute -right-6 -bottom-6 w-48 h-48 pointer-events-none"
-                style={{ color: 'rgba(212,175,55,0.06)' }}
+                className="absolute -right-8 -bottom-8 w-56 h-56 pointer-events-none"
+                style={{ color: 'rgba(201,169,97,0.06)' }}
               />
               {/* Faixa dourada superior */}
               <div
                 className="h-1.5 w-full"
-                style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }}
+                style={{ background: 'linear-gradient(90deg, transparent, #C9A961, transparent)' }}
               />
 
               <div className="relative p-5 sm:p-6">
                 {/* Cabeçalho */}
-                <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid rgba(201,169,97,0.18)' }}>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
-                      <BirdIcon className="w-4.5 h-4.5" style={{ color: '#D4AF37' }} />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(201,169,97,0.18)', border: '1px solid rgba(201,169,97,0.4)' }}>
+                      <BirdIcon className="w-5 h-5" style={{ color: '#C9A961' }} />
                     </div>
                     <div className="leading-tight">
-                      <div className="font-bold text-[13px]" style={{ color: '#D4AF37' }}>{profile.nome_criadouro || 'Plantel Pro+'}</div>
+                      <div className="font-bold text-[13px]" style={{ color: '#C9A961', fontFamily: 'Fraunces, Georgia, serif', letterSpacing: '-0.01em' }}>{profile.nome_criadouro || 'Plantel Pro+'}</div>
                       {profile.codigo_criadouro && (
-                        <div className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,0.5)' }}>COD {profile.codigo_criadouro}</div>
+                        <div className="text-[9px] font-mono" style={{ color: 'rgba(245,241,232,0.55)' }}>COD {profile.codigo_criadouro}</div>
                       )}
                     </div>
                   </div>
                   <span
                     className="text-[9px] font-bold px-2 py-1 rounded uppercase tracking-wider"
                     style={{
-                      background: bird.status === 'Ativo' ? 'rgba(34,197,94,0.18)' : bird.status === 'Berçário' ? 'rgba(59,130,246,0.18)' : bird.status === 'Vendido' ? 'rgba(212,175,55,0.18)' : 'rgba(239,68,68,0.18)',
-                      color: bird.status === 'Ativo' ? '#4ADE80' : bird.status === 'Berçário' ? '#60A5FA' : bird.status === 'Vendido' ? '#D4AF37' : '#F87171',
+                      background: bird.status === 'Ativo' ? 'rgba(74,139,111,0.25)' : bird.status === 'Berçário' ? 'rgba(96,165,250,0.2)' : bird.status === 'Vendido' ? 'rgba(201,169,97,0.22)' : 'rgba(199,84,80,0.22)',
+                      color: bird.status === 'Ativo' ? '#7BC4A0' : bird.status === 'Berçário' ? '#7FB6F5' : bird.status === 'Vendido' ? '#D4B97A' : '#E58885',
                     }}
                   >
                     {bird.status}
@@ -479,8 +480,8 @@ export default function BirdDetail() {
                 {/* Foto + nome */}
                 <div className="flex gap-4">
                   <div
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '2px solid rgba(212,175,55,0.4)' }}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+                    style={{ background: 'rgba(245,241,232,0.04)', boxShadow: '0 0 0 2px rgba(201,169,97,0.5), 0 0 0 5px rgba(10,46,34,1), 0 0 0 6px rgba(201,169,97,0.3)' }}
                   >
                     {photoDataUrl ? (
                       <img src={photoDataUrl} alt={bird.nome} className="w-full h-full object-cover" crossOrigin="anonymous" />
@@ -489,20 +490,20 @@ export default function BirdDetail() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       </div>
                     ) : (
-                      <BirdIcon className="w-10 h-10" style={{ color: 'rgba(255,255,255,0.15)' }} />
+                      <BirdIcon className="w-10 h-10" style={{ color: 'rgba(201,169,97,0.25)' }} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
-                    <h3 className="font-bold text-xl leading-tight truncate">{bird.nome}</h3>
-                    <p className="text-[11px] italic truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>{bird.nome_cientifico || '—'}</p>
-                    <div className="inline-block px-2.5 py-1 rounded-md font-mono text-xs font-bold mt-1" style={{ background: 'rgba(212,175,55,0.12)', color: '#D4AF37', border: '1px dashed rgba(212,175,55,0.4)' }}>
+                    <h3 className="font-bold text-2xl leading-tight truncate" style={{ fontFamily: 'Fraunces, Georgia, serif', color: '#F5F1E8', letterSpacing: '-0.02em' }}>{bird.nome}</h3>
+                    <p className="text-[11px] italic truncate" style={{ color: 'rgba(245,241,232,0.6)', fontFamily: 'Fraunces, Georgia, serif' }}>{bird.nome_cientifico || '—'}</p>
+                    <div className="inline-block px-2.5 py-1 rounded-md font-mono text-xs font-bold mt-1.5" style={{ background: 'rgba(201,169,97,0.15)', color: '#C9A961', border: '1px dashed rgba(201,169,97,0.45)', letterSpacing: '0.1em' }}>
                       {bird.codigo_anilha}
                     </div>
                   </div>
                 </div>
 
                 {/* Dados */}
-                <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-5 text-[11px]">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-5 text-[11px]">
                   <Field label="Sexo" value={bird.sexo === 'M' ? '♂ Macho' : bird.sexo === 'F' ? '♀ Fêmea' : 'A definir'} />
                   <Field label="Nascimento" value={bird.data_nascimento ? new Date(bird.data_nascimento).toLocaleDateString('pt-BR') : '—'} />
                   <Field label="Espécie" value={bird.nome_comum_especie || '—'} />
@@ -512,14 +513,14 @@ export default function BirdDetail() {
                 </div>
 
                 {/* Rodapé com QR */}
-                <div className="flex justify-between items-end mt-5 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="flex justify-between items-end mt-5 pt-3" style={{ borderTop: '1px solid rgba(201,169,97,0.18)' }}>
                   <div className="space-y-0.5">
-                    <div className="text-[9px] uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.6)' }}>Documento Digital</div>
-                    <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>ID: {bird.id.slice(0, 8).toUpperCase()}</div>
-                    <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Emitido em {new Date().toLocaleDateString('pt-BR')}</div>
+                    <div className="text-[9px] uppercase tracking-[0.18em] font-semibold" style={{ color: 'rgba(201,169,97,0.7)' }}>Verificado · Plantel Pro+</div>
+                    <div className="text-[9px]" style={{ color: 'rgba(245,241,232,0.4)' }}>ID: {bird.id.slice(0, 8).toUpperCase()}</div>
+                    <div className="text-[9px]" style={{ color: 'rgba(245,241,232,0.4)' }}>Emitido em {new Date().toLocaleDateString('pt-BR')}</div>
                   </div>
-                  <div className="p-1.5 rounded-md" style={{ background: 'rgba(255,255,255,0.95)' }}>
-                    <QRCodeSVG value={`https://plantelpro.lovable.app/ave/${bird.id}`} size={56} bgColor="#FFFFFF" fgColor="#0B3B2A" level="M" />
+                  <div className="p-1.5 rounded-lg" style={{ background: '#FFFFFF', boxShadow: '0 0 0 1px rgba(201,169,97,0.4)' }}>
+                    <QRCodeSVG value={`https://plantelpro.lovable.app/ave/${bird.id}`} size={60} bgColor="#FFFFFF" fgColor="#0A2E22" level="M" />
                   </div>
                 </div>
               </div>
@@ -527,7 +528,7 @@ export default function BirdDetail() {
               {/* Faixa dourada inferior */}
               <div
                 className="h-1.5 w-full"
-                style={{ background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)' }}
+                style={{ background: 'linear-gradient(90deg, transparent, #C9A961, transparent)' }}
               />
             </div>
 
@@ -574,8 +575,8 @@ export default function BirdDetail() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col leading-tight">
-      <span className="text-[9px] uppercase tracking-wider" style={{ color: 'rgba(212,175,55,0.6)' }}>{label}</span>
-      <span className="text-[12px] font-medium truncate" style={{ color: 'rgba(255,255,255,0.92)' }}>{value}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] font-semibold" style={{ color: 'rgba(201,169,97,0.7)' }}>{label}</span>
+      <span className="text-[12px] font-medium truncate mt-0.5" style={{ color: 'rgba(245,241,232,0.95)' }}>{value}</span>
     </div>
   );
 }

@@ -6,35 +6,70 @@ import type { BirdLoan } from '@/types/loan';
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
 
+// Paleta Aviário Premium (RGB)
+const C_FOREST = [10, 46, 34] as [number, number, number];        // #0A2E22
+const C_FOREST_DEEP = [8, 36, 27] as [number, number, number];    // mais escuro
+const C_GOLD = [201, 169, 97] as [number, number, number];        // #C9A961
+const C_GOLD_SOFT = [184, 147, 90] as [number, number, number];   // #B8935A
+const C_CREAM = [245, 241, 232] as [number, number, number];      // #F5F1E8
+const C_CREAM_ALT = [250, 247, 239] as [number, number, number];  // zebra
+const C_TEXT = [30, 38, 34] as [number, number, number];
+const C_MUTED = [120, 130, 124] as [number, number, number];
+
 function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
-  doc.setFillColor(11, 59, 42); // primary green
-  doc.rect(0, 0, doc.internal.pageSize.getWidth(), 22, 'F');
+  const w = doc.internal.pageSize.getWidth();
 
-  doc.setTextColor(212, 175, 55); // gold
+  // Faixa principal verde-floresta
+  doc.setFillColor(...C_FOREST);
+  doc.rect(0, 0, w, 26, 'F');
+
+  // Linha dourada inferior na faixa
+  doc.setDrawColor(...C_GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(0, 26, w, 26);
+
+  // Logo / nome do criadouro
+  doc.setTextColor(...C_GOLD);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text(profile.nome_criadouro || 'Criadouro', 14, 10);
+  doc.setFontSize(15);
+  doc.text(profile.nome_criadouro || 'Plantel Pro+', 14, 12);
 
-  doc.setTextColor(255, 255, 255);
+  // Metadados
+  doc.setTextColor(...C_CREAM);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   const meta: string[] = [];
-  if (profile.codigo_criadouro) meta.push(`Cód: ${profile.codigo_criadouro}`);
-  if (profile.registro_ctf) meta.push(`CTF/IBAMA: ${profile.registro_ctf}`);
-  if (profile.cpf) meta.push(`CPF: ${profile.cpf}`);
-  doc.text(meta.join('  ·  '), 14, 16);
+  if (profile.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
+  if (profile.registro_ctf) meta.push(`CTF/IBAMA ${profile.registro_ctf}`);
+  if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
+  if (meta.length) doc.text(meta.join('  ·  '), 14, 19);
 
-  doc.setTextColor(0, 0, 0);
+  // Selo "Plantel Pro+" no canto direito
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text(title, 14, 32);
+  doc.setFontSize(9);
+  doc.setTextColor(...C_GOLD);
+  doc.text('PLANTEL PRO+', w - 14, 12, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_CREAM);
+  doc.text('Aviário Premium', w - 14, 17, { align: 'right' });
+
+  // Título do documento
+  doc.setTextColor(...C_TEXT);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text(title, 14, 38);
   if (subtitle) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(90, 90, 90);
-    doc.text(subtitle, 14, 38);
+    doc.setTextColor(...C_MUTED);
+    doc.text(subtitle, 14, 44);
   }
-  doc.setTextColor(0, 0, 0);
+  // Linha dourada decorativa
+  doc.setDrawColor(...C_GOLD);
+  doc.setLineWidth(0.3);
+  doc.line(14, 47, w - 14, 47);
+  doc.setTextColor(...C_TEXT);
 }
 
 function footer(doc: jsPDF) {
@@ -43,11 +78,44 @@ function footer(doc: jsPDF) {
   const h = doc.internal.pageSize.getHeight();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    // Linha dourada
+    doc.setDrawColor(...C_GOLD);
+    doc.setLineWidth(0.3);
+    doc.line(14, h - 12, w - 14, h - 12);
+    // Texto
     doc.setFontSize(8);
-    doc.setTextColor(140, 140, 140);
-    doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} por Plantel Pro+`, 14, h - 8);
-    doc.text(`Página ${i} de ${pageCount}`, w - 14, h - 8, { align: 'right' });
+    doc.setTextColor(...C_MUTED);
+    doc.text(`Plantel Pro+ · Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, h - 7);
+    doc.text(`Página ${i} de ${pageCount}`, w - 14, h - 7, { align: 'right' });
   }
+}
+
+const tableTheme = {
+  headStyles: {
+    fillColor: C_FOREST,
+    textColor: C_GOLD,
+    fontStyle: 'bold' as const,
+    fontSize: 9,
+    cellPadding: 3,
+  },
+  bodyStyles: {
+    fontSize: 9,
+    textColor: C_TEXT,
+    cellPadding: 2.5,
+  },
+  alternateRowStyles: { fillColor: C_CREAM_ALT },
+  styles: { lineColor: C_GOLD, lineWidth: 0.1 },
+};
+
+function sectionTitle(doc: jsPDF, text: string, y: number) {
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C_FOREST);
+  doc.text(text, 14, y);
+  doc.setDrawColor(...C_GOLD);
+  doc.setLineWidth(0.2);
+  doc.line(14, y + 1.5, 14 + doc.getTextWidth(text) + 4, y + 1.5);
+  doc.setTextColor(...C_TEXT);
 }
 
 /* ─────────── Recibo de Empréstimo ─────────── */
@@ -56,65 +124,74 @@ export function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorProfile) 
   const snap = (loan.bird_snapshot || {}) as any;
   header(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
 
-  let y = 48;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Partes envolvidas', 14, y); y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text(`Cedente (proprietário): ${loan.owner_email || '—'}`, 14, y); y += 5;
-  doc.text(`Recebedor: ${loan.borrower_email}${loan.borrower_codigo_criadouro ? ` (cód. ${loan.borrower_codigo_criadouro})` : ''}`, 14, y); y += 8;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('Dados da ave', 14, y); y += 2;
+  let y = 56;
+  sectionTitle(doc, 'Partes envolvidas', y); y += 6;
 
   autoTable(doc, {
     startY: y,
     theme: 'grid',
-    headStyles: { fillColor: [11, 59, 42], textColor: [212, 175, 55] },
-    styles: { fontSize: 9 },
+    ...tableTheme,
     body: [
-      ['Nome', snap.nome || '—', 'Anilha', snap.codigo_anilha || '—'],
-      ['Espécie', snap.nome_cientifico || '—', 'Sexo', sexoLabel(snap.sexo)],
-      ['Nascimento', fmtDate(snap.data_nascimento), 'Diâmetro', snap.diametro_anilha || '—'],
-      ['Tipo anilha', snap.tipo_anilha || '—', 'Estado', snap.estado || '—'],
+      [{ content: 'Cedente (proprietário)', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, loan.owner_email || '—'],
+      [{ content: 'Recebedor', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, `${loan.borrower_email}${loan.borrower_codigo_criadouro ? ` (cód. ${loan.borrower_codigo_criadouro})` : ''}`],
+    ],
+    columnStyles: { 0: { cellWidth: 55 } },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 8;
+  sectionTitle(doc, 'Dados da ave', y); y += 4;
+
+  autoTable(doc, {
+    startY: y,
+    theme: 'grid',
+    ...tableTheme,
+    body: [
+      [{ content: 'Nome', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, snap.nome || '—', { content: 'Anilha', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, snap.codigo_anilha || '—'],
+      [{ content: 'Espécie', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, { content: snap.nome_cientifico || '—', styles: { fontStyle: 'italic' } }, { content: 'Sexo', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, sexoLabel(snap.sexo)],
+      [{ content: 'Nascimento', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, fmtDate(snap.data_nascimento), { content: 'Diâmetro', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, snap.diametro_anilha || '—'],
+      [{ content: 'Tipo anilha', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, snap.tipo_anilha || '—', { content: 'Estado', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, snap.estado || '—'],
     ],
   });
 
   y = (doc as any).lastAutoTable.finalY + 8;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('Condições do empréstimo', 14, y); y += 2;
+  sectionTitle(doc, 'Condições do empréstimo', y); y += 4;
 
   autoTable(doc, {
     startY: y,
     theme: 'grid',
-    headStyles: { fillColor: [11, 59, 42], textColor: [212, 175, 55] },
-    styles: { fontSize: 9 },
+    ...tableTheme,
     body: [
-      ['Data do empréstimo', fmtDate(loan.data_emprestimo)],
-      ['Prazo previsto', fmtDate(loan.prazo_devolucao)],
-      ['Status atual', loan.status.replace('_', ' ')],
-      ['Observações', loan.observacoes || '—'],
+      [{ content: 'Data do empréstimo', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, fmtDate(loan.data_emprestimo)],
+      [{ content: 'Prazo previsto', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, fmtDate(loan.prazo_devolucao)],
+      [{ content: 'Status atual', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, loan.status.replace('_', ' ')],
+      [{ content: 'Observações', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, loan.observacoes || '—'],
     ],
+    columnStyles: { 0: { cellWidth: 55 } },
   });
 
-  y = (doc as any).lastAutoTable.finalY + 14;
+  y = (doc as any).lastAutoTable.finalY + 12;
+
+  // Termo legal
+  doc.setFillColor(...C_CREAM);
+  doc.roundedRect(14, y - 4, doc.internal.pageSize.getWidth() - 28, 26, 2, 2, 'F');
   doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
+  doc.setTextColor(...C_TEXT);
+  doc.setFont('helvetica', 'italic');
   const termo =
     'Declaramos que a ave acima descrita foi cedida em empréstimo para fins de reprodução, ' +
     'permanecendo a propriedade do cedente. O recebedor compromete-se a zelar pelo bem-estar ' +
     'da ave e devolvê-la conforme combinado. Filhotes gerados durante o empréstimo pertencem ao recebedor.';
-  doc.text(doc.splitTextToSize(termo, 180), 14, y);
+  doc.text(doc.splitTextToSize(termo, 175), 18, y + 2);
+  doc.setFont('helvetica', 'normal');
 
-  y += 26;
-  doc.setDrawColor(180, 180, 180);
+  y += 38;
+  doc.setDrawColor(...C_GOLD_SOFT);
+  doc.setLineWidth(0.4);
   doc.line(20, y, 90, y);
   doc.line(120, y, 190, y);
   doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
+  doc.setTextColor(...C_FOREST);
+  doc.setFont('helvetica', 'bold');
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
@@ -133,10 +210,9 @@ export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile)
   );
 
   autoTable(doc, {
-    startY: 44,
+    startY: 54,
     theme: 'grid',
-    headStyles: { fillColor: [11, 59, 42], textColor: [212, 175, 55], fontSize: 8 },
-    bodyStyles: { fontSize: 8 },
+    ...tableTheme,
     head: [['Anilha', 'SISPASS', 'Nome', 'Espécie', 'Sexo', 'Nasc.', 'Tipo', 'Diâm.', 'Status', 'Estado']],
     body: birds.map(b => [
       b.codigo_anilha || '—',
@@ -153,13 +229,13 @@ export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile)
     columnStyles: {
       0: { cellWidth: 22 },
       1: { cellWidth: 16 },
-      3: { cellWidth: 40, fontStyle: 'italic' },
+      3: { cellWidth: 45, fontStyle: 'italic' },
     },
   });
 
   // Resumo
-  let y = (doc as any).lastAutoTable.finalY + 8;
-  if (y > 180) { doc.addPage(); y = 20; }
+  let y = (doc as any).lastAutoTable.finalY + 10;
+  if (y > 175) { doc.addPage(); y = 24; }
   const counts = {
     ativos: birds.filter(b => b.status === 'Ativo').length,
     bercario: birds.filter(b => b.status === 'Berçário').length,
@@ -168,17 +244,15 @@ export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile)
     machos: birds.filter(b => b.sexo === 'M').length,
     femeas: birds.filter(b => b.sexo === 'F').length,
   };
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('Resumo', 14, y); y += 2;
+  sectionTitle(doc, 'Resumo do plantel', y); y += 4;
   autoTable(doc, {
     startY: y,
-    theme: 'plain',
-    styles: { fontSize: 9 },
+    theme: 'grid',
+    ...tableTheme,
     body: [
-      ['Ativos', String(counts.ativos), 'Berçário', String(counts.bercario)],
-      ['Vendidos', String(counts.vendidos), 'Falecidos', String(counts.falecidos)],
-      ['Machos', String(counts.machos), 'Fêmeas', String(counts.femeas)],
+      [{ content: 'Ativos', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, String(counts.ativos), { content: 'Berçário', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, String(counts.bercario)],
+      [{ content: 'Vendidos', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, String(counts.vendidos), { content: 'Falecidos', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, String(counts.falecidos)],
+      [{ content: 'Machos', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, String(counts.machos), { content: 'Fêmeas', styles: { fontStyle: 'bold', fillColor: C_CREAM } }, String(counts.femeas)],
     ],
   });
 
