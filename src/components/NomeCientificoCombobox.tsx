@@ -1,20 +1,14 @@
 import { forwardRef, useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Plus, Check } from 'lucide-react';
+import { NOME_COMUM_POR_ESPECIE } from '@/data/anilhas';
 
 const SPECIES_MAP: Record<string, string> = {
-  'Sporophila angolensis': 'Curió',
-  'Sporophila maximiliani': 'Bicudo',
+  ...NOME_COMUM_POR_ESPECIE,
+  // Legado / espécies adicionais não cobertas pelo mapa oficial:
   'Serinus canaria': 'Canário',
-  'Sporophila caerulescens': 'Coleirinho',
-  'Sporophila nigricollis': 'Baiano',
-  'Saltator similis': 'Trinca-ferro',
-  'Sicalis flaveola': 'Canário-da-terra',
   'Sporophila frontalis': 'Pixoxó',
   'Sporophila leucoptera': 'Chorão',
-  'Carduelis magellanica': 'Pintassilgo',
-  'Paroaria dominicana': 'Cardeal',
-  'Cyanoloxia brissonii': 'Azulão',
 };
 
 interface Props {
