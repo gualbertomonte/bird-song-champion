@@ -214,32 +214,38 @@ export type Database = {
       }
       health_records: {
         Row: {
+          aplicada_em: string | null
           bird_id: string
           created_at: string
           data: string
           descricao: string | null
           id: string
           proxima_dose: string | null
+          recorrencia_meses: number | null
           tipo: string
           user_id: string
         }
         Insert: {
+          aplicada_em?: string | null
           bird_id: string
           created_at?: string
           data: string
           descricao?: string | null
           id?: string
           proxima_dose?: string | null
+          recorrencia_meses?: number | null
           tipo?: string
           user_id: string
         }
         Update: {
+          aplicada_em?: string | null
           bird_id?: string
           created_at?: string
           data?: string
           descricao?: string | null
           id?: string
           proxima_dose?: string | null
+          recorrencia_meses?: number | null
           tipo?: string
           user_id?: string
         }
