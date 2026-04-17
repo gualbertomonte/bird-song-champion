@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Trophy } from 'lucide-react';
 import { Bird, Nest } from '@/types/bird';
 
@@ -16,7 +17,7 @@ interface CasalStats {
   taxa: number; // 0-100
 }
 
-export function DesempenhoCasais({ nests, birds }: Props) {
+function DesempenhoCasaisImpl({ nests, birds }: Props) {
   const map = new Map<string, CasalStats>();
 
   for (const n of nests) {
@@ -89,3 +90,6 @@ export function DesempenhoCasais({ nests, birds }: Props) {
     </div>
   );
 }
+
+export const DesempenhoCasais = React.memo(DesempenhoCasaisImpl);
+

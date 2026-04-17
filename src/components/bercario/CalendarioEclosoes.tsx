@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { CalendarDays } from 'lucide-react';
 import { Bird, Nest } from '@/types/bird';
 
@@ -8,7 +9,7 @@ interface Props {
   birds: Bird[];
 }
 
-export function CalendarioEclosoes({ ninhadas, birds }: Props) {
+function CalendarioEclosoesImpl({ ninhadas, birds }: Props) {
   const previsoes = ninhadas
     .map(n => {
       const previsao = new Date(n.data_postura);
@@ -59,3 +60,6 @@ export function CalendarioEclosoes({ ninhadas, birds }: Props) {
     </div>
   );
 }
+
+export const CalendarioEclosoes = React.memo(CalendarioEclosoesImpl);
+
