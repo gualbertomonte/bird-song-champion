@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import LoanBadge from '@/components/LoanBadge';
 import { generateLoanReceiptPDF } from '@/lib/pdf';
 import { FileDown } from 'lucide-react';
+import AmigoSelector from '@/components/AmigoSelector';
 
 export default function BirdDetail() {
   const { id } = useParams<{ id: string }>();
