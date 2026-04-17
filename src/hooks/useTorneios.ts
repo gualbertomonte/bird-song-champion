@@ -24,6 +24,7 @@ export function useTorneioDetalhe(torneioId: string | undefined) {
   const [convites, setConvites] = useState<TorneioConvite[]>([]);
   const [auditLog, setAuditLog] = useState<TorneioAuditLog[]>([]);
   const [participantes, setParticipantes] = useState<{ user_id: string }[]>([]);
+  const [criadores, setCriadores] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -37,11 +38,27 @@ export function useTorneioDetalhe(torneioId: string | undefined) {
       supabase.from('torneio_participantes').select('user_id').eq('torneio_id', torneioId),
     ]);
     setTorneio(t.data as Torneio | null);
-    setInscricoes((ins.data ?? []) as TorneioInscricao[]);
+    const inscricoesList = (ins.data ?? []) as TorneioInscricao[];
+    setInscricoes(inscricoesList);
     setPontuacoes((pts.data ?? []) as TorneioPontuacao[]);
     setConvites((conv.data ?? []) as TorneioConvite[]);
     setAuditLog((audit.data ?? []) as TorneioAuditLog[]);
     setParticipantes((parts.data ?? []) as { user_id: string }[]);
+
+    // Fetch criador names for all involved users (organizer + participants + inscricoes)
+    const userIds = new Set<string>();
+    if (t.data?.organizer_user_id) userIds.add(t.data.organizer_user_id);
+    (parts.data ?? []).forEach((p: any) => userIds.add(p.user_id));
+    inscricoesList.forEach(i => userIds.add(i.participante_user_id));
+    if (userIds.size > 0) {
+      const { data: cps } = await supabase
+        .from('criador_profile')
+        .select('user_id, nome_criadouro')
+        .in('user_id', Array.from(userIds));
+      const map: Record<string, string> = {};
+      (cps ?? []).forEach((c: any) => { map[c.user_id] = c.nome_criadouro || ''; });
+      setCriadores(map);
+    }
     setLoading(false);
   }, [torneioId]);
 
@@ -59,5 +76,5 @@ export function useTorneioDetalhe(torneioId: string | undefined) {
     return () => { supabase.removeChannel(channel); };
   }, [torneioId, refresh]);
 
-  return { torneio, inscricoes, pontuacoes, convites, auditLog, participantes, loading, refresh };
+  return { torneio, inscricoes, pontuacoes, convites, auditLog, participantes, criadores, loading, refresh };
 }

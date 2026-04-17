@@ -19,7 +19,7 @@ export default function TorneioDetalhe() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { birds, profile } = useAppState();
-  const { torneio, inscricoes, pontuacoes, convites, auditLog, loading, refresh } = useTorneioDetalhe(id);
+  const { torneio, inscricoes, pontuacoes, convites, auditLog, criadores, loading, refresh } = useTorneioDetalhe(id);
   const [tab, setTab] = useState<TabKey>('visao');
   const [convidarOpen, setConvidarOpen] = useState(false);
   const [inscreverOpen, setInscreverOpen] = useState(false);
@@ -63,7 +63,7 @@ export default function TorneioDetalhe() {
 
   const baixarPDF = () => {
     try {
-      gerarRelatorioTorneio(torneio, classificacao, profile);
+      gerarRelatorioTorneio(torneio, classificacao, profile, criadores);
     } catch (e: any) {
       toast.error('Erro ao gerar PDF: ' + e.message);
     }
@@ -198,7 +198,7 @@ export default function TorneioDetalhe() {
 
       {/* Classificação */}
       {tab === 'classificacao' && (
-        <ClassificacaoTab classificacao={classificacao} torneio={torneio} userId={user?.id} />
+        <ClassificacaoTab classificacao={classificacao} torneio={torneio} userId={user?.id} criadores={criadores} />
       )}
 
       {/* Auditoria */}
@@ -396,7 +396,7 @@ function PontuacaoTab({ torneio, inscricoes, pontuacoes, onChange }: any) {
   );
 }
 
-function ClassificacaoTab({ classificacao, torneio, userId }: any) {
+function ClassificacaoTab({ classificacao, torneio, userId, criadores }: any) {
   if (classificacao.length === 0) {
     return <div className="card-premium p-10 text-center text-sm text-muted-foreground">Sem aves aprovadas ainda</div>;
   }
@@ -404,11 +404,12 @@ function ClassificacaoTab({ classificacao, torneio, userId }: any) {
   return (
     <div className="card-premium overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm min-w-[480px]">
+        <table className="w-full text-sm min-w-[520px]">
           <thead className="bg-muted/20">
             <tr>
               <th className="text-left p-3 text-xs font-medium text-muted-foreground w-16">Pos.</th>
               <th className="text-left p-3 text-xs font-medium text-muted-foreground">Ave</th>
+              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Proprietário</th>
               <th className="text-left p-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Anilha</th>
               <th className="text-right p-3 text-xs font-medium text-muted-foreground">Total</th>
             </tr>
@@ -416,6 +417,7 @@ function ClassificacaoTab({ classificacao, torneio, userId }: any) {
           <tbody>
             {classificacao.map((c: any) => {
               const minha = c.inscricao.participante_user_id === userId;
+              const dono = criadores?.[c.inscricao.participante_user_id] || '—';
               return (
                 <tr key={c.inscricao.id} className={`border-t border-border/30 ${minha ? 'bg-secondary/10 ring-1 ring-secondary/30' : ''}`}>
                   <td className="p-3 font-bold whitespace-nowrap">{medal(c.posicao)} {c.posicao}º</td>
@@ -424,6 +426,7 @@ function ClassificacaoTab({ classificacao, torneio, userId }: any) {
                     <p className="text-[10px] text-muted-foreground sm:hidden">{c.inscricao.bird_snapshot?.codigo_anilha}</p>
                     {minha && <span className="text-[10px] text-secondary uppercase">minha ave</span>}
                   </td>
+                  <td className="p-3 text-xs truncate max-w-[140px]">{dono}</td>
                   <td className="p-3 text-muted-foreground text-xs hidden sm:table-cell">{c.inscricao.bird_snapshot?.codigo_anilha}</td>
                   <td className="p-3 text-right font-bold text-secondary text-base whitespace-nowrap">{c.totalPontos.toFixed(2)}</td>
                 </tr>
