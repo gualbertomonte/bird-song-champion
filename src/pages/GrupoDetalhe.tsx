@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut } from 'lucide-react';
+import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut, Trash2 } from 'lucide-react';
 import { useGrupoDetalhe } from '@/hooks/useGrupoDetalhe';
 import { useAuth } from '@/context/AuthContext';
 import RankingAcumuladoTable from '@/components/grupos/RankingAcumuladoTable';
@@ -36,6 +36,29 @@ export default function GrupoDetalhe() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const excluirGrupo = async () => {
+    if (!grupo) return;
+    const txt = prompt(`Para confirmar a exclusão, digite o nome do grupo:\n\n"${grupo.nome}"\n\nIsso apagará TODAS as baterias, inscrições e pontuações deste grupo. Esta ação não pode ser desfeita.`);
+    if (txt === null) return;
+    if (txt.trim() !== grupo.nome) { toast.error('Nome não confere — exclusão cancelada'); return; }
+    try {
+      // Apaga dependências em cascata (sem FKs com ON DELETE)
+      const { data: bats } = await supabase.from('torneio_baterias').select('id').eq('grupo_id', grupo.id);
+      const batIds = (bats || []).map((b: any) => b.id);
+      if (batIds.length > 0) {
+        await supabase.from('bateria_pontuacoes').delete().in('bateria_id', batIds);
+        await supabase.from('bateria_inscricoes').delete().in('bateria_id', batIds);
+        await supabase.from('torneio_baterias').delete().in('id', batIds);
+      }
+      await supabase.from('torneio_grupo_convites').delete().eq('grupo_id', grupo.id);
+      await supabase.from('torneio_grupo_membros').delete().eq('grupo_id', grupo.id);
+      const { error } = await supabase.from('torneio_grupos').delete().eq('id', grupo.id);
+      if (error) throw error;
+      toast.success('Grupo excluído');
+      navigate('/grupos');
+    } catch (e: any) { toast.error(e.message || 'Erro ao excluir'); }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <button onClick={() => navigate('/grupos')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -50,7 +73,11 @@ export default function GrupoDetalhe() {
           </div>
           {grupo.descricao && <p className="text-sm text-muted-foreground">{grupo.descricao}</p>}
         </div>
-        {!isAdmin && (
+        {isAdmin ? (
+          <button onClick={excluirGrupo} className="text-xs text-destructive hover:underline flex items-center gap-1">
+            <Trash2 className="w-3 h-3" /> Excluir grupo
+          </button>
+        ) : (
           <button onClick={sair} className="text-xs text-destructive hover:underline flex items-center gap-1">
             <LogOut className="w-3 h-3" /> Sair do grupo
           </button>
