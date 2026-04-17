@@ -212,6 +212,33 @@ export type Database = {
         }
         Relationships: []
       }
+      friendships: {
+        Row: {
+          addressee_user_id: string
+          created_at: string
+          id: string
+          requester_user_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          addressee_user_id: string
+          created_at?: string
+          id?: string
+          requester_user_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          addressee_user_id?: string
+          created_at?: string
+          id?: string
+          requester_user_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       health_records: {
         Row: {
           aplicada_em: string | null
@@ -668,6 +695,101 @@ export type Database = {
         }
         Relationships: []
       }
+      treatment_doses: {
+        Row: {
+          aplicada_em: string | null
+          aplicada_por_user_id: string | null
+          bird_id: string
+          created_at: string
+          data_prevista: string
+          id: string
+          observacoes_aplicacao: string | null
+          treatment_id: string
+          user_id: string
+        }
+        Insert: {
+          aplicada_em?: string | null
+          aplicada_por_user_id?: string | null
+          bird_id: string
+          created_at?: string
+          data_prevista: string
+          id?: string
+          observacoes_aplicacao?: string | null
+          treatment_id: string
+          user_id: string
+        }
+        Update: {
+          aplicada_em?: string | null
+          aplicada_por_user_id?: string | null
+          bird_id?: string
+          created_at?: string
+          data_prevista?: string
+          id?: string
+          observacoes_aplicacao?: string | null
+          treatment_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_doses_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatments: {
+        Row: {
+          bird_id: string
+          created_at: string
+          data_inicio: string
+          dosagem: string | null
+          duracao_dias: number
+          frequencia_diaria: number
+          hora_primeira_dose: string
+          id: string
+          medicamento: string
+          observacoes: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          via_administracao: string | null
+        }
+        Insert: {
+          bird_id: string
+          created_at?: string
+          data_inicio: string
+          dosagem?: string | null
+          duracao_dias: number
+          frequencia_diaria?: number
+          hora_primeira_dose?: string
+          id?: string
+          medicamento: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          via_administracao?: string | null
+        }
+        Update: {
+          bird_id?: string
+          created_at?: string
+          data_inicio?: string
+          dosagem?: string | null
+          duracao_dias?: number
+          frequencia_diaria?: number
+          hora_primeira_dose?: string
+          id?: string
+          medicamento?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          via_administracao?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -689,7 +811,22 @@ export type Database = {
         }
         Returns: Json
       }
+      criar_tratamento: {
+        Args: {
+          _bird_id: string
+          _data_inicio: string
+          _dosagem: string
+          _duracao_dias: number
+          _frequencia_diaria: number
+          _hora_primeira: string
+          _medicamento: string
+          _observacoes?: string
+          _via: string
+        }
+        Returns: string
+      }
       encerrar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
+      enviar_pedido_amizade: { Args: { _destinatario: string }; Returns: Json }
       generate_codigo_criadouro: { Args: never; Returns: string }
       inscrever_ave_torneio: {
         Args: { _bird_id: string; _torneio_id: string }
@@ -700,8 +837,17 @@ export type Database = {
         Args: { _torneio_id: string }
         Returns: boolean
       }
+      marcar_dose_aplicada: {
+        Args: { _dose_id: string; _observacoes?: string }
+        Returns: undefined
+      }
       registrar_pontuacao: {
         Args: { _bateria: number; _inscricao_id: string; _pontos: number }
+        Returns: undefined
+      }
+      remover_amizade: { Args: { _friendship_id: string }; Returns: undefined }
+      responder_pedido_amizade: {
+        Args: { _aceitar: boolean; _friendship_id: string }
         Returns: undefined
       }
       sortear_estacoes: { Args: { _torneio_id: string }; Returns: undefined }

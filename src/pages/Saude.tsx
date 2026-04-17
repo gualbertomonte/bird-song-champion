@@ -2,6 +2,7 @@ import { useAppState } from '@/context/AppContext';
 import { Heart, Plus, Pill, Calendar, AlertCircle, X, Check, CheckCircle2, Repeat } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import TratamentoSection from '@/components/TratamentoSection';
 
 const tiposOptions = ['Vermifugação', 'Vacina', 'Exame', 'Vitamina', 'Tratamento', 'Cirurgia', 'Outro'];
 const recorrenciaOptions = [
@@ -177,13 +178,13 @@ export default function Saude() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in" onClick={() => setShowForm(false)}>
+          <div className="bg-card rounded-t-2xl sm:rounded-2xl border shadow-xl w-full sm:max-w-md max-h-[92vh] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 sm:p-5 border-b border-border/60 flex-shrink-0">
               <h2 className="font-bold text-xl">Novo Registro de Saúde</h2>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 p-4 sm:p-5 overflow-y-auto flex-1">
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Ave *</label>
                 <select value={form.bird_id} onChange={e => setForm({ ...form, bird_id: e.target.value })} className="mt-1 input-field">
@@ -231,7 +232,7 @@ export default function Saude() {
                 </p>
               )}
             </div>
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3 p-4 sm:p-5 border-t border-border/60 flex-shrink-0 bg-card">
               <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
               <button onClick={save} className="btn-primary"><Check className="w-4 h-4" /> Salvar</button>
             </div>

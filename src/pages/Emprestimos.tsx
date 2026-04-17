@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { generateLoanReceiptPDF } from '@/lib/pdf';
+import AmigoSelector from '@/components/AmigoSelector';
 
 export default function Emprestimos() {
   const { birds, loans, profile, createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan } = useAppState();
@@ -209,18 +210,15 @@ export default function Emprestimos() {
               )}
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Código do Criadouro do Recebedor *</label>
-              <input
-                type="text"
-                value={form.codigoCriadouro}
-                onChange={e => setForm({ ...form, codigoCriadouro: e.target.value.toUpperCase() })}
-                placeholder="Ex: A1B2C3"
-                maxLength={6}
-                className="input-field mt-1 font-mono uppercase tracking-wider"
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">O recebedor encontra o código dele no Perfil</p>
-            </div>
+            <AmigoSelector
+              label="Recebedor (amigo ou código do criadouro) *"
+              value={form.codigoCriadouro}
+              onChange={(v) => setForm({ ...form, codigoCriadouro: v })}
+              preferEmail={false}
+              forceCodigo={false}
+              placeholder="Ex: A1B2C3"
+              help="Selecione um amigo ou digite o código de 6 caracteres do criadouro do recebedor."
+            />
 
             <div>
               <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">

@@ -3,6 +3,7 @@ import { Bird, Trophy, Heart, Egg, TrendingUp, Calendar, Plus, ChevronRight } fr
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useState } from 'react';
+import DosesHojeCard from '@/components/DosesHojeCard';
 
 export default function Dashboard() {
   const { birds, tournaments, healthRecords, nests, profile } = useAppState();
@@ -76,6 +77,8 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      <DosesHojeCard />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card-premium p-5 animate-fade-in" style={{ animationDelay: '200ms' }}>
