@@ -20,9 +20,9 @@ export default function Dashboard() {
   }).length;
 
   const proximasVermifugacoes = healthRecords
-    .filter(h => h.proxima_dose && new Date(h.proxima_dose) > new Date())
+    .filter(h => h.proxima_dose && !h.aplicada_em)
     .sort((a, b) => new Date(a.proxima_dose!).getTime() - new Date(b.proxima_dose!).getTime())
-    .slice(0, 3);
+    .slice(0, 5);
 
   const stats = [
     { label: 'Aves Ativas', value: ativas, icon: Bird, color: 'text-success' },
@@ -100,27 +100,34 @@ export default function Dashboard() {
 
         <div className="bg-card rounded-xl border p-5 animate-fade-in" style={{ animationDelay: '300ms' }}>
           <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-secondary" /> Próximos Compromissos
+            <Heart className="w-4 h-4 text-destructive" /> Alertas de Saúde
+            <Link to="/saude" className="ml-auto text-xs text-secondary hover:underline font-normal">Ver todos</Link>
           </h2>
           <div className="space-y-3">
             {proximasVermifugacoes.length > 0 ? proximasVermifugacoes.map(h => {
               const bird = birds.find(b => b.id === h.bird_id);
+              const days = Math.ceil((new Date(h.proxima_dose!).getTime() - Date.now()) / 86400000);
+              const isOverdue = days < 0;
+              const isSoon = days >= 0 && days <= 7;
               return (
-                <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                  <Heart className="w-4 h-4 text-destructive flex-shrink-0" />
+                <Link to="/saude" key={h.id} className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isOverdue ? 'bg-destructive/10 border border-destructive/25 hover:bg-destructive/15' : isSoon ? 'bg-destructive/5 border border-destructive/15 hover:bg-destructive/10' : 'bg-muted/30 hover:bg-muted/50'}`}>
+                  <Heart className={`w-4 h-4 flex-shrink-0 ${isOverdue || isSoon ? 'text-destructive' : 'text-muted-foreground'}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{bird?.nome} — {h.tipo}</p>
-                    <p className="text-xs text-muted-foreground truncate">{h.descricao}</p>
+                    <p className="text-xs text-muted-foreground truncate">{h.descricao || 'Sem descrição'}</p>
                   </div>
-                  <span className="text-xs text-secondary font-medium whitespace-nowrap">
-                    {new Date(h.proxima_dose!).toLocaleDateString('pt-BR')}
-                  </span>
-                </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs font-medium whitespace-nowrap">{new Date(h.proxima_dose!).toLocaleDateString('pt-BR')}</p>
+                    <p className={`text-[10px] ${isOverdue || isSoon ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {isOverdue ? `vencida há ${Math.abs(days)}d` : days === 0 ? 'hoje' : `em ${days}d`}
+                    </p>
+                  </div>
+                </Link>
               );
             }) : (
-              <p className="text-sm text-muted-foreground">Nenhum compromisso pendente.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma dose pendente. 🎉</p>
             )}
-            {nests.filter(n => n.status === 'Incubando').map(n => {
+            {nests.filter(n => n.status === 'Incubando').slice(0, 2).map(n => {
               const femea = birds.find(b => b.id === n.femea_id);
               return (
                 <div key={n.id} className="flex items-center gap-3 p-3 rounded-lg bg-info/5 border border-info/10">
