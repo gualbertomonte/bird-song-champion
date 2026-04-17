@@ -42,6 +42,7 @@ interface AppState {
   deleteTournament: (id: string) => void;
   addHealthRecord: (h: HealthRecord) => void;
   deleteHealthRecord: (id: string) => void;
+  markHealthApplied: (id: string) => Promise<void>;
   addNest: (n: Nest) => void;
   updateNest: (id: string, data: Partial<Nest>) => void;
   createLoan: (params: { birdId: string; codigoCriadouro: string; prazo?: string; observacoes?: string }) => Promise<void>;
@@ -169,6 +170,8 @@ function rowToHealth(r: any): HealthRecord {
   return {
     id: r.id, bird_id: r.bird_id, data: r.data, tipo: r.tipo,
     descricao: r.descricao ?? undefined, proxima_dose: r.proxima_dose ?? undefined,
+    recorrencia_meses: r.recorrencia_meses ?? undefined,
+    aplicada_em: r.aplicada_em ?? undefined,
   };
 }
 function rowToNest(r: any): Nest {
@@ -560,6 +563,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.from('health_records').insert({
       user_id: user.id, bird_id: h.bird_id, data: h.data, tipo: h.tipo,
       descricao: h.descricao ?? null, proxima_dose: h.proxima_dose || null,
+      recorrencia_meses: h.recorrencia_meses ?? null,
     }).select('*').single();
     if (error) { toast.error('Erro ao salvar'); console.error(error); return; }
     setHealthRecordsState(prev => [rowToHealth(data), ...prev]);
@@ -570,6 +574,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (error) { toast.error('Erro ao excluir'); return; }
     setHealthRecordsState(prev => prev.filter(h => h.id !== id));
   }, []);
+
+  const markHealthApplied = useCallback(async (id: string) => {
+    if (!user) return;
+    const rec = healthRecords.find(h => h.id === id);
+    if (!rec) return;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data, error } = await supabase.from('health_records')
+      .update({ aplicada_em: today }).eq('id', id).select('*').single();
+    if (error) { toast.error('Erro ao marcar como aplicada'); return; }
+    setHealthRecordsState(prev => prev.map(h => h.id === id ? rowToHealth(data) : h));
+
+    // Se for recorrente, cria próxima dose
+    if (rec.recorrencia_meses && rec.recorrencia_meses > 0) {
+      const next = new Date();
+      next.setMonth(next.getMonth() + rec.recorrencia_meses);
+      const nextStr = next.toISOString().slice(0, 10);
+      const { data: novo, error: insErr } = await supabase.from('health_records').insert({
+        user_id: user.id, bird_id: rec.bird_id, data: today, tipo: rec.tipo,
+        descricao: rec.descricao ?? null, proxima_dose: nextStr,
+        recorrencia_meses: rec.recorrencia_meses,
+      }).select('*').single();
+      if (!insErr && novo) {
+        setHealthRecordsState(prev => [rowToHealth(novo), ...prev]);
+        toast.success(`Aplicada! Próxima dose agendada para ${new Date(nextStr).toLocaleDateString('pt-BR')}`);
+      } else {
+        toast.success('Marcada como aplicada');
+      }
+    } else {
+      toast.success('Marcada como aplicada');
+    }
+
+    // Marcar notificações relacionadas como lidas
+    await supabase.from('notifications')
+      .update({ lida: true })
+      .eq('user_id', user.id)
+      .eq('tipo', 'health_due')
+      .contains('metadata', { health_id: id });
+    setNotificationsState(prev => prev.map(n =>
+      (n.metadata as any)?.health_id === id ? { ...n, lida: true } : n
+    ));
+  }, [user, healthRecords]);
 
   // ============ Nests ============
   const addNest = useCallback(async (n: Nest) => {
@@ -823,7 +869,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setBirds, setTournaments, setHealthRecords, setNests, setProfile,
       addBird, updateBird, deleteBird,
       addTournament, updateTournament, deleteTournament,
-      addHealthRecord, deleteHealthRecord,
+      addHealthRecord, deleteHealthRecord, markHealthApplied,
       addNest, updateNest,
       createLoan, requestLoanReturn, confirmLoanReturn, cancelLoan,
       markNotificationRead, markAllNotificationsRead, deleteNotification,

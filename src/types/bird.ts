@@ -69,6 +69,8 @@ export interface HealthRecord {
   tipo: string;
   descricao?: string;
   proxima_dose?: string;
+  recorrencia_meses?: number;
+  aplicada_em?: string;
 }
 
 export interface CriadorProfile {
