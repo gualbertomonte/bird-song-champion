@@ -71,12 +71,17 @@ export default function BirdDetail() {
     if (!crachaRef.current) return;
     setDownloadingCracha(true);
     try {
-      const canvas = await html2canvas(crachaRef.current, {
+      const el = crachaRef.current;
+      const canvas = await html2canvas(el, {
         backgroundColor: null,
         scale: 3,
         useCORS: true,
         allowTaint: false,
         logging: false,
+        width: el.offsetWidth,
+        height: el.scrollHeight,
+        windowWidth: el.offsetWidth,
+        windowHeight: el.scrollHeight,
       });
       const link = document.createElement('a');
       link.download = `cracha_${bird.codigo_anilha.replace(/\s/g, '_')}.png`;
@@ -494,9 +499,9 @@ export default function BirdDetail() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
-                    <h3 className="font-bold text-2xl leading-tight truncate" style={{ fontFamily: 'Fraunces, Georgia, serif', color: '#F5F1E8', letterSpacing: '-0.02em' }}>{bird.nome}</h3>
-                    <p className="text-[11px] italic truncate" style={{ color: 'rgba(245,241,232,0.6)', fontFamily: 'Fraunces, Georgia, serif' }}>{bird.nome_cientifico || '—'}</p>
-                    <div className="inline-block px-2.5 py-1 rounded-md font-mono text-xs font-bold mt-1.5" style={{ background: 'rgba(201,169,97,0.15)', color: '#C9A961', border: '1px dashed rgba(201,169,97,0.45)', letterSpacing: '0.1em' }}>
+                    <h3 className="font-bold text-2xl break-words" style={{ fontFamily: 'Fraunces, Georgia, serif', color: '#F5F1E8', letterSpacing: '-0.02em', lineHeight: 1.15, paddingBottom: '2px' }}>{bird.nome}</h3>
+                    <p className="text-[11px] italic break-words" style={{ color: 'rgba(245,241,232,0.6)', fontFamily: 'Fraunces, Georgia, serif', lineHeight: 1.4, paddingBottom: '2px' }}>{bird.nome_cientifico || '—'}</p>
+                    <div className="inline-block px-2.5 py-1 rounded-md font-mono text-xs font-bold mt-1.5" style={{ background: 'rgba(201,169,97,0.15)', color: '#C9A961', border: '1px dashed rgba(201,169,97,0.45)', letterSpacing: '0.1em', lineHeight: 1.3 }}>
                       {bird.codigo_anilha}
                     </div>
                   </div>
@@ -574,9 +579,9 @@ export default function BirdDetail() {
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col leading-tight">
-      <span className="text-[9px] uppercase tracking-[0.18em] font-semibold" style={{ color: 'rgba(201,169,97,0.7)' }}>{label}</span>
-      <span className="text-[12px] font-medium truncate mt-0.5" style={{ color: 'rgba(245,241,232,0.95)' }}>{value}</span>
+    <div className="flex flex-col min-w-0" style={{ lineHeight: 1.3 }}>
+      <span className="text-[9px] uppercase tracking-[0.18em] font-semibold" style={{ color: 'rgba(201,169,97,0.7)', lineHeight: 1.4 }}>{label}</span>
+      <span className="text-[12px] font-medium mt-0.5 break-words" style={{ color: 'rgba(245,241,232,0.95)', lineHeight: 1.4, paddingBottom: '2px' }}>{value}</span>
     </div>
   );
 }
