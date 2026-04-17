@@ -1,13 +1,24 @@
-import { useAppState } from '@/context/AppContext';
+import { useAppState, DEFAULT_MOBILE_NAV, MobileNavKey, MobileNavItemConfig } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff, Copy, Hash } from 'lucide-react';
+import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff, Copy, Hash, Smartphone, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
+const NAV_LABELS: Record<MobileNavKey, string> = {
+  dashboard: 'Dashboard',
+  plantel: 'Plantel',
+  arvore: 'Árvore Genealógica',
+  bercario: 'Berçário',
+  emprestimos: 'Empréstimos',
+  torneios: 'Torneios',
+  saude: 'Saúde',
+  perfil: 'Perfil',
+};
+
 export default function Perfil() {
-  const { profile, setProfile } = useAppState();
+  const { profile, setProfile, mobileNavConfig, setMobileNavConfig } = useAppState();
   const { user } = useAuth();
   const [form, setForm] = useState({ ...profile });
   const [saved, setSaved] = useState(false);
