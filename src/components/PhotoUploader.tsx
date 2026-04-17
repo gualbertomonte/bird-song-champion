@@ -146,7 +146,7 @@ const PhotoUploader = forwardRef<HTMLDivElement, Props>(function PhotoUploader(
             <ImagePlus className="w-3.5 h-3.5" /> Galeria
           </button>
           {uploading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
         </div>
       )}
 
