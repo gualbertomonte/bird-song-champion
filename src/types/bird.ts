@@ -46,7 +46,7 @@ export interface Nest {
   data_eclosao?: string;
   quantidade_ovos: number;
   quantidade_filhotes?: number;
-  status: 'Incubando' | 'Eclodida' | 'Perdida';
+  status: 'Incubando' | 'Eclosao Parcial' | 'Eclodida' | 'Encerrada' | 'Perdida';
   observacoes?: string;
   created_at?: string;
 }
