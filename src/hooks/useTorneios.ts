@@ -76,5 +76,5 @@ export function useTorneioDetalhe(torneioId: string | undefined) {
     return () => { supabase.removeChannel(channel); };
   }, [torneioId, refresh]);
 
-  return { torneio, inscricoes, pontuacoes, convites, auditLog, participantes, loading, refresh };
+  return { torneio, inscricoes, pontuacoes, convites, auditLog, participantes, criadores, loading, refresh };
 }
