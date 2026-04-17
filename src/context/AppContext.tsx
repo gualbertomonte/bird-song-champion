@@ -5,6 +5,19 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type MobileNavKey = 'dashboard' | 'plantel' | 'arvore' | 'bercario' | 'emprestimos' | 'torneios' | 'saude' | 'perfil';
+export interface MobileNavItemConfig { key: MobileNavKey; visible: boolean; }
+export const DEFAULT_MOBILE_NAV: MobileNavItemConfig[] = [
+  { key: 'dashboard', visible: true },
+  { key: 'plantel', visible: true },
+  { key: 'arvore', visible: true },
+  { key: 'bercario', visible: true },
+  { key: 'emprestimos', visible: true },
+  { key: 'torneios', visible: true },
+  { key: 'saude', visible: true },
+  { key: 'perfil', visible: true },
+];
+
 interface AppState {
   birds: Bird[];
   tournaments: Tournament[];
@@ -14,6 +27,8 @@ interface AppState {
   loans: BirdLoan[];
   notifications: AppNotification[];
   loading: boolean;
+  mobileNavConfig: MobileNavItemConfig[];
+  setMobileNavConfig: (config: MobileNavItemConfig[]) => Promise<void>;
   setBirds: (birds: Bird[]) => void;
   setTournaments: (t: Tournament[]) => void;
   setHealthRecords: (h: HealthRecord[]) => void;
@@ -43,6 +58,25 @@ const AppContext = createContext<AppState | null>(null);
 const defaultProfile: CriadorProfile = { nome_criadouro: '' };
 
 const MIGRATION_FLAG = 'ppp_migrated_to_cloud_v1';
+
+function sanitizeMobileNavConfig(raw: any): MobileNavItemConfig[] {
+  const validKeys = new Set(DEFAULT_MOBILE_NAV.map(d => d.key));
+  if (!Array.isArray(raw)) return DEFAULT_MOBILE_NAV;
+  const seen = new Set<string>();
+  const cleaned: MobileNavItemConfig[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const key = item.key as MobileNavKey;
+    if (!validKeys.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push({ key, visible: item.visible !== false });
+  }
+  // Append any missing keys (visible:true) so user always sees newly added screens
+  for (const def of DEFAULT_MOBILE_NAV) {
+    if (!seen.has(def.key)) cleaned.push({ ...def });
+  }
+  return cleaned;
+}
 
 // Map DB row -> Bird
 function rowToBird(r: any): Bird {
@@ -153,6 +187,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<CriadorProfile>(defaultProfile);
   const [loans, setLoansState] = useState<BirdLoan[]>([]);
   const [notifications, setNotificationsState] = useState<AppNotification[]>([]);
+  const [mobileNavConfig, setMobileNavConfigState] = useState<MobileNavItemConfig[]>(DEFAULT_MOBILE_NAV);
   const [loading, setLoading] = useState(true);
   const idMapRef = useRef<Map<string, string>>(new Map()); // localId -> cloudId during migration
 
@@ -186,8 +221,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           logo_url: p.data.logo_url ?? undefined,
           codigo_criadouro: (p.data as any).codigo_criadouro ?? undefined,
         });
+        setMobileNavConfigState(sanitizeMobileNavConfig((p.data as any).mobile_nav_config));
       } else {
         setProfileState(defaultProfile);
+        setMobileNavConfigState(DEFAULT_MOBILE_NAV);
       }
     } catch (err) {
       console.error('Load error', err);
@@ -414,7 +451,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           endereco: p.endereco ?? undefined,
           telefone: p.telefone ?? undefined,
           logo_url: p.logo_url ?? undefined,
+          codigo_criadouro: p.codigo_criadouro ?? undefined,
         });
+        setMobileNavConfigState(sanitizeMobileNavConfig(p.mobile_nav_config));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bird_loans' }, (payload) => {
         const isMine = (row: any) => row && (row.owner_user_id === uid || row.borrower_user_id === uid);
@@ -582,7 +621,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  // ============ Loans ============
+  const setMobileNavConfig = useCallback(async (config: MobileNavItemConfig[]) => {
+    if (!user) return;
+    const sanitized = sanitizeMobileNavConfig(config);
+    setMobileNavConfigState(sanitized);
+    const { error } = await supabase.from('criador_profile').upsert({
+      user_id: user.id,
+      nome_criadouro: profile.nome_criadouro || '',
+      mobile_nav_config: sanitized as any,
+    });
+    if (error) { toast.error('Erro ao salvar barra de navegação'); console.error(error); }
+  }, [user, profile.nome_criadouro]);
   const sendLoanEmail = useCallback(async (payload: any) => {
     try {
       await supabase.functions.invoke('send-loan-email', { body: payload });
@@ -768,6 +817,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       birds, tournaments, healthRecords, nests, profile, loans, notifications, loading,
+      mobileNavConfig, setMobileNavConfig,
       setBirds, setTournaments, setHealthRecords, setNests, setProfile,
       addBird, updateBird, deleteBird,
       addTournament, updateTournament, deleteTournament,

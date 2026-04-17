@@ -1,0 +1,1 @@
+ALTER TABLE public.criador_profile ADD COLUMN IF NOT EXISTS mobile_nav_config jsonb DEFAULT NULL;

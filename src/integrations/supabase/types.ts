@@ -173,6 +173,7 @@ export type Database = {
           cpf: string | null
           endereco: string | null
           logo_url: string | null
+          mobile_nav_config: Json | null
           nome_criadouro: string
           registro_ctf: string | null
           telefone: string | null
@@ -185,6 +186,7 @@ export type Database = {
           cpf?: string | null
           endereco?: string | null
           logo_url?: string | null
+          mobile_nav_config?: Json | null
           nome_criadouro?: string
           registro_ctf?: string | null
           telefone?: string | null
@@ -197,6 +199,7 @@ export type Database = {
           cpf?: string | null
           endereco?: string | null
           logo_url?: string | null
+          mobile_nav_config?: Json | null
           nome_criadouro?: string
           registro_ctf?: string | null
           telefone?: string | null

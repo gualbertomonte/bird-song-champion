@@ -1,13 +1,24 @@
-import { useAppState } from '@/context/AppContext';
+import { useAppState, DEFAULT_MOBILE_NAV, MobileNavKey, MobileNavItemConfig } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff, Copy, Hash } from 'lucide-react';
+import { User, Save, Upload, Check, Loader2, Lock, Eye, EyeOff, Copy, Hash, Smartphone, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
+const NAV_LABELS: Record<MobileNavKey, string> = {
+  dashboard: 'Dashboard',
+  plantel: 'Plantel',
+  arvore: 'Árvore Genealógica',
+  bercario: 'Berçário',
+  emprestimos: 'Empréstimos',
+  torneios: 'Torneios',
+  saude: 'Saúde',
+  perfil: 'Perfil',
+};
+
 export default function Perfil() {
-  const { profile, setProfile } = useAppState();
+  const { profile, setProfile, mobileNavConfig, setMobileNavConfig } = useAppState();
   const { user } = useAuth();
   const [form, setForm] = useState({ ...profile });
   const [saved, setSaved] = useState(false);
@@ -173,6 +184,72 @@ export default function Perfil() {
             {saved ? 'Salvo!' : 'Salvar Perfil'}
           </button>
         </div>
+      </div>
+
+      {/* Barra de Navegação Mobile */}
+      <div className="bg-card rounded-xl border p-5 space-y-4 animate-fade-in" style={{ animationDelay: '250ms' }}>
+        <div className="flex items-center gap-2">
+          <Smartphone className="w-4 h-4 text-secondary" />
+          <h3 className="font-semibold">Barra de Navegação Mobile</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Escolha quais atalhos aparecem na barra inferior do celular e em que ordem. Recomendado: 4 a 6 itens visíveis.
+        </p>
+        {(() => {
+          const visibleCount = mobileNavConfig.filter(c => c.visible).length;
+          const move = (idx: number, dir: -1 | 1) => {
+            const next = [...mobileNavConfig];
+            const target = idx + dir;
+            if (target < 0 || target >= next.length) return;
+            [next[idx], next[target]] = [next[target], next[idx]];
+            setMobileNavConfig(next);
+          };
+          const toggle = (idx: number) => {
+            const next = mobileNavConfig.map((c, i) => i === idx ? { ...c, visible: !c.visible } : c);
+            if (next.filter(c => c.visible).length === 0) {
+              toast.error('Mantenha pelo menos 1 item visível');
+              return;
+            }
+            setMobileNavConfig(next);
+          };
+          const reset = () => {
+            setMobileNavConfig([...DEFAULT_MOBILE_NAV]);
+            toast.success('Barra restaurada para o padrão');
+          };
+          return (
+            <>
+              <div className="flex items-center justify-between text-xs">
+                <span className={visibleCount > 6 ? 'text-destructive' : 'text-muted-foreground'}>
+                  {visibleCount} item(s) visível(is)
+                </span>
+                <button onClick={reset} className="flex items-center gap-1 text-secondary hover:underline">
+                  <RotateCcw className="w-3 h-3" /> Restaurar padrão
+                </button>
+              </div>
+              <ul className="divide-y border rounded-lg overflow-hidden">
+                {mobileNavConfig.map((item, idx) => (
+                  <li key={item.key} className="flex items-center gap-2 px-3 py-2 bg-background/40">
+                    <input
+                      type="checkbox"
+                      checked={item.visible}
+                      onChange={() => toggle(idx)}
+                      className="w-4 h-4 accent-secondary"
+                    />
+                    <span className={`flex-1 text-sm ${item.visible ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
+                      {NAV_LABELS[item.key]}
+                    </span>
+                    <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-muted disabled:opacity-30" aria-label="Mover para cima">
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => move(idx, 1)} disabled={idx === mobileNavConfig.length - 1} className="p-1 rounded hover:bg-muted disabled:opacity-30" aria-label="Mover para baixo">
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          );
+        })()}
       </div>
 
       {/* Alterar Senha */}
