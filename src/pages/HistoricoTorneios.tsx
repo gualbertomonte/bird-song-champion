@@ -23,13 +23,23 @@ export default function Torneios() {
   }, [tournaments, filterBird]);
 
   const ranking = useMemo(() => {
-    const map = new Map<string, { total: number; count: number }>();
+    const map = new Map<string, { total: number; count: number; best: number }>();
     tournaments.forEach(t => {
-      const existing = map.get(t.bird_id) || { total: 0, count: 0 };
-      map.set(t.bird_id, { total: existing.total + t.pontuacao, count: existing.count + 1 });
+      const existing = map.get(t.bird_id) || { total: 0, count: 0, best: 0 };
+      map.set(t.bird_id, {
+        total: existing.total + Number(t.pontuacao || 0),
+        count: existing.count + 1,
+        best: Math.max(existing.best, Number(t.pontuacao || 0)),
+      });
     });
     return Array.from(map.entries())
-      .map(([id, data]) => ({ bird: birds.find(b => b.id === id), avg: Math.round(data.total / data.count), count: data.count }))
+      .map(([id, data]) => ({
+        bird: birds.find(b => b.id === id),
+        avg: data.count > 0 ? data.total / data.count : 0,
+        total: data.total,
+        best: data.best,
+        count: data.count,
+      }))
       .filter(r => r.bird)
       .sort((a, b) => b.avg - a.avg)
       .slice(0, 10);
@@ -72,14 +82,18 @@ export default function Torneios() {
           </h2>
           <div className="space-y-2">
             {ranking.map((item, i) => (
-              <div key={item.bird!.id} className={`flex items-center gap-3 sm:gap-4 p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
-                <span className={`text-lg font-bold w-8 text-center ${medalColor(i)}`}>{i + 1}º</span>
+              <div key={item.bird!.id} className={`flex items-center gap-2 sm:gap-4 p-2.5 sm:p-3 rounded-lg ${i === 0 ? 'bg-secondary/5 border border-secondary/15' : 'bg-muted/20'}`}>
+                <span className={`text-base sm:text-lg font-bold w-7 sm:w-8 text-center shrink-0 ${medalColor(i)}`}>{i + 1}º</span>
                 <div className="flex-1 min-w-0">
-                  <span className="font-medium text-sm">{item.bird!.nome}</span>
-                  <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">{item.bird!.codigo_anilha}</span>
+                  <p className="font-medium text-sm truncate">{item.bird!.nome}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                    {item.bird!.codigo_anilha} · {item.count} {item.count === 1 ? 'torneio' : 'torneios'} · melhor {item.best.toFixed(0)}
+                  </p>
                 </div>
-                <span className="text-xs text-muted-foreground hidden sm:inline">{item.count} torneios</span>
-                <span className="font-bold text-lg text-secondary">{item.avg}</span>
+                <div className="text-right shrink-0">
+                  <p className="font-bold text-base sm:text-lg text-secondary leading-none">{item.avg.toFixed(1)}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">média</p>
+                </div>
               </div>
             ))}
           </div>
@@ -88,7 +102,7 @@ export default function Torneios() {
 
       <div className="flex items-center gap-2">
         <Filter className="w-4 h-4 text-muted-foreground" />
-        <select value={filterBird} onChange={e => setFilterBird(e.target.value)} className="input-field w-auto min-w-[200px]">
+        <select value={filterBird} onChange={e => setFilterBird(e.target.value)} className="input-field w-full sm:w-auto sm:min-w-[200px]">
           <option value="">Todas as aves</option>
           {activeBirds.map(b => <option key={b.id} value={b.id}>{b.nome} ({b.codigo_anilha})</option>)}
         </select>
