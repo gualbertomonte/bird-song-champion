@@ -1,69 +1,83 @@
 
+Plano: introduzir o conceito de **Grupo de Torneio** (comunidade fixa) com **Baterias** (eventos) e **Ranking acumulado**, reaproveitando o sistema de Amigos já existente. Mantemos o `/torneios` atual como "Torneios Avulsos" e adicionamos `/grupos` como nova seção principal.
 
-## Torneios Multi-Usuário — plano aprovado
+## 1. Banco (migration)
 
-Decisões confirmadas: manter atual como "Histórico de Participações" · múltiplas baterias com soma · organizador escolhe entre link aberto OU convite por e-mail.
+**Novas tabelas (todas com RLS):**
 
-### 1. Banco (migration)
+- `torneio_grupos` — `id, admin_user_id, nome, descricao, regulamento_padrao, criado_em`.
+- `torneio_grupo_membros` — `id, grupo_id, user_id, papel` ('admin'|'membro'), `status` ('Pendente'|'Ativo'|'Saiu'), `created_at`. Unique(grupo_id, user_id).
+- `torneio_grupo_convites` — `id, grupo_id, convidado_user_id, status` ('Pendente'|'Aceito'|'Recusado'), `created_at`.
+- `torneio_baterias` — `id, grupo_id, nome, data, numero_estacoes, regulamento, status` ('Agendada'|'Inscricoes'|'Sorteada'|'Em andamento'|'Encerrada'), `criado_por, encerrado_em`.
+- `bateria_inscricoes` — `id, bateria_id, membro_user_id, bird_id, bird_snapshot, status` ('Pendente'|'Aprovada'|'Rejeitada'), `estacao int, motivo_rejeicao`. Unique(bateria_id, bird_id).
+- `bateria_pontuacoes` — `id, bateria_id, inscricao_id, pontos numeric, registrado_por, created_at, updated_at`. Unique(inscricao_id).
 
-**Tabelas (todas com RLS):**
-- `torneios` — `id, organizer_user_id, nome, data, regulamento, numero_estacoes int, numero_baterias int default 1, status` ('Rascunho'|'Inscricoes'|'Sorteado'|'Em andamento'|'Encerrado'), `created_at, encerrado_em`.
-- `torneio_convites` — `id, torneio_id, tipo` ('email'|'link_aberto'), `email_convidado` (nullable), `token uuid unique, status, accepted_user_id`.
-- `torneio_participantes` — `id, torneio_id, user_id`, unique(torneio_id,user_id).
-- `torneio_inscricoes` — `id, torneio_id, participante_user_id, bird_id, bird_snapshot jsonb, status` ('Pendente'|'Aprovada'|'Rejeitada'), `motivo_rejeicao, estacao int`.
-- `torneio_pontuacoes` — `id, torneio_id, inscricao_id, bateria int, pontos numeric, created_by_user_id, created_at`.
-- `torneio_audit_log` — preenchido por trigger em `torneio_pontuacoes`.
+**Funções SECURITY DEFINER:**
+- `is_grupo_admin(_grupo_id)`, `is_grupo_membro(_grupo_id)` — helpers para RLS sem recursão.
+- `criar_grupo_torneio(nome, descricao, regulamento)` — cria grupo + adiciona criador como admin.
+- `convidar_membro_grupo(_grupo_id, _user_id)` — admin convida amigo.
+- `responder_convite_grupo(_convite_id, _aceitar)` — usuário aceita/rejeita.
+- `sair_do_grupo(_grupo_id)` — membro sai (admin não pode sair sem transferir).
+- `criar_bateria(grupo_id, nome, data, num_estacoes, regulamento)` — só admin.
+- `inscrever_ave_bateria(_bateria_id, _bird_id)` — membro ativo, ave macho.
+- `aprovar_inscricao_bateria(_inscricao_id, _aprovar, _motivo)` — só admin.
+- `sortear_estacoes_bateria(_bateria_id)` — server-side `random()`, refazível antes de "Em andamento".
+- `registrar_pontuacao_bateria(_inscricao_id, _pontos)` — só admin, bloqueia se Encerrada.
+- `encerrar_bateria(_bateria_id)`.
 
-**RPCs SECURITY DEFINER:**
-- `aceitar_convite_torneio(_token)` — valida e-mail se tipo='email'; aceita qualquer logado se 'link_aberto' até atingir nº estações.
-- `inscrever_ave_torneio(_torneio_id,_bird_id)` — valida ownership + cria snapshot.
-- `aprovar_inscricao(_inscricao_id,_aprovar,_motivo)` — só organizador.
-- `sortear_estacoes(_torneio_id)` — server-side `random()`, só organizador, refazível antes de "Em andamento".
-- `registrar_pontuacao(_inscricao_id,_bateria,_pontos)` — só organizador, bloqueia se Encerrado.
-- `encerrar_torneio(_torneio_id)`.
+**View `ranking_acumulado_grupo`** — agrega `bateria_pontuacoes` por `(grupo_id, membro_user_id, bird_id)` somando pontos de baterias **encerradas** do grupo. Retorna nome da ave, dono, total, nº baterias, melhor colocação.
 
-**Realtime:** publicar `torneio_pontuacoes` e `torneio_inscricoes`.
+**RLS-chave:**
+- `birds` intocada → admin nunca edita aves alheias.
+- Membros leem grupo/baterias/pontuações; só admin insere/edita via RPC.
+- Realtime em `bateria_pontuacoes` e `bateria_inscricoes`.
 
-**RLS-chave:** `birds` intocada → organizador nunca edita aves alheias. INSERT/UPDATE de pontuação e estação só via RPC.
+## 2. Frontend
 
-### 2. Edge Functions
+**Novas rotas:**
+- `/grupos` — lista de grupos (criados ou membro), botão "Criar grupo".
+- `/grupos/novo` — wizard simples: nome, descrição, regulamento padrão, convidar amigos iniciais (usa `AmigoSelector` em modo multi).
+- `/grupos/:id` — abas:
+  - **Visão Geral** (descrição, regulamento, lista de membros, ranking acumulado top 10).
+  - **Membros** (admin: convidar amigo, ver pendentes, remover).
+  - **Baterias** (lista + botão "Nova bateria" para admin).
+  - **Ranking Acumulado** (tabela completa: ave · proprietário · baterias disputadas · total · 🥇🥈🥉).
+- `/grupos/:id/baterias/:bateriaId` — abas:
+  - **Inscrições** (membro inscreve ave macho; admin aprova/rejeita).
+  - **Sorteio** (admin: botão "Sortear estações" / "Refazer"; tabela Estação→Ave).
+  - **Pontuação** (admin: input por inscrição).
+  - **Classificação** (realtime, badges, destaque "minha ave", botão PDF quando encerrada).
 
-- `enviar-convite-torneio` — cria convites + dispara e-mails (template app email) + retorna link WhatsApp.
-- `notificar-evento-torneio` — cria `notifications` e dispara e-mails para: aprovação, sorteio, pontuação atualizada, encerramento.
+**Componentes novos** (`src/components/grupos/`):
+- `GrupoCard.tsx`, `MembrosList.tsx`, `ConvidarMembroModal.tsx` (reusa `AmigoSelector`).
+- `BateriaCard.tsx`, `NovaBateriaModal.tsx`, `InscricoesBateriaTab.tsx`, `SorteioBateriaTab.tsx`, `PontuacaoBateriaTab.tsx`, `ClassificacaoBateriaTab.tsx`.
+- `RankingAcumuladoTable.tsx`.
 
-Usa infraestrutura de **app emails** built-in (precisa setup de domínio se ainda não houver — será feito no fluxo).
+**Hooks novos** (`src/hooks/`):
+- `useGrupos.ts` — lista grupos do usuário (admin/membro), realtime.
+- `useGrupoDetalhe.ts` — grupo + membros + baterias + ranking, realtime.
+- `useBateria.ts` — bateria + inscrições + pontuações, realtime.
 
-### 3. Frontend (tema Aviário Premium já aplicado)
+**Reuso do AmigoSelector:** já está integrado em transferências, empréstimos e convites de torneio. Adicionamos modo `multi` (múltiplos amigos) usado em "convidar para grupo" e "convidar para bateria".
 
-- `/torneios` (NOVO) — lista de torneios colaborativos (organizador/participante, filtro por status).
-- `/torneios/novo` — wizard: nome · data · nº estações · nº baterias · regulamento · convites (escolha link aberto OU e-mails).
-- `/torneios/:id` — abas: Visão Geral · Inscrições (organizador aprova) · Sorteio (tabela Estação→Ave, botão "Refazer") · Pontuação (organizador, grid bateria×ave) · Classificação (realtime, badges 🥇🥈🥉, destaque dourado em "minha ave") · Auditoria (organizador).
-- `/torneio/convite/:token` — página pública: chama RPC se logado, senão redireciona p/ `/login?redirect=...`.
-- `/historico-torneios` — atual `Torneios.tsx` renomeado (zero quebra).
-- Menu lateral: "Torneios" (novo) + "Histórico" (antigo).
+**Notificações** (extende `NotificationBell`): `grupo_convite`, `grupo_aceito`, `bateria_criada`, `inscricao_aprovada`, `bateria_encerrada`.
 
-### 4. PDF
+**PDF:** `src/lib/pdf.ts` ganha `gerarRelatorioBateria(bateria, classificacao, grupo)` e `gerarRankingAcumulado(grupo, ranking)`.
 
-`src/lib/pdf.ts` ganha `gerarRelatorioTorneio(torneio, classificacao, criador)` — capa + regulamento + tabela classificação final + rodapé Plantel Pro+. Botão "Baixar Relatório" em torneios Encerrado.
+**Menu lateral (`AppLayout`):** novo item "Grupos" entre "Torneios" e "Histórico".
 
-### 5. Notificações
+## 3. Garantias
 
-`NotificationBell` ganha tipos: `torneio_convite, torneio_aprovacao, torneio_sorteio, torneio_pontuacao, torneio_encerrado`.
+- Zero alteração em `birds`, `friendships`, `torneios` (sistema antigo continua intacto).
+- Sorteio 100% server-side.
+- Apenas machos podem ser inscritos (regra herdada).
+- Ranking acumulado considera só baterias **Encerradas** (evita placar instável).
+- Mobile-first: modais com `max-h-[92vh]` + footer sticky, tabelas com scroll horizontal.
 
-### 6. Arquivos
+## 4. Arquivos
 
-- **Migration**: 6 tabelas + 6 RPCs + trigger auditoria + RLS + realtime publication.
-- **Renomear**: `src/pages/Torneios.tsx` → `HistoricoTorneios.tsx` (rota `/historico-torneios`).
-- **Novo**: `Torneios.tsx`, `TorneioNovo.tsx`, `TorneioDetalhe.tsx`, `ConviteTorneio.tsx` + 7 componentes em `src/components/torneio/`.
-- **Edge Functions**: `enviar-convite-torneio`, `notificar-evento-torneio` + templates de e-mail.
-- **Edição**: `App.tsx` (rotas), `AppLayout.tsx` (menu), `lib/pdf.ts`, `types/`.
-- **Setup**: app emails infrastructure (domínio + setup_email_infra + scaffold transactional) se ainda não existir.
+- **Migration**: 6 tabelas + view + 10 RPCs + RLS + realtime publication.
+- **Novos**: 3 páginas, 10 componentes, 3 hooks, 1 type file (`types/grupo.ts`).
+- **Edição**: `App.tsx` (rotas), `AppLayout.tsx` (menu), `lib/pdf.ts`, `AmigoSelector.tsx` (modo multi), `NotificationBell.tsx` (novos tipos).
 
-### 7. Garantias
-
-- Zero alteração nas tabelas existentes.
-- Organizador nunca edita dados das aves alheias (RLS de `birds`).
-- Sorteio 100% server-side (impossível manipular).
-- Auditoria de toda alteração de pontuação.
-- Pontuações em torneio encerrado bloqueadas.
-
+Após aprovação, executo na ordem: **migration → types/hooks → páginas/componentes → integrações de menu/notificações/PDF → revisão mobile final**.
