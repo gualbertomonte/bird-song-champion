@@ -1,36 +1,48 @@
 
-User wants to nest "Grupos" inside "Torneios" instead of being a top-level menu item. Let me check current structure.
+User está pedindo ideias para facilitar o uso do módulo de Torneios/Grupos pelos usuários (UX). Vou propor melhorias práticas focadas em reduzir fricção, sem expandir muito o escopo.
 
-Current state:
-- `/torneios` — Torneios Avulsos list
-- `/grupos` — separate top-level menu item
-- AppLayout has both as separate sidebar entries
+## Ideias para facilitar o uso
 
-Plan: unify under Torneios with tabs.
+### 1. Onboarding e primeiro uso
+- **Tour guiado** na primeira visita à aba Grupos: 3 balões explicando "Criar grupo → Convidar amigos → Criar bateria".
+- **Estado vazio melhorado**: quando não há grupos, mostrar um card ilustrado com "Como funciona em 3 passos" e botão grande "Criar meu primeiro grupo".
+- **Grupo de exemplo**: opção "Criar grupo de demonstração" que já vem com 1 bateria fictícia para o usuário explorar.
 
-## Mudanças
+### 2. Atalhos no fluxo de criação
+- **Wizard único** para criar grupo + primeira bateria + convidar amigos numa só tela (em vez de 3 etapas separadas).
+- **Templates de regulamento**: ao criar grupo/bateria, oferecer 2-3 modelos prontos ("Canto livre 10 estacas", "Pontuação por juiz", etc.) para o usuário só clicar e ajustar.
+- **Duplicar bateria**: botão "Repetir esta bateria" que clona nome, nº estacas e regulamento, mudando só a data.
 
-**1. `src/pages/Torneios.tsx`** — adicionar duas abas no topo:
-- **Avulsos** (conteúdo atual da página)
-- **Grupos** (conteúdo de `/grupos`: lista de grupos + convites pendentes + botão "Criar grupo")
+### 3. Inscrição mais rápida
+- **Inscrição em lote**: checkbox para selecionar várias aves machos do plantel e inscrever todas de uma vez.
+- **"Inscrever minhas aves favoritas"**: lembra das últimas aves inscritas e oferece inscrever de novo com 1 clique.
+- **Pré-aprovação automática**: opção no grupo "aprovar inscrições automaticamente" para admin não precisar aprovar manualmente toda vez.
 
-A aba ativa controlada por query param `?tab=grupos` para preservar deep-link.
+### 4. Pontuação no celular (admin)
+- **Modo "Estaca por estaca"**: tela cheia mostrando uma estaca por vez com o nome da ave grande e teclado numérico — admin desliza pra próxima. Bem mais rápido que tabela.
+- **Auto-save por dose**: salva a cada dígito (sem botão "salvar").
+- **Atalho de voz**: botão microfone para ditar a pontuação.
 
-**2. `src/components/AppLayout.tsx`**:
-- Remover item "Grupos" do `navItems` (sidebar desktop).
-- Remover `grupos` do `ALL_MOBILE_ITEMS` (já não estava, ok).
+### 5. Compartilhamento e visibilidade
+- **Link público read-only** da classificação (`/baterias/:id/publico`) com botão "Compartilhar no WhatsApp" — sem precisar de login.
+- **QR Code da bateria** para imprimir e os participantes acompanharem ao vivo.
+- **Resumo automático no fim**: ao encerrar bateria, gera card com pódio pronto para compartilhar como imagem.
 
-**3. `src/App.tsx`** — manter as rotas `/grupos`, `/grupos/novo`, `/grupos/:id`, `/grupos/:id/baterias/:bateriaId` funcionando (deep-links de convites/notificações continuam válidos). Adicionar redirect: `/grupos` → `/torneios?tab=grupos` (opcional, mas mantém retrocompatibilidade do menu antigo).
+### 6. Notificações inteligentes
+- **Push/sino contextual**: "Sua estaca é a nº 7" assim que admin sortear; "Você ficou em 3º lugar 🥉" ao encerrar.
+- **Lembrete da bateria**: 1 dia antes da data, notifica todos os membros.
 
-**4. `src/pages/Grupos.tsx`** — extrair o conteúdo principal num componente reutilizável `GruposTabContent` (ou simplesmente importar a página inteira como sub-componente da aba). Mais simples: criar `src/components/torneios/GruposTab.tsx` com o conteúdo atual de `Grupos.tsx`, e fazer `Grupos.tsx` virar wrapper que redireciona para `/torneios?tab=grupos`.
+### 7. Pequenos ajustes de UX já visíveis
+- **Badge de convites pendentes** na aba "Grupos" dentro de Torneios.
+- **Foto da ave** nas tabelas de classificação e ranking (já temos `bird_snapshot.foto_url`).
+- **Lembrar última aba** (Avulsos/Grupos) no localStorage.
+- **Busca/filtro** na lista de baterias quando o grupo crescer.
 
-**5. Botões "Criar"**: na aba ativa, o botão do header muda:
-- Aba Avulsos → "Novo Torneio" (vai para `/torneios/novo`)
-- Aba Grupos → "Criar grupo" (vai para `/grupos/novo`)
+### Recomendação prática
+Dos itens acima, **os 4 que mais reduziriam fricção rapidamente**:
+1. **Wizard "Criar grupo + convidar + 1ª bateria" em uma tela**.
+2. **Inscrição em lote** (checkbox múltiplo).
+3. **Modo "Estaca por estaca" no celular** para pontuar.
+4. **Link público + WhatsApp** da classificação.
 
-**6. Links internos** que apontam para `/grupos` (ex.: notificações, GrupoCard de volta) — manter funcionando via redirect.
-
-## Resultado
-- Sidebar mais enxuta (1 item a menos).
-- Tudo sobre torneios em um lugar só, com toggle Avulsos/Grupos.
-- URLs antigas continuam funcionando.
+Posso implementar esses 4 num próximo passo, ou um subconjunto que você escolher.
