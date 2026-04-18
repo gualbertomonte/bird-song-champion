@@ -1,48 +1,48 @@
 
-User está pedindo ideias para facilitar o uso do módulo de Torneios/Grupos pelos usuários (UX). Vou propor melhorias práticas focadas em reduzir fricção, sem expandir muito o escopo.
+User quer facilitar ainda mais o convite porque o app é novo e quase não tem usuários cadastrados. Logo, depender de "amigos já aceitos" ou de "usuário já existir no app" é fricção alta. O foco deve ser **convidar quem ainda NEM tem conta**.
 
-## Ideias para facilitar o uso
+## Plano: convite "viral" para grupos (foco em quem não é usuário)
 
-### 1. Onboarding e primeiro uso
-- **Tour guiado** na primeira visita à aba Grupos: 3 balões explicando "Criar grupo → Convidar amigos → Criar bateria".
-- **Estado vazio melhorado**: quando não há grupos, mostrar um card ilustrado com "Como funciona em 3 passos" e botão grande "Criar meu primeiro grupo".
-- **Grupo de exemplo**: opção "Criar grupo de demonstração" que já vem com 1 bateria fictícia para o usuário explorar.
+### Ideia central
+Substituir o modal atual (que só mostra amigos) por um modal único focado em **link público + convite por email**, pensado para o admin compartilhar no WhatsApp com pessoas que ainda não usam o app.
 
-### 2. Atalhos no fluxo de criação
-- **Wizard único** para criar grupo + primeira bateria + convidar amigos numa só tela (em vez de 3 etapas separadas).
-- **Templates de regulamento**: ao criar grupo/bateria, oferecer 2-3 modelos prontos ("Canto livre 10 estacas", "Pontuação por juiz", etc.) para o usuário só clicar e ajustar.
-- **Duplicar bateria**: botão "Repetir esta bateria" que clona nome, nº estacas e regulamento, mudando só a data.
+### 1. Link público de convite ao grupo (principal)
+- Nova coluna `token uuid` em `torneio_grupo_convites` (ou nova tabela `torneio_grupo_convite_links` com token único por grupo, reutilizável).
+- Decisão: **1 link único por grupo** (mais simples, fácil de compartilhar várias vezes). Coluna `convite_token uuid` direto em `torneio_grupos`.
+- Nova página pública `/entrar/grupo/:token`:
+  - Mostra nome do grupo, admin, nº de membros, descrição.
+  - Botão grande "Entrar no grupo".
+  - Se logado → RPC `aceitar_convite_grupo_por_token(_token)` adiciona como membro e redireciona para `/grupos/:id`.
+  - Se NÃO logado → tela com 2 botões: "Já tenho conta (entrar)" e "Criar conta grátis". Após login/signup, volta automaticamente para o link e entra no grupo.
+- No admin: botão "Copiar link" + "Compartilhar no WhatsApp" (com mensagem pronta: "Você foi convidado para o grupo X no PlantelPro: [link]").
 
-### 3. Inscrição mais rápida
-- **Inscrição em lote**: checkbox para selecionar várias aves machos do plantel e inscrever todas de uma vez.
-- **"Inscrever minhas aves favoritas"**: lembra das últimas aves inscritas e oferece inscrever de novo com 1 clique.
-- **Pré-aprovação automática**: opção no grupo "aprovar inscrições automaticamente" para admin não precisar aprovar manualmente toda vez.
+### 2. Convite por email (mesmo de quem não tem conta)
+- Novo modal substitui o atual, com 2 tabs:
+  - **Tab "Link"** (padrão): mostra o link público + botão WhatsApp + QR code pequeno.
+  - **Tab "Por email"**: input de email → RPC `convidar_por_email_grupo(_grupo_id, _email)`:
+    - Se email existe em `profiles` → cria convite normal em `torneio_grupo_convites` + notificação.
+    - Se NÃO existe → cria registro em nova tabela `torneio_grupo_convites_email (grupo_id, email, token, status)` + dispara edge function `send-grupo-invite-email` com link `/entrar/grupo/:token?email=...`.
+  - Quando o destinatário criar conta com aquele email, um trigger ou check no login resolve automaticamente o convite pendente.
 
-### 4. Pontuação no celular (admin)
-- **Modo "Estaca por estaca"**: tela cheia mostrando uma estaca por vez com o nome da ave grande e teclado numérico — admin desliza pra próxima. Bem mais rápido que tabela.
-- **Auto-save por dose**: salva a cada dígito (sem botão "salvar").
-- **Atalho de voz**: botão microfone para ditar a pontuação.
+### 3. Remover dependência de "amigo aceito"
+- Tab "Amigos" continua existindo (atalho rápido) mas deixa de ser o caminho principal. Aparece embaixo, como "Adicionar amigos do app" (lista compacta).
 
-### 5. Compartilhamento e visibilidade
-- **Link público read-only** da classificação (`/baterias/:id/publico`) com botão "Compartilhar no WhatsApp" — sem precisar de login.
-- **QR Code da bateria** para imprimir e os participantes acompanharem ao vivo.
-- **Resumo automático no fim**: ao encerrar bateria, gera card com pódio pronto para compartilhar como imagem.
+### 4. Edge function de email
+- `supabase/functions/send-grupo-invite-email/index.ts` — usa Resend (já configurado para outras functions de email) com template simples: "Fulano convidou você para o grupo X. [Botão Aceitar]".
 
-### 6. Notificações inteligentes
-- **Push/sino contextual**: "Sua estaca é a nº 7" assim que admin sortear; "Você ficou em 3º lugar 🥉" ao encerrar.
-- **Lembrete da bateria**: 1 dia antes da data, notifica todos os membros.
+### Backend (1 migration)
+1. `ALTER TABLE torneio_grupos ADD COLUMN convite_token uuid DEFAULT gen_random_uuid() UNIQUE NOT NULL;` (preenche existentes com uuid).
+2. Nova tabela `torneio_grupo_convites_email (id, grupo_id, email, token, convidado_por, status, created_at, claimed_user_id)` + RLS (admin do grupo lê/cria/cancela).
+3. RPC `aceitar_convite_grupo_por_token(_token uuid)` — security definer, resolve grupo, insere em `torneio_grupo_membros` se ainda não for membro.
+4. RPC `convidar_por_email_grupo(_grupo_id uuid, _email text)` — decide entre fluxo logado/email.
+5. RPC pública `get_grupo_convite_publico(_token uuid)` — retorna `{ nome, descricao, admin_nome, total_membros }` sem auth.
+6. Trigger `on_auth_user_created` (ou ajuste no existente) → ao criar usuário, procurar `torneio_grupo_convites_email` por email e marcar como pendentes para o user_id (ou auto-aceitar opcional).
 
-### 7. Pequenos ajustes de UX já visíveis
-- **Badge de convites pendentes** na aba "Grupos" dentro de Torneios.
-- **Foto da ave** nas tabelas de classificação e ranking (já temos `bird_snapshot.foto_url`).
-- **Lembrar última aba** (Avulsos/Grupos) no localStorage.
-- **Busca/filtro** na lista de baterias quando o grupo crescer.
+### Frontend
+- `src/pages/EntrarGrupo.tsx` (rota pública `/entrar/grupo/:token`).
+- Refatorar `src/components/grupos/ConvidarMembroModal.tsx` com 3 abas: **Link** (padrão), **Email**, **Amigos**.
+- `src/pages/GrupoDetalhe.tsx`: header ganha botão "Compartilhar grupo" (ícone de share) que abre o modal direto na aba Link.
+- `src/App.tsx`: nova rota pública.
 
-### Recomendação prática
-Dos itens acima, **os 4 que mais reduziriam fricção rapidamente**:
-1. **Wizard "Criar grupo + convidar + 1ª bateria" em uma tela**.
-2. **Inscrição em lote** (checkbox múltiplo).
-3. **Modo "Estaca por estaca" no celular** para pontuar.
-4. **Link público + WhatsApp** da classificação.
-
-Posso implementar esses 4 num próximo passo, ou um subconjunto que você escolher.
+### Resultado para o usuário
+Admin clica em "Compartilhar grupo" → escolhe WhatsApp → cola na conversa. Quem recebe abre o link, faz signup em 30s e já cai dentro do grupo. **Zero dependência de o convidado já existir no app**.
