@@ -100,6 +100,38 @@ export default function BateriaDetalhe() {
         </div>
       </header>
 
+      {/* Banner: você foi convidado, escolha sua ave */}
+      {(() => {
+        const pendenteAve = minhasInscricoes.find(i => i.status === 'PendenteAve');
+        if (!pendenteAve) return null;
+        return (
+          <div className="p-4 rounded-2xl border-2 border-primary/40 bg-primary/5 flex flex-col sm:flex-row sm:items-center gap-3">
+            <BirdIcon className="w-6 h-6 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Você foi convidado para este evento</p>
+              <p className="text-xs text-muted-foreground">Escolha qual das suas aves vai participar</p>
+            </div>
+            <button onClick={() => setEscolherAveInsc(pendenteAve.id)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
+              <BirdIcon className="w-4 h-4" /> Escolher ave
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Banner: membro pode pedir para participar */}
+      {!isAdmin && aceitaInscricao && minhasInscricoes.length === 0 && (
+        <div className="p-4 rounded-2xl border border-secondary/40 bg-secondary/5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <Hand className="w-6 h-6 text-secondary flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Quer participar deste evento?</p>
+            <p className="text-xs text-muted-foreground">Envie um pedido escolhendo sua ave. O admin vai aprovar.</p>
+          </div>
+          <button onClick={() => setShowPedir(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
+            <Hand className="w-4 h-4" /> Pedir para participar
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-1 border-b border-border overflow-x-auto no-scrollbar">
         {([
           { key: 'participantes', label: `Participantes (${inscricoes.length})` },
