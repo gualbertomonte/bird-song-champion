@@ -40,7 +40,7 @@ export default function BateriaDetalhe() {
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
 
-  const isAdmin = grupo.admin_user_id === user?.id;
+  const isAdmin = isCoAdmin;
   const minhasInscricoes = inscricoes.filter(i => i.membro_user_id === user?.id);
   const aprovadas = inscricoes.filter(i => i.status === 'Aprovada');
   const classificacao = calcularClassificacaoBateria(inscricoes, pontuacoes);
