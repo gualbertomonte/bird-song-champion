@@ -190,10 +190,48 @@ export default function BateriaDetalhe() {
       {tab === 'participantes' && (
         <section className="space-y-3">
           {isAdmin && aceitaInscricao && (
-            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center gap-2">
+            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
               <Users className="w-4 h-4" /> Adicionar participantes
             </button>
           )}
+
+          {/* Pedidos pendentes — destaque para admin */}
+          {isAdmin && (() => {
+            const pendentes = inscricoes.filter(i => i.status === 'Pendente');
+            if (pendentes.length === 0) return null;
+            return (
+              <div className="p-3 rounded-2xl border-2 border-accent/40 bg-accent/5 space-y-2">
+                <p className="text-xs font-semibold flex items-center gap-2">
+                  <Hand className="w-4 h-4 text-accent-foreground" />
+                  {pendentes.length} pedido(s) aguardando sua aprovação
+                </p>
+                {pendentes.map(p => (
+                  <div key={p.id} className="p-2.5 rounded-xl bg-card border border-border flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.bird_snapshot?.nome || 'Ave'}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono">{p.bird_snapshot?.codigo_anilha}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => {
+                        const { error } = await supabase.rpc('aprovar_inscricao_bateria', { _inscricao_id: p.id, _aprovar: true });
+                        if (error) toast.error(error.message); else toast.success('Aprovado');
+                      }} className="flex-1 sm:flex-initial text-xs px-3 py-1.5 rounded-lg bg-secondary/20 text-secondary hover:bg-secondary/30 inline-flex items-center justify-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar
+                      </button>
+                      <button onClick={async () => {
+                        const motivo = prompt('Motivo da rejeição (opcional):') || '';
+                        const { error } = await supabase.rpc('aprovar_inscricao_bateria', { _inscricao_id: p.id, _aprovar: false, _motivo: motivo });
+                        if (error) toast.error(error.message); else toast.success('Rejeitado');
+                      }} className="flex-1 sm:flex-initial text-xs px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 inline-flex items-center justify-center gap-1">
+                        <X className="w-3.5 h-3.5" /> Rejeitar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
           <ParticipantesEvento bateriaId={bateria.id} isElim={isElim} faseAtual={bateria.fase_atual} />
         </section>
       )}
