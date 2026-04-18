@@ -18,6 +18,8 @@ import Grupos from "@/pages/Grupos";
 import GrupoNovo from "@/pages/GrupoNovo";
 import GrupoDetalhe from "@/pages/GrupoDetalhe";
 import BateriaDetalhe from "@/pages/BateriaDetalhe";
+import PontuarBateria from "@/pages/PontuarBateria";
+import BateriaPublica from "@/pages/BateriaPublica";
 import Saude from "@/pages/Saude";
 import Bercario from "@/pages/Bercario";
 import Perfil from "@/pages/Perfil";
@@ -76,6 +78,7 @@ const App = () => (
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
+            <Route path="/p/bateria/:id" element={<BateriaPublica />} />
 
             {/* Protected routes */}
             <Route path="/*" element={
@@ -95,6 +98,7 @@ const App = () => (
                       <Route path="/grupos/novo" element={<GrupoNovo />} />
                       <Route path="/grupos/:id" element={<GrupoDetalhe />} />
                       <Route path="/grupos/:id/baterias/:bateriaId" element={<BateriaDetalhe />} />
+                      <Route path="/grupos/:id/baterias/:bateriaId/pontuar" element={<PontuarBateria />} />
                       <Route path="/saude" element={<Saude />} />
                       <Route path="/bercario" element={<Bercario />} />
                       <Route path="/emprestimos" element={<Emprestimos />} />
