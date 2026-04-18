@@ -1197,6 +1197,26 @@ export type Database = {
       generate_codigo_criadouro: { Args: never; Returns: string }
       get_bateria_publica: { Args: { _bateria_id: string }; Returns: Json }
       get_grupo_convite_publico: { Args: { _token: string }; Returns: Json }
+      get_participantes_evento: {
+        Args: { _bateria_id: string }
+        Returns: {
+          bird_id: string
+          bird_nome: string
+          classificado_final: boolean
+          codigo_anilha: string
+          codigo_criadouro: string
+          convidado_pelo_admin: boolean
+          email: string
+          estacao: number
+          inscricao_id: string
+          membro_user_id: string
+          nome_criador: string
+          pontos_classif: number
+          pontos_final: number
+          pontos_total: number
+          status: string
+        }[]
+      }
       get_ranking_acumulado_grupo: {
         Args: { _grupo_id: string }
         Returns: {

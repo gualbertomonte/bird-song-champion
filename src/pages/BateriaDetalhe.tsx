@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 import { calcularClassificacaoBateria } from '@/types/grupo';
 import { SelecionarParticipantesModal } from '@/components/grupos/SelecionarParticipantesModal';
 import { ConfigEliminatoriaModal } from '@/components/grupos/ConfigEliminatoriaModal';
+import { ParticipantesEvento } from '@/components/grupos/ParticipantesEvento';
 
-type Tab = 'inscricoes' | 'sorteio' | 'pontuacao' | 'classificacao';
+type Tab = 'participantes' | 'inscricoes' | 'sorteio' | 'pontuacao' | 'classificacao';
 
 export default function BateriaDetalhe() {
   const { id, bateriaId } = useParams<{ id: string; bateriaId: string }>();
@@ -18,7 +19,7 @@ export default function BateriaDetalhe() {
   const { user } = useAuth();
   const { birds } = useAppState();
   const { bateria, grupo, inscricoes, pontuacoes, loading } = useBateria(bateriaId);
-  const [tab, setTab] = useState<Tab>('inscricoes');
+  const [tab, setTab] = useState<Tab>('participantes');
   const [showInscrever, setShowInscrever] = useState(false);
   const [showParticipantes, setShowParticipantes] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
@@ -32,7 +33,8 @@ export default function BateriaDetalhe() {
   const classificacao = calcularClassificacaoBateria(inscricoes, pontuacoes);
   const aceitaInscricao = ['Agendada', 'Inscricoes'].includes(bateria.status);
   const isElim = bateria.formato === 'eliminatoria';
-  const podeConfigurar = isAdmin && ['Agendada', 'Inscricoes', 'Sorteada'].includes(bateria.status);
+  const podeConfigurar = isAdmin && bateria.status !== 'Encerrada';
+  const temPontuacoes = pontuacoes.length > 0 || inscricoes.some(i => i.pontos_classif != null || i.pontos_final != null);
 
   const compartilharLink = async () => {
     const url = `${window.location.origin}/p/bateria/${bateria.id}`;
@@ -87,7 +89,8 @@ export default function BateriaDetalhe() {
 
       <div className="flex gap-1 border-b border-border overflow-x-auto no-scrollbar">
         {([
-          { key: 'inscricoes', label: `Inscrições (${inscricoes.length})` },
+          { key: 'participantes', label: `Participantes (${inscricoes.length})` },
+          { key: 'inscricoes', label: 'Inscrições' },
           { key: 'sorteio', label: 'Sorteio' },
           { key: 'pontuacao', label: 'Pontuação' },
           { key: 'classificacao', label: 'Classificação' },
@@ -111,7 +114,7 @@ export default function BateriaDetalhe() {
             <div className="flex gap-2 flex-wrap">
               {podeConfigurar && (
                 <button onClick={() => setShowConfig(true)} className="text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 flex items-center gap-1">
-                  <Zap className="w-3 h-3" /> {isElim ? 'Editar eliminatória' : 'Ativar eliminatória'}
+                  <Zap className="w-3 h-3" /> {isElim ? 'Editar configuração' : 'Ativar eliminatória'}
                 </button>
               )}
               {aceitaInscricao && (
@@ -131,6 +134,22 @@ export default function BateriaDetalhe() {
               )}
             </div>
           </div>
+          {temPontuacoes && (
+            <p className="text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg">
+              ⚠ Já existem pontuações neste evento. Ao alterar a configuração, as pontuações registradas são preservadas.
+            </p>
+          )}
+        </section>
+      )}
+
+      {tab === 'participantes' && (
+        <section className="space-y-3">
+          {isAdmin && aceitaInscricao && (
+            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center gap-2">
+              <Users className="w-4 h-4" /> Adicionar participantes
+            </button>
+          )}
+          <ParticipantesEvento bateriaId={bateria.id} isElim={isElim} faseAtual={bateria.fase_atual} />
         </section>
       )}
 
@@ -238,7 +257,7 @@ export default function BateriaDetalhe() {
           {!isAdmin && <p className="text-xs text-muted-foreground">Apenas o admin do grupo lança pontuação</p>}
           {isAdmin && bateria.status !== 'Encerrada' && aprovadas.some(i => i.estacao) && (
             <button
-              onClick={() => navigate(`/grupos/${id}/baterias/${bateriaId}/pontuar`)}
+              onClick={() => navigate(`/grupos/${id}/eventos/${bateriaId}/pontuar`)}
               className="btn-primary inline-flex items-center gap-2 w-full md:w-auto justify-center"
             >
               <Zap className="w-4 h-4" /> Modo rápido (estaca por estaca)
