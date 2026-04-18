@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut, Trash2, Share2 } from 'lucide-react';
+import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut, Trash2, Share2, ShieldPlus, ShieldMinus } from 'lucide-react';
 import { useGrupoDetalhe } from '@/hooks/useGrupoDetalhe';
 import { useAuth } from '@/context/AuthContext';
 import RankingAcumuladoTable from '@/components/grupos/RankingAcumuladoTable';
