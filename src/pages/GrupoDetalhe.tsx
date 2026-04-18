@@ -171,7 +171,7 @@ export default function GrupoDetalhe() {
               {baterias.map(b => (
                 <Link
                   key={b.id}
-                  to={`/grupos/${grupo.id}/baterias/${b.id}`}
+                  to={`/grupos/${grupo.id}/eventos/${b.id}`}
                   className="block p-3 rounded-xl bg-card border border-border hover:border-secondary/40 transition-all"
                 >
                   <div className="flex items-center justify-between gap-3">
