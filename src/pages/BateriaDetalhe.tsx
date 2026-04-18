@@ -187,10 +187,17 @@ export default function BateriaDetalhe() {
 
       {tab === 'participantes' && (
         <section className="space-y-3">
-          {isAdmin && aceitaInscricao && (
-            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
-              <Users className="w-4 h-4" /> Adicionar participantes
-            </button>
+          {isAdmin && bateria.status !== 'Encerrada' && (
+            <div className="space-y-2">
+              <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
+                <Users className="w-4 h-4" /> Adicionar participantes
+              </button>
+              {!aceitaInscricao && (
+                <p className="text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg">
+                  ⚠ Novos participantes entrarão sem estação sorteada — refaça o sorteio se necessário.
+                </p>
+              )}
+            </div>
           )}
 
           {/* Pedidos pendentes — destaque para admin */}
