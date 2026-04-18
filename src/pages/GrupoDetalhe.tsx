@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut, Trash2 } from 'lucide-react';
+import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut, Trash2, Share2 } from 'lucide-react';
 import { useGrupoDetalhe } from '@/hooks/useGrupoDetalhe';
 import { useAuth } from '@/context/AuthContext';
 import RankingAcumuladoTable from '@/components/grupos/RankingAcumuladoTable';
@@ -18,7 +18,13 @@ export default function GrupoDetalhe() {
   const { grupo, membros, convites, baterias, ranking, loading, reload } = useGrupoDetalhe(id);
   const [tab, setTab] = useState<Tab>('visao');
   const [showConvidar, setShowConvidar] = useState(false);
+  const [convidarTab, setConvidarTab] = useState<'link' | 'email' | 'amigos'>('link');
   const [showNovaBateria, setShowNovaBateria] = useState(false);
+
+  const abrirConvidar = (tab: 'link' | 'email' | 'amigos' = 'link') => {
+    setConvidarTab(tab);
+    setShowConvidar(true);
+  };
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!grupo) return <p className="text-sm text-muted-foreground text-center py-12">Grupo não encontrado</p>;
