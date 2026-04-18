@@ -673,6 +673,50 @@ export type Database = {
           },
         ]
       }
+      torneio_grupo_convites_email: {
+        Row: {
+          claimed_at: string | null
+          claimed_user_id: string | null
+          convidado_por: string
+          created_at: string
+          email: string
+          grupo_id: string
+          id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_user_id?: string | null
+          convidado_por: string
+          created_at?: string
+          email: string
+          grupo_id: string
+          id?: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_user_id?: string | null
+          convidado_por?: string
+          created_at?: string
+          email?: string
+          grupo_id?: string
+          id?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneio_grupo_convites_email_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "torneio_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       torneio_grupo_membros: {
         Row: {
           created_at: string
@@ -711,6 +755,7 @@ export type Database = {
       torneio_grupos: {
         Row: {
           admin_user_id: string
+          convite_token: string
           created_at: string
           descricao: string | null
           id: string
@@ -720,6 +765,7 @@ export type Database = {
         }
         Insert: {
           admin_user_id: string
+          convite_token?: string
           created_at?: string
           descricao?: string | null
           id?: string
@@ -729,6 +775,7 @@ export type Database = {
         }
         Update: {
           admin_user_id?: string
+          convite_token?: string
           created_at?: string
           descricao?: string | null
           id?: string
@@ -1040,6 +1087,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aceitar_convite_grupo_por_token: {
+        Args: { _token: string }
+        Returns: Json
+      }
       aceitar_convite_torneio: { Args: { _token: string }; Returns: Json }
       aprovar_inscricao: {
         Args: { _aprovar: boolean; _inscricao_id: string; _motivo?: string }
@@ -1054,6 +1105,10 @@ export type Database = {
       convidar_membro_grupo: {
         Args: { _grupo_id: string; _user_id: string }
         Returns: string
+      }
+      convidar_por_email_grupo: {
+        Args: { _email: string; _grupo_id: string }
+        Returns: Json
       }
       create_loan: {
         Args: {
@@ -1097,6 +1152,7 @@ export type Database = {
       enviar_pedido_amizade: { Args: { _destinatario: string }; Returns: Json }
       generate_codigo_criadouro: { Args: never; Returns: string }
       get_bateria_publica: { Args: { _bateria_id: string }; Returns: Json }
+      get_grupo_convite_publico: { Args: { _token: string }; Returns: Json }
       get_ranking_acumulado_grupo: {
         Args: { _grupo_id: string }
         Returns: {

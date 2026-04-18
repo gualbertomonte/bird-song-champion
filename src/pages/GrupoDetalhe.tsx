@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut, Trash2 } from 'lucide-react';
+import { ArrowLeft, Crown, Users, Calendar, Trophy, Plus, UserPlus, LogOut, Trash2, Share2 } from 'lucide-react';
 import { useGrupoDetalhe } from '@/hooks/useGrupoDetalhe';
 import { useAuth } from '@/context/AuthContext';
 import RankingAcumuladoTable from '@/components/grupos/RankingAcumuladoTable';
@@ -18,7 +18,13 @@ export default function GrupoDetalhe() {
   const { grupo, membros, convites, baterias, ranking, loading, reload } = useGrupoDetalhe(id);
   const [tab, setTab] = useState<Tab>('visao');
   const [showConvidar, setShowConvidar] = useState(false);
+  const [convidarTab, setConvidarTab] = useState<'link' | 'email' | 'amigos'>('link');
   const [showNovaBateria, setShowNovaBateria] = useState(false);
+
+  const abrirConvidar = (tab: 'link' | 'email' | 'amigos' = 'link') => {
+    setConvidarTab(tab);
+    setShowConvidar(true);
+  };
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!grupo) return <p className="text-sm text-muted-foreground text-center py-12">Grupo não encontrado</p>;
@@ -73,15 +79,24 @@ export default function GrupoDetalhe() {
           </div>
           {grupo.descricao && <p className="text-sm text-muted-foreground">{grupo.descricao}</p>}
         </div>
-        {isAdmin ? (
-          <button onClick={excluirGrupo} className="text-xs text-destructive hover:underline flex items-center gap-1">
-            <Trash2 className="w-3 h-3" /> Excluir grupo
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => abrirConvidar('link')}
+            className="text-xs px-3 py-1.5 rounded-full border border-secondary/40 text-secondary hover:bg-secondary/10 inline-flex items-center gap-1"
+            title="Compartilhar grupo"
+          >
+            <Share2 className="w-3 h-3" /> Compartilhar
           </button>
-        ) : (
-          <button onClick={sair} className="text-xs text-destructive hover:underline flex items-center gap-1">
-            <LogOut className="w-3 h-3" /> Sair do grupo
-          </button>
-        )}
+          {isAdmin ? (
+            <button onClick={excluirGrupo} className="text-xs text-destructive hover:underline flex items-center gap-1">
+              <Trash2 className="w-3 h-3" /> Excluir grupo
+            </button>
+          ) : (
+            <button onClick={sair} className="text-xs text-destructive hover:underline flex items-center gap-1">
+              <LogOut className="w-3 h-3" /> Sair do grupo
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Tabs */}
@@ -120,9 +135,14 @@ export default function GrupoDetalhe() {
       {tab === 'membros' && (
         <section className="space-y-3">
           {isAdmin && (
-            <button onClick={() => setShowConvidar(true)} className="btn-primary inline-flex items-center gap-2">
-              <UserPlus className="w-4 h-4" /> Convidar amigos
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => abrirConvidar('link')} className="btn-primary inline-flex items-center gap-2">
+                <Share2 className="w-4 h-4" /> Compartilhar link
+              </button>
+              <button onClick={() => abrirConvidar('email')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border hover:border-secondary/40 text-sm font-medium">
+                <UserPlus className="w-4 h-4" /> Convidar por e-mail
+              </button>
+            </div>
           )}
           {convites.length > 0 && isAdmin && (
             <div className="p-3 rounded-xl bg-muted/30 border border-border">
@@ -184,8 +204,11 @@ export default function GrupoDetalhe() {
       {showConvidar && (
         <ConvidarMembroModal
           grupoId={grupo.id}
+          grupoNome={grupo.nome}
+          conviteToken={grupo.convite_token}
           membrosUserIds={membros.map(m => m.user_id)}
           convitesUserIds={convites.map(c => c.convidado_user_id)}
+          initialTab={convidarTab}
           onClose={() => setShowConvidar(false)}
           onDone={reload}
         />

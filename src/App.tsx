@@ -13,6 +13,7 @@ import Torneios from "@/pages/Torneios";
 import TorneioNovo from "@/pages/TorneioNovo";
 import TorneioDetalhe from "@/pages/TorneioDetalhe";
 import ConviteTorneio from "@/pages/ConviteTorneio";
+import EntrarGrupo from "@/pages/EntrarGrupo";
 import HistoricoTorneios from "@/pages/HistoricoTorneios";
 import Grupos from "@/pages/Grupos";
 import GrupoNovo from "@/pages/GrupoNovo";
@@ -78,6 +79,7 @@ const App = () => (
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
+            <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
             <Route path="/p/bateria/:id" element={<BateriaPublica />} />
 
             {/* Protected routes */}
