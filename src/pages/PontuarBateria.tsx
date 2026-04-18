@@ -100,17 +100,35 @@ export default function PontuarBateria() {
   return (
     <div className="fixed inset-0 z-40 bg-background flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between p-3 border-b border-border">
+      <header className="flex items-center justify-between p-3 border-b border-border gap-2">
         <button onClick={() => navigate(`/grupos/${id}/baterias/${bateriaId}`)} className="btn-ghost">
           <ArrowLeft className="w-4 h-4" /> Sair
         </button>
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">{bateria.nome}</p>
-          <p className="text-[11px] text-muted-foreground">{pontuadas}/{total} pontuadas</p>
+        <div className="text-center flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground truncate">{bateria.nome}</p>
+          {isElim ? (
+            <p className="text-[11px] font-semibold text-primary">
+              {fase === 'classificatoria' ? `Classificatória ${bateria.classif_duracao_min}min` : `Final ${bateria.final_duracao_min}min`} · {pontuadas}/{total}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">{pontuadas}/{total} pontuadas</p>
+          )}
         </div>
-        <div className="w-16 text-right">
-          <span className="text-xs font-semibold text-secondary">{progresso}%</span>
-        </div>
+        {isElim && fase === 'classificatoria' ? (
+          <button
+            onClick={async () => {
+              if (!confirm(`Aplicar corte (mínimo ${bateria.classif_corte_minimo})?`)) return;
+              const { data, error } = await supabase.rpc('aplicar_corte_classificatoria', { _bateria_id: bateria.id });
+              if (error) toast.error(error.message);
+              else { toast.success(`${(data as any)?.classificados ?? 0} classificadas`); setIdx(0); }
+            }}
+            className="text-[11px] px-2 py-1 rounded-lg bg-primary text-primary-foreground font-semibold"
+          >
+            Aplicar corte
+          </button>
+        ) : (
+          <span className="text-xs font-semibold text-secondary w-16 text-right">{progresso}%</span>
+        )}
       </header>
 
       {/* Progress bar */}
