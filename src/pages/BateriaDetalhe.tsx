@@ -63,6 +63,13 @@ export default function BateriaDetalhe() {
             bateria.status === 'Em andamento' ? 'bg-secondary/20 text-secondary' :
             'bg-accent/20 text-accent-foreground'
           }`}>{bateria.status}</span>
+          {isElim && (
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-primary/15 text-primary flex items-center gap-1">
+              <Zap className="w-3 h-3" />
+              {bateria.fase_atual === 'classificatoria' ? `Classificatória ${bateria.classif_duracao_min}min` :
+               bateria.fase_atual === 'final' ? `Final ${bateria.final_duracao_min}min` : 'Eliminatória'}
+            </span>
+          )}
           <button onClick={compartilharLink} className="text-xs px-3 py-1 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
             <Share2 className="w-3 h-3" /> Compartilhar
           </button>
