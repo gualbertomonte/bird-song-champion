@@ -319,6 +319,17 @@ export default function BateriaDetalhe() {
           onClose={() => setShowInscrever(false)}
         />
       )}
+      {showParticipantes && (
+        <SelecionarParticipantesModal
+          bateriaId={bateria.id}
+          grupoId={grupo.id}
+          inscricoesUserIds={inscricoes.map(i => i.membro_user_id)}
+          onClose={() => setShowParticipantes(false)}
+        />
+      )}
+      {showConfig && (
+        <ConfigEliminatoriaModal bateria={bateria} onClose={() => setShowConfig(false)} />
+      )}
     </div>
   );
 }
