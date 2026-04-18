@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award, Zap, Share2, Check, Users, Scissors } from 'lucide-react';
+import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award, Zap, Share2, Check, Users, Scissors, Bird as BirdIcon, Hand } from 'lucide-react';
+import { EscolherAveInscricaoModal } from '@/components/grupos/EscolherAveInscricaoModal';
+import { PedirParticiparEventoModal } from '@/components/grupos/PedirParticiparEventoModal';
 import { useBateria } from '@/hooks/useBateria';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
@@ -23,11 +25,22 @@ export default function BateriaDetalhe() {
   const [showInscrever, setShowInscrever] = useState(false);
   const [showParticipantes, setShowParticipantes] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [showPedir, setShowPedir] = useState(false);
+  const [escolherAveInsc, setEscolherAveInsc] = useState<string | null>(null);
+  const [isCoAdmin, setIsCoAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!grupo || !user) return;
+    if (grupo.admin_user_id === user.id) { setIsCoAdmin(true); return; }
+    supabase.from('torneio_grupo_membros')
+      .select('papel').eq('grupo_id', grupo.id).eq('user_id', user.id).eq('status', 'Ativo').maybeSingle()
+      .then(({ data }) => setIsCoAdmin(data?.papel === 'admin'));
+  }, [grupo, user]);
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
 
-  const isAdmin = grupo.admin_user_id === user?.id;
+  const isAdmin = isCoAdmin;
   const minhasInscricoes = inscricoes.filter(i => i.membro_user_id === user?.id);
   const aprovadas = inscricoes.filter(i => i.status === 'Aprovada');
   const classificacao = calcularClassificacaoBateria(inscricoes, pontuacoes);
@@ -87,6 +100,38 @@ export default function BateriaDetalhe() {
         </div>
       </header>
 
+      {/* Banner: você foi convidado, escolha sua ave */}
+      {(() => {
+        const pendenteAve = minhasInscricoes.find(i => i.status === 'PendenteAve');
+        if (!pendenteAve) return null;
+        return (
+          <div className="p-4 rounded-2xl border-2 border-primary/40 bg-primary/5 flex flex-col sm:flex-row sm:items-center gap-3">
+            <BirdIcon className="w-6 h-6 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Você foi convidado para este evento</p>
+              <p className="text-xs text-muted-foreground">Escolha qual das suas aves vai participar</p>
+            </div>
+            <button onClick={() => setEscolherAveInsc(pendenteAve.id)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
+              <BirdIcon className="w-4 h-4" /> Escolher ave
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Banner: membro pode pedir para participar */}
+      {!isAdmin && aceitaInscricao && minhasInscricoes.length === 0 && (
+        <div className="p-4 rounded-2xl border border-secondary/40 bg-secondary/5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <Hand className="w-6 h-6 text-secondary flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Quer participar deste evento?</p>
+            <p className="text-xs text-muted-foreground">Envie um pedido escolhendo sua ave. O admin vai aprovar.</p>
+          </div>
+          <button onClick={() => setShowPedir(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
+            <Hand className="w-4 h-4" /> Pedir para participar
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-1 border-b border-border overflow-x-auto no-scrollbar">
         {([
           { key: 'participantes', label: `Participantes (${inscricoes.length})` },
@@ -145,10 +190,48 @@ export default function BateriaDetalhe() {
       {tab === 'participantes' && (
         <section className="space-y-3">
           {isAdmin && aceitaInscricao && (
-            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center gap-2">
+            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
               <Users className="w-4 h-4" /> Adicionar participantes
             </button>
           )}
+
+          {/* Pedidos pendentes — destaque para admin */}
+          {isAdmin && (() => {
+            const pendentes = inscricoes.filter(i => i.status === 'Pendente');
+            if (pendentes.length === 0) return null;
+            return (
+              <div className="p-3 rounded-2xl border-2 border-accent/40 bg-accent/5 space-y-2">
+                <p className="text-xs font-semibold flex items-center gap-2">
+                  <Hand className="w-4 h-4 text-accent-foreground" />
+                  {pendentes.length} pedido(s) aguardando sua aprovação
+                </p>
+                {pendentes.map(p => (
+                  <div key={p.id} className="p-2.5 rounded-xl bg-card border border-border flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.bird_snapshot?.nome || 'Ave'}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono">{p.bird_snapshot?.codigo_anilha}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={async () => {
+                        const { error } = await supabase.rpc('aprovar_inscricao_bateria', { _inscricao_id: p.id, _aprovar: true });
+                        if (error) toast.error(error.message); else toast.success('Aprovado');
+                      }} className="flex-1 sm:flex-initial text-xs px-3 py-1.5 rounded-lg bg-secondary/20 text-secondary hover:bg-secondary/30 inline-flex items-center justify-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar
+                      </button>
+                      <button onClick={async () => {
+                        const motivo = prompt('Motivo da rejeição (opcional):') || '';
+                        const { error } = await supabase.rpc('aprovar_inscricao_bateria', { _inscricao_id: p.id, _aprovar: false, _motivo: motivo });
+                        if (error) toast.error(error.message); else toast.success('Rejeitado');
+                      }} className="flex-1 sm:flex-initial text-xs px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 inline-flex items-center justify-center gap-1">
+                        <X className="w-3.5 h-3.5" /> Rejeitar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
           <ParticipantesEvento bateriaId={bateria.id} isElim={isElim} faseAtual={bateria.fase_atual} />
         </section>
       )}
@@ -348,6 +431,12 @@ export default function BateriaDetalhe() {
       )}
       {showConfig && (
         <ConfigEliminatoriaModal bateria={bateria} onClose={() => setShowConfig(false)} />
+      )}
+      {showPedir && (
+        <PedirParticiparEventoModal bateriaId={bateria.id} onClose={() => setShowPedir(false)} />
+      )}
+      {escolherAveInsc && (
+        <EscolherAveInscricaoModal inscricaoId={escolherAveInsc} onClose={() => setEscolherAveInsc(null)} />
       )}
     </div>
   );

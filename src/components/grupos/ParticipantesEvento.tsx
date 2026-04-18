@@ -93,8 +93,11 @@ export function ParticipantesEvento({ bateriaId, isElim, faseAtual }: Props) {
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                 p.status === 'Aprovada' ? 'bg-secondary/20 text-secondary' :
                 p.status === 'Rejeitada' ? 'bg-destructive/10 text-destructive' :
+                p.status === 'PendenteAve' ? 'bg-primary/15 text-primary' :
                 'bg-muted text-muted-foreground'
-              }`}>{p.status}</span>
+              }`}>
+                {p.status === 'PendenteAve' ? 'Aguarda ave' : p.status}
+              </span>
               {p.convidado_pelo_admin && (
                 <span className="text-[9px] text-primary flex items-center gap-0.5">
                   <UserCheck className="w-2.5 h-2.5" /> convidado

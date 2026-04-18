@@ -2,7 +2,7 @@ export type GrupoPapel = 'admin' | 'membro';
 export type MembroStatus = 'Pendente' | 'Ativo' | 'Saiu';
 export type ConviteGrupoStatus = 'Pendente' | 'Aceito' | 'Recusado';
 export type BateriaStatus = 'Agendada' | 'Inscricoes' | 'Sorteada' | 'Em andamento' | 'Encerrada';
-export type InscricaoBateriaStatus = 'Pendente' | 'Aprovada' | 'Rejeitada';
+export type InscricaoBateriaStatus = 'PendenteAve' | 'Pendente' | 'Aprovada' | 'Rejeitada';
 
 export interface TorneioGrupo {
   id: string;
@@ -60,7 +60,7 @@ export interface BateriaInscricao {
   id: string;
   bateria_id: string;
   membro_user_id: string;
-  bird_id: string;
+  bird_id: string | null;
   bird_snapshot: any;
   status: InscricaoBateriaStatus;
   estacao: number | null;
