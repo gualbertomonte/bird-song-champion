@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award, Zap, Share2, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award, Zap, Share2, Check, Users, Scissors } from 'lucide-react';
 import { useBateria } from '@/hooks/useBateria';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { calcularClassificacaoBateria } from '@/types/grupo';
+import { SelecionarParticipantesModal } from '@/components/grupos/SelecionarParticipantesModal';
+import { ConfigEliminatoriaModal } from '@/components/grupos/ConfigEliminatoriaModal';
 
 type Tab = 'inscricoes' | 'sorteio' | 'pontuacao' | 'classificacao';
 
@@ -18,6 +20,8 @@ export default function BateriaDetalhe() {
   const { bateria, grupo, inscricoes, pontuacoes, loading } = useBateria(bateriaId);
   const [tab, setTab] = useState<Tab>('inscricoes');
   const [showInscrever, setShowInscrever] = useState(false);
+  const [showParticipantes, setShowParticipantes] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
@@ -27,6 +31,8 @@ export default function BateriaDetalhe() {
   const aprovadas = inscricoes.filter(i => i.status === 'Aprovada');
   const classificacao = calcularClassificacaoBateria(inscricoes, pontuacoes);
   const aceitaInscricao = ['Agendada', 'Inscricoes'].includes(bateria.status);
+  const isElim = bateria.formato === 'eliminatoria';
+  const podeConfigurar = isAdmin && ['Agendada', 'Inscricoes', 'Sorteada'].includes(bateria.status);
 
   const compartilharLink = async () => {
     const url = `${window.location.origin}/p/bateria/${bateria.id}`;
