@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 import { calcularClassificacaoBateria } from '@/types/grupo';
 import { SelecionarParticipantesModal } from '@/components/grupos/SelecionarParticipantesModal';
 import { ConfigEliminatoriaModal } from '@/components/grupos/ConfigEliminatoriaModal';
+import { ParticipantesEvento } from '@/components/grupos/ParticipantesEvento';
 
-type Tab = 'inscricoes' | 'sorteio' | 'pontuacao' | 'classificacao';
+type Tab = 'participantes' | 'inscricoes' | 'sorteio' | 'pontuacao' | 'classificacao';
 
 export default function BateriaDetalhe() {
   const { id, bateriaId } = useParams<{ id: string; bateriaId: string }>();
