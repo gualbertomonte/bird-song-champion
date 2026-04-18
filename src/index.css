@@ -6,34 +6,34 @@
 
 @layer base {
   :root {
-    /* Aviário Premium — verde-floresta + dourado champanhe */
-    --background: 158 53% 11%;            /* #0A2E22 */
-    --foreground: 41 38% 93%;             /* #F5F1E8 creme quente */
+    /* Aviário Premium — verde-floresta + dourado champanhe (mais claro/legível) */
+    --background: 158 42% 13%;            /* mais claro que antes */
+    --foreground: 41 38% 96%;             /* creme mais nítido */
 
-    --card: 158 50% 14%;                  /* #0F3A2C */
-    --card-foreground: 41 38% 93%;
+    --card: 158 38% 17%;                  /* fundo de card mais arejado */
+    --card-foreground: 41 38% 96%;
 
-    --popover: 158 50% 14%;
-    --popover-foreground: 41 38% 93%;
+    --popover: 158 38% 17%;
+    --popover-foreground: 41 38% 96%;
 
-    --primary: 158 53% 11%;
-    --primary-foreground: 41 45% 57%;
+    --primary: 158 42% 13%;
+    --primary-foreground: 41 55% 68%;
 
-    --secondary: 41 45% 57%;              /* #C9A961 dourado champanhe */
-    --secondary-foreground: 158 53% 11%;
+    --secondary: 41 55% 65%;              /* dourado mais luminoso */
+    --secondary-foreground: 158 50% 10%;
 
-    --muted: 158 30% 18%;
-    --muted-foreground: 158 12% 62%;      /* verde-cinza */
+    --muted: 158 28% 22%;                 /* mais claro */
+    --muted-foreground: 41 18% 78%;       /* texto secundário muito mais legível */
 
-    --accent: 32 35% 54%;                 /* #B8935A cobre suave */
-    --accent-foreground: 158 53% 11%;
+    --accent: 32 45% 62%;                 /* cobre mais claro */
+    --accent-foreground: 158 50% 10%;
 
-    --destructive: 2 49% 55%;             /* #C75450 */
-    --destructive-foreground: 41 38% 96%;
+    --destructive: 2 60% 62%;             /* vermelho mais vivo */
+    --destructive-foreground: 41 38% 98%;
 
-    --border: 158 47% 19%;                /* #1A4A38 */
-    --input: 158 40% 18%;
-    --ring: 41 45% 57%;
+    --border: 158 35% 26%;                /* borda mais visível */
+    --input: 158 32% 22%;
+    --ring: 41 55% 65%;
 
     --radius: 1rem;
 
