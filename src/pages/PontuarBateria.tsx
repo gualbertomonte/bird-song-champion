@@ -71,12 +71,12 @@ export default function PontuarBateria() {
     if (!atual) return;
     const num = parseFloat(valor.replace(',', '.'));
     if (valor !== '' && !isNaN(num)) {
-      // só salva se mudou
-      if (!pontuacaoAtual || Number(pontuacaoAtual.pontos) !== num) {
+      if (valorFaseAtual == null || Number(valorFaseAtual) !== num) {
         setSalvando(true);
-        const { error } = await supabase.rpc('registrar_pontuacao_bateria', {
+        const { error } = await supabase.rpc('registrar_pontuacao_fase', {
           _inscricao_id: atual.id,
           _pontos: num,
+          _fase: fase,
         });
         setSalvando(false);
         if (error) { toast.error(error.message); return; }
