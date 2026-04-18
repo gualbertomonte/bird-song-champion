@@ -99,6 +99,41 @@ export default function BateriaDetalhe() {
         ))}
       </div>
 
+      {isAdmin && bateria.status !== 'Encerrada' && (
+        <section className="p-4 rounded-2xl bg-card border border-border space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <h3 className="heading-serif font-semibold text-sm">Ferramentas do organizador</h3>
+              <p className="text-[11px] text-muted-foreground">
+                {isElim ? `Eliminatória · corte ≥ ${bateria.classif_corte_minimo}` : 'Formato simples (1 fase)'}
+              </p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {podeConfigurar && (
+                <button onClick={() => setShowConfig(true)} className="text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> {isElim ? 'Editar eliminatória' : 'Ativar eliminatória'}
+                </button>
+              )}
+              {aceitaInscricao && (
+                <button onClick={() => setShowParticipantes(true)} className="text-xs px-3 py-1.5 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
+                  <Users className="w-3 h-3" /> Selecionar participantes
+                </button>
+              )}
+              {isElim && bateria.fase_atual === 'classificatoria' && (
+                <button onClick={async () => {
+                  if (!confirm(`Aplicar corte? Aves abaixo de ${bateria.classif_corte_minimo} cantos serão eliminadas e a final começará.`)) return;
+                  const { data, error } = await supabase.rpc('aplicar_corte_classificatoria', { _bateria_id: bateria.id });
+                  if (error) toast.error(error.message);
+                  else toast.success(`${(data as any)?.classificados ?? 0} classificadas, ${(data as any)?.eliminados ?? 0} eliminadas`);
+                }} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1">
+                  <Scissors className="w-3 h-3" /> Aplicar corte e iniciar final
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {tab === 'inscricoes' && (
         <section className="space-y-3">
           {aceitaInscricao && (
