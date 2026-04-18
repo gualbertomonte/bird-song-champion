@@ -218,7 +218,7 @@ export default function GrupoDetalhe() {
           grupoId={grupo.id}
           regulamentoPadrao={grupo.regulamento_padrao}
           onClose={() => setShowNovaBateria(false)}
-          onCreated={(bid) => navigate(`/grupos/${grupo.id}/baterias/${bid}`)}
+          onCreated={(bid) => navigate(`/grupos/${grupo.id}/eventos/${bid}`)}
         />
       )}
     </div>
