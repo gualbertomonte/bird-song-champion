@@ -32,7 +32,8 @@ export default function BateriaDetalhe() {
   const classificacao = calcularClassificacaoBateria(inscricoes, pontuacoes);
   const aceitaInscricao = ['Agendada', 'Inscricoes'].includes(bateria.status);
   const isElim = bateria.formato === 'eliminatoria';
-  const podeConfigurar = isAdmin && ['Agendada', 'Inscricoes', 'Sorteada'].includes(bateria.status);
+  const podeConfigurar = isAdmin && bateria.status !== 'Encerrada';
+  const temPontuacoes = pontuacoes.length > 0 || inscricoes.some(i => i.pontos_classif != null || i.pontos_final != null);
 
   const compartilharLink = async () => {
     const url = `${window.location.origin}/p/bateria/${bateria.id}`;
