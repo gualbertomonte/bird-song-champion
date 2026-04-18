@@ -46,12 +46,12 @@
     --sidebar-border: 158 47% 16%;
     --sidebar-ring: 41 45% 57%;
 
-    --success: 155 32% 42%;               /* #4A8B6F */
-    --success-foreground: 41 38% 96%;
-    --warning: 41 45% 57%;
-    --warning-foreground: 158 53% 11%;
-    --info: 200 60% 55%;
-    --info-foreground: 41 38% 96%;
+    --success: 152 45% 52%;               /* verde mais vivo */
+    --success-foreground: 41 38% 98%;
+    --warning: 41 55% 65%;
+    --warning-foreground: 158 50% 10%;
+    --info: 200 70% 65%;
+    --info-foreground: 41 38% 98%;
     --gold: 41 45% 57%;
 
     --chart-1: 158 53% 22%;
