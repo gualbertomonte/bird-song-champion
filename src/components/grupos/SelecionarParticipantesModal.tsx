@@ -79,14 +79,14 @@ export function SelecionarParticipantesModal({ bateriaId, grupoId, inscricoesUse
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card rounded-t-2xl md:rounded-2xl border border-border w-full md:max-w-md max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
+      <div className="bg-card rounded-t-2xl sm:rounded-2xl border border-border w-full sm:max-w-md max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div>
-            <h3 className="heading-serif font-semibold">Selecionar participantes</h3>
-            <p className="text-[11px] text-muted-foreground">{selecionados.length} selecionado(s)</p>
+            <h3 className="heading-serif font-semibold">Convidar participantes</h3>
+            <p className="text-[11px] text-muted-foreground">Eles escolherão a ave depois</p>
           </div>
-          <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
+          <button onClick={onClose} aria-label="Fechar"><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
 
         <div className="p-3 border-b border-border">
