@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X, UserPlus, Link2, Mail, Users, Copy, Check, Send, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAmigos } from '@/hooks/useAmigos';
