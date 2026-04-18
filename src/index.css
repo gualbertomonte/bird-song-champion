@@ -6,34 +6,34 @@
 
 @layer base {
   :root {
-    /* Aviário Premium — verde-floresta + dourado champanhe */
-    --background: 158 53% 11%;            /* #0A2E22 */
-    --foreground: 41 38% 93%;             /* #F5F1E8 creme quente */
+    /* Aviário Premium — verde-floresta + dourado champanhe (mais claro/legível) */
+    --background: 158 42% 13%;            /* mais claro que antes */
+    --foreground: 41 38% 96%;             /* creme mais nítido */
 
-    --card: 158 50% 14%;                  /* #0F3A2C */
-    --card-foreground: 41 38% 93%;
+    --card: 158 38% 17%;                  /* fundo de card mais arejado */
+    --card-foreground: 41 38% 96%;
 
-    --popover: 158 50% 14%;
-    --popover-foreground: 41 38% 93%;
+    --popover: 158 38% 17%;
+    --popover-foreground: 41 38% 96%;
 
-    --primary: 158 53% 11%;
-    --primary-foreground: 41 45% 57%;
+    --primary: 158 42% 13%;
+    --primary-foreground: 41 55% 68%;
 
-    --secondary: 41 45% 57%;              /* #C9A961 dourado champanhe */
-    --secondary-foreground: 158 53% 11%;
+    --secondary: 41 55% 65%;              /* dourado mais luminoso */
+    --secondary-foreground: 158 50% 10%;
 
-    --muted: 158 30% 18%;
-    --muted-foreground: 158 12% 62%;      /* verde-cinza */
+    --muted: 158 28% 22%;                 /* mais claro */
+    --muted-foreground: 41 18% 78%;       /* texto secundário muito mais legível */
 
-    --accent: 32 35% 54%;                 /* #B8935A cobre suave */
-    --accent-foreground: 158 53% 11%;
+    --accent: 32 45% 62%;                 /* cobre mais claro */
+    --accent-foreground: 158 50% 10%;
 
-    --destructive: 2 49% 55%;             /* #C75450 */
-    --destructive-foreground: 41 38% 96%;
+    --destructive: 2 60% 62%;             /* vermelho mais vivo */
+    --destructive-foreground: 41 38% 98%;
 
-    --border: 158 47% 19%;                /* #1A4A38 */
-    --input: 158 40% 18%;
-    --ring: 41 45% 57%;
+    --border: 158 35% 26%;                /* borda mais visível */
+    --input: 158 32% 22%;
+    --ring: 41 55% 65%;
 
     --radius: 1rem;
 
@@ -46,12 +46,12 @@
     --sidebar-border: 158 47% 16%;
     --sidebar-ring: 41 45% 57%;
 
-    --success: 155 32% 42%;               /* #4A8B6F */
-    --success-foreground: 41 38% 96%;
-    --warning: 41 45% 57%;
-    --warning-foreground: 158 53% 11%;
-    --info: 200 60% 55%;
-    --info-foreground: 41 38% 96%;
+    --success: 152 45% 52%;               /* verde mais vivo */
+    --success-foreground: 41 38% 98%;
+    --warning: 41 55% 65%;
+    --warning-foreground: 158 50% 10%;
+    --info: 200 70% 65%;
+    --info-foreground: 41 38% 98%;
     --gold: 41 45% 57%;
 
     --chart-1: 158 53% 22%;
@@ -164,27 +164,50 @@
     @apply badge-status bg-destructive/15 text-destructive border border-destructive/20;
   }
 
-  /* Buttons */
-  .btn-primary {
-    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:translate-y-0;
-    background: linear-gradient(180deg, hsl(var(--secondary)), hsl(41 45% 50%));
-    color: hsl(var(--secondary-foreground));
-    box-shadow: 0 1px 0 0 hsl(41 60% 75% / 0.4) inset, 0 8px 20px -8px hsl(var(--secondary) / 0.45);
+  /* Buttons — todos com altura mínima 40px (h-10), padding consistente, hover/active claros */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none;
   }
-  .btn-primary:hover {
+  .btn-primary {
+    @apply btn-base;
+    background: linear-gradient(180deg, hsl(var(--secondary)), hsl(41 50% 56%));
+    color: hsl(var(--secondary-foreground));
+    box-shadow: 0 1px 0 0 hsl(41 70% 82% / 0.5) inset, 0 8px 20px -8px hsl(var(--secondary) / 0.5);
+  }
+  .btn-primary:hover:not(:disabled) {
     @apply -translate-y-0.5;
-    box-shadow: 0 1px 0 0 hsl(41 60% 75% / 0.5) inset, 0 12px 28px -10px hsl(var(--secondary) / 0.55);
+    box-shadow: 0 1px 0 0 hsl(41 70% 82% / 0.6) inset, 0 14px 30px -10px hsl(var(--secondary) / 0.65);
+    filter: brightness(1.05);
+  }
+  .btn-primary:active:not(:disabled) {
+    @apply translate-y-0;
+    filter: brightness(0.95);
   }
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-muted/60 text-foreground border border-border hover:bg-muted hover:border-secondary/30 transition-all duration-200;
+    @apply btn-base bg-muted text-foreground border border-border hover:bg-muted/80 hover:border-secondary/50 hover:text-secondary active:scale-[0.98];
   }
   .btn-ghost {
-    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-2 h-10 px-3 rounded-lg text-sm font-medium text-foreground/85 hover:bg-muted hover:text-foreground active:scale-[0.98] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40;
+  }
+  .btn-danger {
+    @apply btn-base bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive active:scale-[0.98];
+  }
+  .btn-success {
+    @apply btn-base bg-success/15 text-success border border-success/30 hover:bg-success hover:text-success-foreground hover:border-success active:scale-[0.98];
+  }
+  .btn-outline-gold {
+    @apply btn-base bg-transparent text-secondary border border-secondary/50 hover:bg-secondary hover:text-secondary-foreground hover:border-secondary active:scale-[0.98];
+  }
+  .btn-sm {
+    @apply h-8 px-3 text-xs rounded-lg;
+  }
+  .btn-lg {
+    @apply h-12 px-6 text-base rounded-2xl;
   }
 
   /* Inputs */
   .input-field {
-    @apply w-full px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary/60 transition-all duration-200;
+    @apply w-full h-10 px-3.5 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary/60 transition-all duration-200;
   }
 
   /* Misc */
