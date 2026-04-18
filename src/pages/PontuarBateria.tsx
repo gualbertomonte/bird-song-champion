@@ -15,22 +15,26 @@ export default function PontuarBateria() {
   const [valor, setValor] = useState('');
   const [salvando, setSalvando] = useState(false);
 
+  const isElim = bateria?.formato === 'eliminatoria';
+  const fase: 'classificatoria' | 'final' | 'unica' = isElim ? (bateria?.fase_atual as any) : 'unica';
+
   const aprovadasComEstacao = useMemo(
     () => inscricoes
       .filter(i => i.status === 'Aprovada' && i.estacao !== null)
+      .filter(i => fase !== 'final' || i.classificado_final)
       .sort((a, b) => (a.estacao || 0) - (b.estacao || 0)),
-    [inscricoes]
+    [inscricoes, fase]
   );
 
   const atual = aprovadasComEstacao[idx];
   const pontuacaoAtual = atual ? pontuacoes.find(p => p.inscricao_id === atual.id) : null;
+  const valorFaseAtual = atual ? (fase === 'classificatoria' ? atual.pontos_classif : fase === 'final' ? atual.pontos_final : pontuacaoAtual?.pontos) : null;
 
   useEffect(() => {
     if (atual) {
-      const p = pontuacoes.find(x => x.inscricao_id === atual.id);
-      setValor(p ? String(p.pontos) : '');
+      setValor(valorFaseAtual != null ? String(valorFaseAtual) : '');
     }
-  }, [atual?.id, pontuacoes]);
+  }, [atual?.id, valorFaseAtual]);
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
@@ -67,12 +71,12 @@ export default function PontuarBateria() {
     if (!atual) return;
     const num = parseFloat(valor.replace(',', '.'));
     if (valor !== '' && !isNaN(num)) {
-      // só salva se mudou
-      if (!pontuacaoAtual || Number(pontuacaoAtual.pontos) !== num) {
+      if (valorFaseAtual == null || Number(valorFaseAtual) !== num) {
         setSalvando(true);
-        const { error } = await supabase.rpc('registrar_pontuacao_bateria', {
+        const { error } = await supabase.rpc('registrar_pontuacao_fase', {
           _inscricao_id: atual.id,
           _pontos: num,
+          _fase: fase,
         });
         setSalvando(false);
         if (error) { toast.error(error.message); return; }
@@ -96,17 +100,35 @@ export default function PontuarBateria() {
   return (
     <div className="fixed inset-0 z-40 bg-background flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between p-3 border-b border-border">
+      <header className="flex items-center justify-between p-3 border-b border-border gap-2">
         <button onClick={() => navigate(`/grupos/${id}/baterias/${bateriaId}`)} className="btn-ghost">
           <ArrowLeft className="w-4 h-4" /> Sair
         </button>
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">{bateria.nome}</p>
-          <p className="text-[11px] text-muted-foreground">{pontuadas}/{total} pontuadas</p>
+        <div className="text-center flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground truncate">{bateria.nome}</p>
+          {isElim ? (
+            <p className="text-[11px] font-semibold text-primary">
+              {fase === 'classificatoria' ? `Classificatória ${bateria.classif_duracao_min}min` : `Final ${bateria.final_duracao_min}min`} · {pontuadas}/{total}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">{pontuadas}/{total} pontuadas</p>
+          )}
         </div>
-        <div className="w-16 text-right">
-          <span className="text-xs font-semibold text-secondary">{progresso}%</span>
-        </div>
+        {isElim && fase === 'classificatoria' ? (
+          <button
+            onClick={async () => {
+              if (!confirm(`Aplicar corte (mínimo ${bateria.classif_corte_minimo})?`)) return;
+              const { data, error } = await supabase.rpc('aplicar_corte_classificatoria', { _bateria_id: bateria.id });
+              if (error) toast.error(error.message);
+              else { toast.success(`${(data as any)?.classificados ?? 0} classificadas`); setIdx(0); }
+            }}
+            className="text-[11px] px-2 py-1 rounded-lg bg-primary text-primary-foreground font-semibold"
+          >
+            Aplicar corte
+          </button>
+        ) : (
+          <span className="text-xs font-semibold text-secondary w-16 text-right">{progresso}%</span>
+        )}
       </header>
 
       {/* Progress bar */}

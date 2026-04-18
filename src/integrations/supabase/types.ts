@@ -19,11 +19,15 @@ export type Database = {
           bateria_id: string
           bird_id: string
           bird_snapshot: Json
+          classificado_final: boolean
+          convidado_pelo_admin: boolean
           created_at: string
           estacao: number | null
           id: string
           membro_user_id: string
           motivo_rejeicao: string | null
+          pontos_classif: number | null
+          pontos_final: number | null
           status: string
           updated_at: string
         }
@@ -31,11 +35,15 @@ export type Database = {
           bateria_id: string
           bird_id: string
           bird_snapshot?: Json
+          classificado_final?: boolean
+          convidado_pelo_admin?: boolean
           created_at?: string
           estacao?: number | null
           id?: string
           membro_user_id: string
           motivo_rejeicao?: string | null
+          pontos_classif?: number | null
+          pontos_final?: number | null
           status?: string
           updated_at?: string
         }
@@ -43,11 +51,15 @@ export type Database = {
           bateria_id?: string
           bird_id?: string
           bird_snapshot?: Json
+          classificado_final?: boolean
+          convidado_pelo_admin?: boolean
           created_at?: string
           estacao?: number | null
           id?: string
           membro_user_id?: string
           motivo_rejeicao?: string | null
+          pontos_classif?: number | null
+          pontos_final?: number | null
           status?: string
           updated_at?: string
         }
@@ -543,10 +555,15 @@ export type Database = {
       }
       torneio_baterias: {
         Row: {
+          classif_corte_minimo: number | null
+          classif_duracao_min: number | null
           created_at: string
           criado_por: string
           data: string
           encerrado_em: string | null
+          fase_atual: string
+          final_duracao_min: number | null
+          formato: string
           grupo_id: string
           id: string
           nome: string
@@ -556,10 +573,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          classif_corte_minimo?: number | null
+          classif_duracao_min?: number | null
           created_at?: string
           criado_por: string
           data: string
           encerrado_em?: string | null
+          fase_atual?: string
+          final_duracao_min?: number | null
+          formato?: string
           grupo_id: string
           id?: string
           nome: string
@@ -569,10 +591,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          classif_corte_minimo?: number | null
+          classif_duracao_min?: number | null
           created_at?: string
           criado_por?: string
           data?: string
           encerrado_em?: string | null
+          fase_atual?: string
+          final_duracao_min?: number | null
+          formato?: string
           grupo_id?: string
           id?: string
           nome?: string
@@ -1092,6 +1119,10 @@ export type Database = {
         Returns: Json
       }
       aceitar_convite_torneio: { Args: { _token: string }; Returns: Json }
+      aplicar_corte_classificatoria: {
+        Args: { _bateria_id: string }
+        Returns: Json
+      }
       aprovar_inscricao: {
         Args: { _aprovar: boolean; _inscricao_id: string; _motivo?: string }
         Returns: undefined
@@ -1105,6 +1136,10 @@ export type Database = {
       convidar_membro_grupo: {
         Args: { _grupo_id: string; _user_id: string }
         Returns: string
+      }
+      convidar_membros_evento: {
+        Args: { _bateria_id: string; _user_ids: string[] }
+        Returns: number
       }
       convidar_por_email_grupo: {
         Args: { _email: string; _grupo_id: string }
@@ -1146,6 +1181,15 @@ export type Database = {
           _via: string
         }
         Returns: string
+      }
+      definir_formato_eliminatoria: {
+        Args: {
+          _bateria_id: string
+          _classif_corte: number
+          _classif_duracao: number
+          _final_duracao: number
+        }
+        Returns: undefined
       }
       encerrar_bateria: { Args: { _bateria_id: string }; Returns: undefined }
       encerrar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
@@ -1192,6 +1236,10 @@ export type Database = {
       }
       registrar_pontuacao_bateria: {
         Args: { _inscricao_id: string; _pontos: number }
+        Returns: undefined
+      }
+      registrar_pontuacao_fase: {
+        Args: { _fase: string; _inscricao_id: string; _pontos: number }
         Returns: undefined
       }
       remover_amizade: { Args: { _friendship_id: string }; Returns: undefined }

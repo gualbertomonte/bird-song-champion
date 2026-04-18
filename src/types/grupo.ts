@@ -34,6 +34,9 @@ export interface GrupoConvite {
   responded_at: string | null;
 }
 
+export type BateriaFormato = 'simples' | 'eliminatoria';
+export type BateriaFase = 'unica' | 'classificatoria' | 'final';
+
 export interface Bateria {
   id: string;
   grupo_id: string;
@@ -46,6 +49,11 @@ export interface Bateria {
   encerrado_em: string | null;
   created_at: string;
   updated_at: string;
+  formato: BateriaFormato;
+  fase_atual: BateriaFase;
+  classif_duracao_min: number | null;
+  classif_corte_minimo: number | null;
+  final_duracao_min: number | null;
 }
 
 export interface BateriaInscricao {
@@ -59,6 +67,10 @@ export interface BateriaInscricao {
   motivo_rejeicao: string | null;
   created_at: string;
   updated_at: string;
+  convidado_pelo_admin: boolean;
+  pontos_classif: number | null;
+  pontos_final: number | null;
+  classificado_final: boolean;
 }
 
 export interface BateriaPontuacao {
