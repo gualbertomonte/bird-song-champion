@@ -10,6 +10,7 @@ export interface TorneioGrupo {
   nome: string;
   descricao: string | null;
   regulamento_padrao: string | null;
+  convite_token: string;
   created_at: string;
   updated_at: string;
 }
