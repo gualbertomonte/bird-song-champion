@@ -1096,6 +1096,7 @@ export type Database = {
       encerrar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
       enviar_pedido_amizade: { Args: { _destinatario: string }; Returns: Json }
       generate_codigo_criadouro: { Args: never; Returns: string }
+      get_bateria_publica: { Args: { _bateria_id: string }; Returns: Json }
       get_ranking_acumulado_grupo: {
         Args: { _grupo_id: string }
         Returns: {
