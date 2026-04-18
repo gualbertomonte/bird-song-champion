@@ -29,7 +29,7 @@ export default function NovaBateriaModal({ grupoId, regulamentoPadrao, onClose, 
         _regulamento: regulamento || null,
       });
       if (error) throw error;
-      toast.success('Bateria criada!');
+      toast.success('Evento criado!');
       onCreated(id as string);
       onClose();
     } catch (e: any) {
@@ -41,7 +41,7 @@ export default function NovaBateriaModal({ grupoId, regulamentoPadrao, onClose, 
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-card rounded-t-2xl md:rounded-2xl border border-border w-full md:max-w-md max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="heading-serif font-semibold">Nova bateria</h3>
+          <h3 className="heading-serif font-semibold">Novo evento</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -67,7 +67,7 @@ export default function NovaBateriaModal({ grupoId, regulamentoPadrao, onClose, 
         <div className="p-4 border-t border-border bg-card">
           <button disabled={salvando} onClick={submit} className="w-full btn-primary flex items-center justify-center gap-2">
             <CalendarPlus className="w-4 h-4" />
-            Criar bateria
+            Criar evento
           </button>
         </div>
       </div>

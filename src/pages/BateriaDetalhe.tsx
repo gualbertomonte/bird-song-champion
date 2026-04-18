@@ -20,7 +20,7 @@ export default function BateriaDetalhe() {
   const [showInscrever, setShowInscrever] = useState(false);
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
-  if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Bateria não encontrada</p>;
+  if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
 
   const isAdmin = grupo.admin_user_id === user?.id;
   const minhasInscricoes = inscricoes.filter(i => i.membro_user_id === user?.id);
@@ -62,9 +62,9 @@ export default function BateriaDetalhe() {
           </button>
           {isAdmin && bateria.status !== 'Encerrada' && (
             <button onClick={async () => {
-              if (!confirm('Encerrar esta bateria? Pontuação será bloqueada.')) return;
+              if (!confirm('Encerrar este evento? Pontuação será bloqueada.')) return;
               const { error } = await supabase.rpc('encerrar_bateria', { _bateria_id: bateria.id });
-              if (error) toast.error(error.message); else toast.success('Bateria encerrada');
+              if (error) toast.error(error.message); else toast.success('Evento encerrado');
             }} className="text-xs px-3 py-1 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 flex items-center gap-1">
               <Lock className="w-3 h-3" /> Encerrar
             </button>

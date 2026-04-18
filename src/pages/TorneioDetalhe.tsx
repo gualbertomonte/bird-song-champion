@@ -91,7 +91,7 @@ export default function TorneioDetalhe() {
             <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(torneio.data).toLocaleDateString('pt-BR')}</span>
               <span className="flex items-center gap-1"><Users className="w-4 h-4" />{torneio.numero_estacoes} estacas</span>
-              <span>{torneio.numero_baterias} {torneio.numero_baterias === 1 ? 'bateria' : 'baterias'}</span>
+              <span>{torneio.numero_baterias} {torneio.numero_baterias === 1 ? 'evento' : 'eventos'}</span>
             </div>
           </div>
           {isOrganizer && (
@@ -451,7 +451,7 @@ function AuditoriaTab({ logs, inscricoes }: any) {
             <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
             <th className="text-left p-3 font-medium text-muted-foreground">Ação</th>
             <th className="text-left p-3 font-medium text-muted-foreground">Ave</th>
-            <th className="text-left p-3 font-medium text-muted-foreground">Bateria</th>
+            <th className="text-left p-3 font-medium text-muted-foreground">Evento</th>
             <th className="text-right p-3 font-medium text-muted-foreground">Pontos</th>
           </tr>
         </thead>

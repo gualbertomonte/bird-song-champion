@@ -23,9 +23,9 @@ export default function GrupoNovo() {
   const toggleAmigo = (uid: string) =>
     setConvidar(s => (s.includes(uid) ? s.filter(x => x !== uid) : [...s, uid]));
 
-  // Step 3 — 1ª bateria (opcional)
+  // Step 3 — 1º evento (opcional)
   const [criarBateria, setCriarBateria] = useState(false);
-  const [batNome, setBatNome] = useState('Bateria 1');
+  const [batNome, setBatNome] = useState('Evento 1');
   const [batData, setBatData] = useState(new Date().toISOString().slice(0, 10));
   const [batEstacas, setBatEstacas] = useState(10);
 
@@ -47,7 +47,7 @@ export default function GrupoNovo() {
         if (!e2) convOk++;
       }
 
-      // 1ª bateria opcional
+      // 1º evento opcional
       let bateriaId: string | null = null;
       if (criarBateria && batNome.trim()) {
         const { data: bid, error: e3 } = await supabase.rpc('criar_bateria', {
@@ -57,12 +57,12 @@ export default function GrupoNovo() {
           _numero_estacoes: batEstacas,
           _regulamento: regulamento || null,
         });
-        if (e3) toast.error('Grupo criado, mas a bateria falhou: ' + e3.message);
+        if (e3) toast.error('Grupo criado, mas o evento falhou: ' + e3.message);
         else bateriaId = bid as string;
       }
 
       toast.success(
-        `Grupo criado!${convOk > 0 ? ` ${convOk} convite(s) enviado(s).` : ''}${bateriaId ? ' Bateria pronta.' : ''}`
+        `Grupo criado!${convOk > 0 ? ` ${convOk} convite(s) enviado(s).` : ''}${bateriaId ? ' Evento pronto.' : ''}`
       );
       if (bateriaId) navigate(`/grupos/${grupoId}/baterias/${bateriaId}`);
       else navigate(`/grupos/${grupoId}`);
@@ -119,7 +119,7 @@ export default function GrupoNovo() {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Regulamento padrão (opcional)</label>
-            <textarea value={regulamento} onChange={e => setRegulamento(e.target.value)} rows={3} className="input-field" placeholder="Será usado como padrão nas baterias" />
+            <textarea value={regulamento} onChange={e => setRegulamento(e.target.value)} rows={3} className="input-field" placeholder="Será usado como padrão nos eventos" />
           </div>
         </div>
       )}
@@ -175,14 +175,14 @@ export default function GrupoNovo() {
         </div>
       )}
 
-      {/* Step 3 — 1ª bateria */}
+      {/* Step 3 — 1º evento */}
       {step === 3 && (
         <div className="space-y-4 p-4 rounded-2xl bg-card border border-border">
           <div>
             <h2 className="heading-serif font-semibold mb-1 flex items-center gap-2">
-              <CalendarPlus className="w-4 h-4" /> Primeira bateria
+              <CalendarPlus className="w-4 h-4" /> Primeiro evento
             </h2>
-            <p className="text-xs text-muted-foreground">Já adianta a primeira bateria do grupo, ou pule e crie depois.</p>
+            <p className="text-xs text-muted-foreground">Já adianta o primeiro evento do grupo, ou pule e crie depois.</p>
           </div>
 
           <label className="flex items-center gap-2 text-sm cursor-pointer p-3 rounded-xl border border-border hover:border-secondary/40 transition-all">
@@ -192,13 +192,13 @@ export default function GrupoNovo() {
               onChange={e => setCriarBateria(e.target.checked)}
               className="w-4 h-4 accent-secondary"
             />
-            <span>Sim, criar a primeira bateria agora</span>
+            <span>Sim, criar o primeiro evento agora</span>
           </label>
 
           {criarBateria && (
             <div className="space-y-3 pl-2 border-l-2 border-secondary/30">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome da bateria</label>
+                <label className="text-xs font-medium text-muted-foreground">Nome do evento</label>
                 <input value={batNome} onChange={e => setBatNome(e.target.value)} className="input-field" />
               </div>
               <div className="grid grid-cols-2 gap-3">

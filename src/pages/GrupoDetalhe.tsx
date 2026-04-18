@@ -89,7 +89,7 @@ export default function GrupoDetalhe() {
         {([
           { key: 'visao', label: 'Visão Geral' },
           { key: 'membros', label: `Membros (${ativos.length})` },
-          { key: 'baterias', label: `Baterias (${baterias.length})` },
+          { key: 'baterias', label: `Eventos (${baterias.length})` },
           { key: 'ranking', label: 'Ranking' },
         ] as { key: Tab; label: string }[]).map(t => (
           <button
@@ -141,11 +141,11 @@ export default function GrupoDetalhe() {
         <section className="space-y-3">
           {isAdmin && (
             <button onClick={() => setShowNovaBateria(true)} className="btn-primary inline-flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Nova bateria
+              <Plus className="w-4 h-4" /> Novo evento
             </button>
           )}
           {baterias.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Nenhuma bateria criada ainda</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Nenhum evento criado ainda</p>
           ) : (
             <div className="space-y-2">
               {baterias.map(b => (

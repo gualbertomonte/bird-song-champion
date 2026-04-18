@@ -72,7 +72,7 @@ export default function BateriaPublica() {
   if (erro || !data) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-sm text-muted-foreground mb-4">Bateria não encontrada ou link inválido.</p>
+        <p className="text-sm text-muted-foreground mb-4">Evento não encontrado ou link inválido.</p>
         <Link to="/" className="text-secondary text-sm hover:underline">Ir para início</Link>
       </div>
     );

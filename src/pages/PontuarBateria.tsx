@@ -33,7 +33,7 @@ export default function PontuarBateria() {
   }, [atual?.id, pontuacoes]);
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
-  if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Bateria não encontrada</p>;
+  if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
 
   const isAdmin = grupo.admin_user_id === user?.id;
   if (!isAdmin) {
@@ -48,7 +48,7 @@ export default function PontuarBateria() {
   if (bateria.status === 'Encerrada') {
     return (
       <div className="max-w-md mx-auto py-12 text-center space-y-3">
-        <p className="text-sm text-muted-foreground">Esta bateria está encerrada — pontuação bloqueada.</p>
+        <p className="text-sm text-muted-foreground">Este evento está encerrado — pontuação bloqueada.</p>
         <button onClick={() => navigate(`/grupos/${id}/baterias/${bateriaId}`)} className="btn-secondary">Voltar</button>
       </div>
     );
