@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award, Zap, Share2, Check, Users, Scissors } from 'lucide-react';
+import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award, Zap, Share2, Check, Users, Scissors, Bird as BirdIcon, Hand } from 'lucide-react';
+import { EscolherAveInscricaoModal } from '@/components/grupos/EscolherAveInscricaoModal';
+import { PedirParticiparEventoModal } from '@/components/grupos/PedirParticiparEventoModal';
 import { useBateria } from '@/hooks/useBateria';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
