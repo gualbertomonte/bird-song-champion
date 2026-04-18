@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award } from 'lucide-react';
+import { ArrowLeft, Plus, Shuffle, Lock, CheckCircle2, X, Trophy, Medal, Award, Zap, Share2, Check } from 'lucide-react';
 import { useBateria } from '@/hooks/useBateria';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState } from '@/context/AppContext';
@@ -28,6 +28,16 @@ export default function BateriaDetalhe() {
   const classificacao = calcularClassificacaoBateria(inscricoes, pontuacoes);
   const aceitaInscricao = ['Agendada', 'Inscricoes'].includes(bateria.status);
 
+  const compartilharLink = async () => {
+    const url = `${window.location.origin}/p/bateria/${bateria.id}`;
+    const texto = `🏆 ${bateria.nome} — ${grupo.nome}\nVer classificação ao vivo:\n${url}`;
+    const wa = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: bateria.nome, text: texto, url }); return; } catch {}
+    }
+    window.open(wa, '_blank');
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <button onClick={() => navigate(`/grupos/${id}`)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -38,15 +48,18 @@ export default function BateriaDetalhe() {
         <div>
           <h1 className="heading-serif text-2xl md:text-3xl font-semibold">{bateria.nome}</h1>
           <p className="text-sm text-muted-foreground">
-            {new Date(bateria.data + 'T00:00').toLocaleDateString('pt-BR')} · {bateria.numero_estacoes} estações
+            {new Date(bateria.data + 'T00:00').toLocaleDateString('pt-BR')} · {bateria.numero_estacoes} estacas
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
             bateria.status === 'Encerrada' ? 'bg-muted text-muted-foreground' :
             bateria.status === 'Em andamento' ? 'bg-secondary/20 text-secondary' :
             'bg-accent/20 text-accent-foreground'
           }`}>{bateria.status}</span>
+          <button onClick={compartilharLink} className="text-xs px-3 py-1 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
+            <Share2 className="w-3 h-3" /> Compartilhar
+          </button>
           {isAdmin && bateria.status !== 'Encerrada' && (
             <button onClick={async () => {
               if (!confirm('Encerrar esta bateria? Pontuação será bloqueada.')) return;
@@ -77,7 +90,7 @@ export default function BateriaDetalhe() {
         <section className="space-y-3">
           {aceitaInscricao && (
             <button onClick={() => setShowInscrever(true)} className="btn-primary inline-flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Inscrever ave
+              <Plus className="w-4 h-4" /> Inscrever aves
             </button>
           )}
           {inscricoes.length === 0 ? (
@@ -125,9 +138,9 @@ export default function BateriaDetalhe() {
           {isAdmin && bateria.status !== 'Encerrada' && (
             <button onClick={async () => {
               const { error } = await supabase.rpc('sortear_estacoes_bateria', { _bateria_id: bateria.id });
-              if (error) toast.error(error.message); else toast.success('Estações sorteadas!');
+              if (error) toast.error(error.message); else toast.success('Estacas sorteadas!');
             }} className="btn-primary inline-flex items-center gap-2">
-              <Shuffle className="w-4 h-4" /> {bateria.status === 'Sorteada' || bateria.status === 'Em andamento' ? 'Refazer sorteio' : 'Sortear estações'}
+              <Shuffle className="w-4 h-4" /> {bateria.status === 'Sorteada' || bateria.status === 'Em andamento' ? 'Refazer sorteio' : 'Sortear estacas'}
             </button>
           )}
           {aprovadas.filter(i => i.estacao).length === 0 ? (
@@ -136,7 +149,7 @@ export default function BateriaDetalhe() {
             <div className="overflow-x-auto rounded-2xl border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  <tr><th className="text-left px-3 py-2">Estação</th><th className="text-left px-3 py-2">Ave</th><th className="text-left px-3 py-2">Anilha</th></tr>
+                  <tr><th className="text-left px-3 py-2">Estaca</th><th className="text-left px-3 py-2">Ave</th><th className="text-left px-3 py-2">Anilha</th></tr>
                 </thead>
                 <tbody>
                   {[...aprovadas].sort((a, b) => (a.estacao || 0) - (b.estacao || 0)).map(ins => (
@@ -154,8 +167,16 @@ export default function BateriaDetalhe() {
       )}
 
       {tab === 'pontuacao' && (
-        <section className="space-y-2">
+        <section className="space-y-3">
           {!isAdmin && <p className="text-xs text-muted-foreground">Apenas o admin do grupo lança pontuação</p>}
+          {isAdmin && bateria.status !== 'Encerrada' && aprovadas.some(i => i.estacao) && (
+            <button
+              onClick={() => navigate(`/grupos/${id}/baterias/${bateriaId}/pontuar`)}
+              className="btn-primary inline-flex items-center gap-2 w-full md:w-auto justify-center"
+            >
+              <Zap className="w-4 h-4" /> Modo rápido (estaca por estaca)
+            </button>
+          )}
           {aprovadas.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Sem aves aprovadas</p>
           ) : aprovadas.map(ins => {
@@ -164,7 +185,7 @@ export default function BateriaDetalhe() {
               <div key={ins.id} className="p-3 rounded-xl bg-card border border-border flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{ins.bird_snapshot?.nome}</p>
-                  <p className="text-xs text-muted-foreground">Estação {ins.estacao || '—'}</p>
+                  <p className="text-xs text-muted-foreground">Estaca {ins.estacao || '—'}</p>
                 </div>
                 <input
                   type="number"
@@ -194,7 +215,7 @@ export default function BateriaDetalhe() {
             <div className="overflow-x-auto rounded-2xl border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  <tr><th className="text-left px-3 py-2">#</th><th className="text-left px-3 py-2">Ave</th><th className="text-left px-3 py-2">Estação</th><th className="text-right px-3 py-2">Pontos</th></tr>
+                  <tr><th className="text-left px-3 py-2">#</th><th className="text-left px-3 py-2">Ave</th><th className="text-left px-3 py-2">Estaca</th><th className="text-right px-3 py-2">Pontos</th></tr>
                 </thead>
                 <tbody>
                   {classificacao.map(c => {
@@ -221,7 +242,7 @@ export default function BateriaDetalhe() {
       )}
 
       {showInscrever && (
-        <InscreverAveModal
+        <InscreverAvesModal
           bateriaId={bateria.id}
           birdsDisponiveis={birds.filter(b => b.sexo === 'M' && b.loan_status === 'proprio' && !minhasInscricoes.find(i => i.bird_id === b.id))}
           onClose={() => setShowInscrever(false)}
@@ -231,35 +252,107 @@ export default function BateriaDetalhe() {
   );
 }
 
-function InscreverAveModal({ bateriaId, birdsDisponiveis, onClose }: { bateriaId: string; birdsDisponiveis: any[]; onClose: () => void }) {
+function InscreverAvesModal({ bateriaId, birdsDisponiveis, onClose }: { bateriaId: string; birdsDisponiveis: any[]; onClose: () => void }) {
+  const [selecionadas, setSelecionadas] = useState<string[]>([]);
+  const [busca, setBusca] = useState('');
   const [salvando, setSalvando] = useState(false);
-  const inscrever = async (birdId: string) => {
-    setSalvando(true);
-    try {
-      const { error } = await supabase.rpc('inscrever_ave_bateria', { _bateria_id: bateriaId, _bird_id: birdId });
-      if (error) throw error;
-      toast.success('Ave inscrita! Aguardando aprovação.');
-      onClose();
-    } catch (e: any) { toast.error(e.message); }
-    finally { setSalvando(false); }
+
+  const filtradas = birdsDisponiveis.filter(b => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return true;
+    return (b.nome || '').toLowerCase().includes(q) || (b.codigo_anilha || '').toLowerCase().includes(q);
+  });
+
+  const toggle = (bid: string) =>
+    setSelecionadas(s => (s.includes(bid) ? s.filter(x => x !== bid) : [...s, bid]));
+
+  const todasSelecionadas = filtradas.length > 0 && filtradas.every(b => selecionadas.includes(b.id));
+  const toggleTodas = () => {
+    if (todasSelecionadas) setSelecionadas(s => s.filter(id => !filtradas.find(b => b.id === id)));
+    else setSelecionadas(s => [...new Set([...s, ...filtradas.map(b => b.id)])]);
   };
+
+  const inscrever = async () => {
+    if (selecionadas.length === 0) return;
+    setSalvando(true);
+    let ok = 0, fail = 0;
+    for (const bid of selecionadas) {
+      const { error } = await supabase.rpc('inscrever_ave_bateria', { _bateria_id: bateriaId, _bird_id: bid });
+      if (error) { fail++; console.error(error); } else ok++;
+    }
+    setSalvando(false);
+    if (ok > 0) toast.success(`${ok} ave(s) inscrita(s) — aguardando aprovação`);
+    if (fail > 0) toast.error(`${fail} falharam`);
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-card rounded-t-2xl md:rounded-2xl border border-border w-full md:max-w-md max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="heading-serif font-semibold">Inscrever ave</h3>
+          <div>
+            <h3 className="heading-serif font-semibold">Inscrever aves</h3>
+            <p className="text-[11px] text-muted-foreground">{selecionadas.length} selecionada(s)</p>
+          </div>
           <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+
+        {birdsDisponiveis.length > 0 && (
+          <div className="p-3 border-b border-border space-y-2">
+            <input
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              placeholder="Buscar por nome ou anilha"
+              className="input-field text-sm"
+            />
+            <button
+              type="button"
+              onClick={toggleTodas}
+              className="text-xs text-secondary hover:underline"
+            >
+              {todasSelecionadas ? 'Desmarcar todas' : 'Selecionar todas'} ({filtradas.length})
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {birdsDisponiveis.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum macho disponível para inscrever</p>
-          ) : birdsDisponiveis.map(b => (
-            <button key={b.id} disabled={salvando} onClick={() => inscrever(b.id)}
-              className="w-full p-3 rounded-xl border border-border hover:border-secondary/40 text-left transition-all">
-              <p className="font-medium text-sm">{b.nome}</p>
-              <p className="text-xs text-muted-foreground font-mono">{b.codigo_anilha}</p>
-            </button>
-          ))}
+          ) : filtradas.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nada encontrado</p>
+          ) : filtradas.map(b => {
+            const sel = selecionadas.includes(b.id);
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => toggle(b.id)}
+                className={`w-full p-3 rounded-xl border text-left transition-all flex items-center gap-3 ${
+                  sel ? 'border-secondary bg-secondary/10' : 'border-border hover:border-secondary/40'
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center ${
+                  sel ? 'border-secondary bg-secondary' : 'border-muted-foreground/40'
+                }`}>
+                  {sel && <Check className="w-3 h-3 text-secondary-foreground" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{b.nome}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{b.codigo_anilha}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="p-4 border-t border-border bg-card">
+          <button
+            disabled={salvando || selecionadas.length === 0}
+            onClick={inscrever}
+            className="w-full btn-primary justify-center disabled:opacity-40"
+          >
+            {salvando ? 'Inscrevendo…' : `Inscrever ${selecionadas.length} ave(s)`}
+          </button>
         </div>
       </div>
     </div>
