@@ -67,13 +67,13 @@ export function SelecionarParticipantesModal({ bateriaId, grupoId, inscricoesUse
   const confirmar = async () => {
     if (selecionados.length === 0) return;
     setSalvando(true);
-    const { data, error } = await supabase.rpc('convidar_membros_evento', {
+    const { data, error } = await supabase.rpc('convidar_membros_evento_pendente' as any, {
       _bateria_id: bateriaId,
       _user_ids: selecionados,
     });
     setSalvando(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(`${data ?? selecionados.length} participante(s) adicionado(s)`);
+    toast.success(`${data ?? selecionados.length} convite(s) enviados — aguardando o membro escolher uma ave`);
     onDone?.();
     onClose();
   };
