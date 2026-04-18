@@ -114,7 +114,7 @@ export default function BateriaDetalhe() {
             <div className="flex gap-2 flex-wrap">
               {podeConfigurar && (
                 <button onClick={() => setShowConfig(true)} className="text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 flex items-center gap-1">
-                  <Zap className="w-3 h-3" /> {isElim ? 'Editar eliminatória' : 'Ativar eliminatória'}
+                  <Zap className="w-3 h-3" /> {isElim ? 'Editar configuração' : 'Ativar eliminatória'}
                 </button>
               )}
               {aceitaInscricao && (
@@ -134,6 +134,22 @@ export default function BateriaDetalhe() {
               )}
             </div>
           </div>
+          {temPontuacoes && (
+            <p className="text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg">
+              ⚠ Já existem pontuações neste evento. Ao alterar a configuração, as pontuações registradas são preservadas.
+            </p>
+          )}
+        </section>
+      )}
+
+      {tab === 'participantes' && (
+        <section className="space-y-3">
+          {isAdmin && aceitaInscricao && (
+            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center gap-2">
+              <Users className="w-4 h-4" /> Adicionar participantes
+            </button>
+          )}
+          <ParticipantesEvento bateriaId={bateria.id} isElim={isElim} faseAtual={bateria.fase_atual} />
         </section>
       )}
 
