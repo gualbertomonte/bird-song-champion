@@ -45,7 +45,7 @@ export default function Torneios() {
           <p className="page-subtitle">
             {tab === 'avulsos'
               ? `${torneios.length} torneios · organizador ou participante`
-              : 'Comunidades fixas com baterias e ranking acumulado'}
+              : 'Comunidades fixas com eventos e ranking acumulado'}
           </p>
         </div>
         <div className="flex gap-2 self-start flex-wrap">
