@@ -244,33 +244,37 @@ export default function BateriaDetalhe() {
               <Zap className="w-4 h-4" /> Modo rápido (estaca por estaca)
             </button>
           )}
-          {aprovadas.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem aves aprovadas</p>
-          ) : aprovadas.map(ins => {
-            const p = pontuacoes.find(x => x.inscricao_id === ins.id);
-            return (
-              <div key={ins.id} className="p-3 rounded-xl bg-card border border-border flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{ins.bird_snapshot?.nome}</p>
-                  <p className="text-xs text-muted-foreground">Estaca {ins.estacao || '—'}</p>
+          {(() => {
+            const fase = isElim ? bateria.fase_atual : 'unica';
+            const lista = fase === 'final' ? aprovadas.filter(i => i.classificado_final) : aprovadas;
+            if (lista.length === 0) return <p className="text-sm text-muted-foreground text-center py-8">{fase === 'final' ? 'Nenhuma ave classificada para a final' : 'Sem aves aprovadas'}</p>;
+            return lista.map(ins => {
+              const valorAtual = fase === 'classificatoria' ? ins.pontos_classif : fase === 'final' ? ins.pontos_final : (pontuacoes.find(x => x.inscricao_id === ins.id)?.pontos);
+              const abaixoCorte = isElim && fase === 'classificatoria' && ins.pontos_classif != null && bateria.classif_corte_minimo != null && Number(ins.pontos_classif) < Number(bateria.classif_corte_minimo);
+              return (
+                <div key={ins.id} className={`p-3 rounded-xl bg-card border flex items-center gap-3 ${abaixoCorte ? 'border-destructive/40' : 'border-border'}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{ins.bird_snapshot?.nome}</p>
+                    <p className="text-xs text-muted-foreground">Estaca {ins.estacao || '—'} {abaixoCorte && <span className="text-destructive ml-1">⚠ abaixo do corte</span>}</p>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={valorAtual ?? ''}
+                    disabled={!isAdmin || bateria.status === 'Encerrada'}
+                    onBlur={async (e) => {
+                      const val = parseFloat(e.target.value);
+                      if (isNaN(val)) return;
+                      const { error } = await supabase.rpc('registrar_pontuacao_fase', { _inscricao_id: ins.id, _pontos: val, _fase: fase });
+                      if (error) toast.error(error.message); else toast.success('Pontuação salva');
+                    }}
+                    className="w-24 input-field text-right"
+                    placeholder="0.0"
+                  />
                 </div>
-                <input
-                  type="number"
-                  step="0.1"
-                  defaultValue={p?.pontos ?? ''}
-                  disabled={!isAdmin || bateria.status === 'Encerrada'}
-                  onBlur={async (e) => {
-                    const val = parseFloat(e.target.value);
-                    if (isNaN(val)) return;
-                    const { error } = await supabase.rpc('registrar_pontuacao_bateria', { _inscricao_id: ins.id, _pontos: val });
-                    if (error) toast.error(error.message); else toast.success('Pontuação salva');
-                  }}
-                  className="w-24 input-field text-right"
-                  placeholder="0.0"
-                />
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </section>
       )}
 
