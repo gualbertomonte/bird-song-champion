@@ -239,7 +239,7 @@ export default function BateriaDetalhe() {
           {!isAdmin && <p className="text-xs text-muted-foreground">Apenas o admin do grupo lança pontuação</p>}
           {isAdmin && bateria.status !== 'Encerrada' && aprovadas.some(i => i.estacao) && (
             <button
-              onClick={() => navigate(`/grupos/${id}/baterias/${bateriaId}/pontuar`)}
+              onClick={() => navigate(`/grupos/${id}/eventos/${bateriaId}/pontuar`)}
               className="btn-primary inline-flex items-center gap-2 w-full md:w-auto justify-center"
             >
               <Zap className="w-4 h-4" /> Modo rápido (estaca por estaca)
