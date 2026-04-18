@@ -100,7 +100,9 @@ const App = () => (
                       <Route path="/grupos/novo" element={<GrupoNovo />} />
                       <Route path="/grupos/:id" element={<GrupoDetalhe />} />
                       <Route path="/grupos/:id/baterias/:bateriaId" element={<BateriaDetalhe />} />
+                      <Route path="/grupos/:id/eventos/:bateriaId" element={<BateriaDetalhe />} />
                       <Route path="/grupos/:id/baterias/:bateriaId/pontuar" element={<PontuarBateria />} />
+                      <Route path="/grupos/:id/eventos/:bateriaId/pontuar" element={<PontuarBateria />} />
                       <Route path="/saude" element={<Saude />} />
                       <Route path="/bercario" element={<Bercario />} />
                       <Route path="/emprestimos" element={<Emprestimos />} />
