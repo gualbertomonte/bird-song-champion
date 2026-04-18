@@ -17,7 +17,7 @@ export type Database = {
       bateria_inscricoes: {
         Row: {
           bateria_id: string
-          bird_id: string
+          bird_id: string | null
           bird_snapshot: Json
           classificado_final: boolean
           convidado_pelo_admin: boolean
@@ -33,7 +33,7 @@ export type Database = {
         }
         Insert: {
           bateria_id: string
-          bird_id: string
+          bird_id?: string | null
           bird_snapshot?: Json
           classificado_final?: boolean
           convidado_pelo_admin?: boolean
@@ -49,7 +49,7 @@ export type Database = {
         }
         Update: {
           bateria_id?: string
-          bird_id?: string
+          bird_id?: string | null
           bird_snapshot?: Json
           classificado_final?: boolean
           convidado_pelo_admin?: boolean
@@ -1141,6 +1141,10 @@ export type Database = {
         Args: { _bateria_id: string; _user_ids: string[] }
         Returns: number
       }
+      convidar_membros_evento_pendente: {
+        Args: { _bateria_id: string; _user_ids: string[] }
+        Returns: number
+      }
       convidar_por_email_grupo: {
         Args: { _email: string; _grupo_id: string }
         Returns: Json
@@ -1194,6 +1198,10 @@ export type Database = {
       encerrar_bateria: { Args: { _bateria_id: string }; Returns: undefined }
       encerrar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
       enviar_pedido_amizade: { Args: { _destinatario: string }; Returns: Json }
+      escolher_ave_inscricao: {
+        Args: { _bird_id: string; _inscricao_id: string }
+        Returns: undefined
+      }
       generate_codigo_criadouro: { Args: never; Returns: string }
       get_bateria_publica: { Args: { _bateria_id: string }; Returns: Json }
       get_grupo_convite_publico: { Args: { _token: string }; Returns: Json }
@@ -1248,6 +1256,14 @@ export type Database = {
       }
       marcar_dose_aplicada: {
         Args: { _dose_id: string; _observacoes?: string }
+        Returns: undefined
+      }
+      promover_membro_admin: {
+        Args: { _grupo_id: string; _user_id: string }
+        Returns: undefined
+      }
+      rebaixar_membro_admin: {
+        Args: { _grupo_id: string; _user_id: string }
         Returns: undefined
       }
       registrar_pontuacao: {
