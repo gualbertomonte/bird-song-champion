@@ -15,7 +15,6 @@ const navItems = [
   { to: '/bercario', icon: Egg, label: 'Berçário' },
   { to: '/emprestimos', icon: Handshake, label: 'Empréstimos' },
   { to: '/torneios', icon: Trophy, label: 'Torneios' },
-  { to: '/grupos', icon: Users2, label: 'Grupos' },
   { to: '/saude', icon: Heart, label: 'Saúde' },
   { to: '/amigos', icon: Users, label: 'Amigos' },
   { to: '/perfil', icon: User, label: 'Perfil' },
