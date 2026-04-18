@@ -394,6 +394,12 @@ export default function BateriaDetalhe() {
       {showConfig && (
         <ConfigEliminatoriaModal bateria={bateria} onClose={() => setShowConfig(false)} />
       )}
+      {showPedir && (
+        <PedirParticiparEventoModal bateriaId={bateria.id} onClose={() => setShowPedir(false)} />
+      )}
+      {escolherAveInsc && (
+        <EscolherAveInscricaoModal inscricaoId={escolherAveInsc} onClose={() => setEscolherAveInsc(null)} />
+      )}
     </div>
   );
 }
