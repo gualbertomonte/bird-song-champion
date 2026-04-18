@@ -15,22 +15,26 @@ export default function PontuarBateria() {
   const [valor, setValor] = useState('');
   const [salvando, setSalvando] = useState(false);
 
+  const isElim = bateria?.formato === 'eliminatoria';
+  const fase: 'classificatoria' | 'final' | 'unica' = isElim ? (bateria?.fase_atual as any) : 'unica';
+
   const aprovadasComEstacao = useMemo(
     () => inscricoes
       .filter(i => i.status === 'Aprovada' && i.estacao !== null)
+      .filter(i => fase !== 'final' || i.classificado_final)
       .sort((a, b) => (a.estacao || 0) - (b.estacao || 0)),
-    [inscricoes]
+    [inscricoes, fase]
   );
 
   const atual = aprovadasComEstacao[idx];
   const pontuacaoAtual = atual ? pontuacoes.find(p => p.inscricao_id === atual.id) : null;
+  const valorFaseAtual = atual ? (fase === 'classificatoria' ? atual.pontos_classif : fase === 'final' ? atual.pontos_final : pontuacaoAtual?.pontos) : null;
 
   useEffect(() => {
     if (atual) {
-      const p = pontuacoes.find(x => x.inscricao_id === atual.id);
-      setValor(p ? String(p.pontos) : '');
+      setValor(valorFaseAtual != null ? String(valorFaseAtual) : '');
     }
-  }, [atual?.id, pontuacoes]);
+  }, [atual?.id, valorFaseAtual]);
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
