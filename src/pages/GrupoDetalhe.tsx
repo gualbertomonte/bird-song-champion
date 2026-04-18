@@ -151,7 +151,17 @@ export default function GrupoDetalhe() {
           )}
           <div className="grid sm:grid-cols-2 gap-2">
             {ativos.map(m => (
-              <MembroRow key={m.id} userId={m.user_id} papel={m.papel} isYou={m.user_id === user?.id} />
+              <MembroRow
+                key={m.id}
+                userId={m.user_id}
+                papel={m.papel}
+                isYou={m.user_id === user?.id}
+                isSuperAdmin={grupo.admin_user_id === m.user_id}
+                viewerIsSuperAdmin={grupo.admin_user_id === user?.id}
+                viewerIsAdmin={isAdmin}
+                grupoId={grupo.id}
+                onChange={reload}
+              />
             ))}
           </div>
         </section>
