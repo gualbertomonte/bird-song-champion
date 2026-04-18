@@ -1,64 +1,62 @@
 
-User está em `/grupos/:id/baterias/:bid` e pede 3 coisas:
+User pediu 4 melhorias no contexto de eventos/grupos:
 
-1. **Ajustar todos os links para convite** — links que apontam para `/grupos/:id/baterias/:bid` ou usam "bateria" devem refletir nova nomenclatura "evento". Notificações ainda mandam pra `/grupos/:id/baterias/:bid` (rota antiga). Provável causa: links de convite/notificação com texto "bateria" ou rotas inconsistentes. Vou padronizar:
-   - Manter rota `/grupos/:id/baterias/:bid` (não quebrar URLs antigos) **mas** adicionar alias `/grupos/:id/eventos/:bid`.
-   - Ajustar todos os textos de notificação e mensagens para "evento" em vez de "bateria".
-   - Verificar `criar_bateria`, `aprovar_inscricao_bateria`, `encerrar_bateria` (RPCs) — geram notificações com "bateria". Atualizar texto.
-   - Verificar `EntrarGrupo.tsx`, `ConvidarMembroModal` — links de convite OK, mas confirmar mensagem WhatsApp.
+1. **Layout responsivo total** — revisar todas as páginas/modais de grupos e eventos para mobile/tablet/desktop.
+2. **Admin adiciona participante; participante só escolhe ave** — admin convida membro pro evento (já existe via `convidar_membros_evento`, mas hoje cria com bird placeholder). Precisa criar fluxo onde o convidado vê notificação "você foi adicionado ao evento X, escolha sua ave" e seleciona uma de suas aves cadastradas.
+3. **Membro pede para participar do evento; admin aceita/rejeita** — fluxo de auto-inscrição já existe (`inscrever_ave_bateria`) que cria status 'Pendente'. Falta UI clara: botão "Pedir para participar" pro membro + tela de aprovação destacada pro admin com aceitar/rejeitar.
+4. **Admin pode promover outros membros a admin do grupo** — hoje grupo tem 1 só `admin_user_id`. Precisa usar `papel='admin'` na tabela `torneio_grupo_membros` e atualizar funções `is_grupo_admin` para aceitar qualquer membro com papel admin.
 
-2. **Cada evento poderá ter config diferente; permitir alterar dentro do evento** — hoje `ConfigEliminatoriaModal` existe mas só aparece antes de iniciar. Precisa:
-   - Permitir editar formato/durações/corte **a qualquer momento** (admin), com aviso se já tem pontuações.
-   - Botão "Editar configuração" sempre visível para admin no `BateriaDetalhe`.
-   - Backend: `definir_formato_eliminatoria` já existe — só remover restrição de status se houver, ou ajustar mensagens.
+## Plano
 
-3. **Dentro do evento mostrar participantes** — `BateriaDetalhe` já lista inscrições, mas pelo relato falta uma seção clara "Participantes" mostrando:
-   - Nome do criador (não só ave)
-   - Ave inscrita + estação
-   - Status fase 1 / fase 2
-   - Quem foi convidado pelo admin vs quem se inscreveu sozinho
+### Backend (1 migration)
 
-## Plano de implementação
+**Mudança de modelo de admin (item 4):**
+- Atualizar `is_grupo_admin(_grupo_id)` para retornar true se `admin_user_id = auth.uid()` **OU** existir membro ativo com `papel='admin'`. Mantém compatibilidade.
+- Nova RPC `promover_membro_admin(_grupo_id, _user_id)` — só admin original ou outro admin pode chamar; faz UPDATE em `torneio_grupo_membros.papel='admin'` + notificação.
+- Nova RPC `rebaixar_membro_admin(_grupo_id, _user_id)` — só admin original (`admin_user_id`) pode rebaixar; impede rebaixar a si mesmo se for o último admin.
 
-### Backend (1 migration pequena)
-- Atualizar textos das notificações nas funções `criar_bateria`, `aprovar_inscricao_bateria`, `encerrar_bateria`: trocar "bateria" → "evento".
-- Atualizar `criar_bateria` para gerar link `/grupos/:id/eventos/:bid` (nova rota).
-- Garantir que `definir_formato_eliminatoria` permita reconfigurar a qualquer momento (já permite, vou só validar).
-- Nova RPC `get_participantes_evento(_bateria_id)` retornando: `inscricao_id, membro_user_id, nome_criador, codigo_criadouro, bird_nome, codigo_anilha, estacao, status, classificado_final, pontos_classif, pontos_final, convidado_pelo_admin` — com join em `criador_profile` (que admin não tem RLS pra ler de outros membros via select direto). Isso resolve o problema de mostrar nomes.
+**Inscrição pendente para participantes adicionados pelo admin (item 2):**
+- Nova RPC `convidar_membros_evento_pendente(_bateria_id, _user_ids[])` — cria inscrições com status `'PendenteAve'` (novo status) + `convidado_pelo_admin=true`, **sem bird_id** (alterar coluna `bird_id` para nullable). Notifica cada convidado: "Você foi adicionado ao evento X. Escolha sua ave."
+- Nova RPC `escolher_ave_inscricao(_inscricao_id, _bird_id)` — convidado seleciona ave dele, valida ownership/sexo, atualiza `bird_id` + `bird_snapshot` + status passa para `'Pendente'` (vai pra fila de aprovação do admin) ou direto `'Aprovada'` se foi convite do admin (decisão: vai direto pra Aprovada para reduzir fricção, já que o admin já o convidou).
+- Migration: `ALTER TABLE bateria_inscricoes ALTER COLUMN bird_id DROP NOT NULL;`
+
+**Auto-inscrição (item 3) — ajustes:**
+- `inscrever_ave_bateria` já existe e cria status 'Pendente'. Adicionar notificação automática para o admin do grupo: "Fulano pediu para participar do evento X". Já está funcional, só falta a notificação.
 
 ### Frontend
 
-**`src/App.tsx`**
-- Adicionar rota alias `/grupos/:id/eventos/:bid` → mesmo componente `BateriaDetalhe` (mantém `/baterias/:bid` funcionando).
+**Item 1 — Responsividade:**
+- `BateriaDetalhe.tsx`: container já é fluid; revisar grids de admin tools, ações de fase, lista de participantes — empilhar em mobile, 2 colunas em md+.
+- `ParticipantesEvento.tsx`: card layout vira lista vertical em mobile.
+- `ConfigEliminatoriaModal.tsx` / `SelecionarParticipantesModal.tsx`: bottom-sheet em mobile, dialog centralizado em md+.
+- `GrupoDetalhe.tsx`: header de ações (compartilhar, convidar, novo evento) vira menu colapsado em mobile.
+- `PontuarBateria.tsx`: já é mobile-first; garantir que funcione bem em tablet/desktop (limitar largura, centralizar).
 
-**`src/pages/BateriaDetalhe.tsx`**
-- Nova seção **"Participantes"** no topo (acima das inscrições atuais), usando a nova RPC, com:
-  - Avatar/inicial do criador
-  - Nome do criador + código
-  - Ave (nome + anilha) + estação
-  - Badges: "Convidado pelo admin", "Classificado para final", "Eliminado"
-  - Pontos fase 1 / fase 2 (se eliminatória)
-- Botão **"Editar configuração do evento"** sempre visível para admin (abre `ConfigEliminatoriaModal`), não só antes de iniciar.
-- Aviso visual quando reconfigurar com pontuações já lançadas: "Alterações afetarão eventos futuros. Pontuações atuais são preservadas."
+**Item 2 — Convidado escolhe ave:**
+- Atualizar `SelecionarParticipantesModal` para chamar a nova RPC `convidar_membros_evento_pendente`.
+- Novo componente `EscolherAveInscricaoModal.tsx` — abre via notificação, lista as aves do usuário (machos), botão "Confirmar".
+- `BateriaDetalhe.tsx`: se houver inscrição própria com status `'PendenteAve'`, mostrar banner amarelo "Escolha sua ave para participar" com CTA.
 
-**`src/components/grupos/ConfigEliminatoriaModal.tsx`**
-- Permitir abrir mesmo com status `'Em andamento'` ou `'Sorteada'`.
-- Mostrar aviso se já tem pontuações registradas.
+**Item 3 — Pedido de participação:**
+- `BateriaDetalhe.tsx`: para membros não inscritos com evento em status `'Inscricoes'`, mostrar botão grande "Pedir para participar" → abre seletor de ave do usuário → chama `inscrever_ave_bateria`.
+- Nova seção destacada para admin: "Pedidos pendentes" no topo de Participantes, com botões Aprovar/Rejeitar inline (já existem RPCs `aprovar_inscricao_bateria`).
 
-**`src/pages/GrupoDetalhe.tsx`**
-- Trocar links internos `/grupos/:id/baterias/:bid` → `/grupos/:id/eventos/:bid` (UI consistente). Notificações antigas continuam funcionando pelo alias.
+**Item 4 — Co-admins:**
+- `GrupoDetalhe.tsx` aba "Membros": badge "Admin" para quem tem `papel='admin'`. Para o admin original, botão de menu por membro: "Promover a admin" / "Remover admin".
+- `ParticipantesEvento.tsx` (não muda, só aproveita).
 
-**Outros arquivos com "bateria" em links visíveis ao usuário**
-- `NotificationBell.tsx` (se renderiza link bruto), mensagens já vêm do banco — atualizadas via migration.
+### Resumo de arquivos
 
-### Resumo
-- 1 migration: textos de notificação + nova RPC `get_participantes_evento`
-- 1 alias de rota
-- Bloco "Participantes" novo em `BateriaDetalhe`
-- Botão "Editar configuração" liberado a qualquer momento
-- Links internos do app passam a usar `/eventos/`
+- Migration: nova com itens 2–4 (atualiza `is_grupo_admin`, novas RPCs, ajuste de coluna).
+- `src/types/grupo.ts`: novo status `'PendenteAve'` + tipo `bird_id: string | null`.
+- `src/pages/BateriaDetalhe.tsx`: banner de escolha de ave + botão "Pedir para participar" + responsividade.
+- `src/pages/GrupoDetalhe.tsx`: aba Membros com promover/rebaixar admin + responsividade.
+- `src/components/grupos/SelecionarParticipantesModal.tsx`: chamar nova RPC pendente.
+- `src/components/grupos/ParticipantesEvento.tsx`: mostrar status PendenteAve + responsividade.
+- `src/components/grupos/EscolherAveInscricaoModal.tsx` (novo).
+- `src/components/grupos/PedirParticiparEventoModal.tsx` (novo).
 
 ### Compatibilidade
-- URLs antigas `/baterias/:id` continuam funcionando (rota mantida).
-- Notificações antigas no banco continuam clicáveis.
-- Nenhuma quebra de dados.
+
+- Inscrições antigas (com bird_id) não são afetadas.
+- Admin original (`admin_user_id` em `torneio_grupos`) continua sendo "super admin" — só ele pode rebaixar outros admins e excluir o grupo.
