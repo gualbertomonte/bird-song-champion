@@ -25,6 +25,17 @@ export default function BateriaDetalhe() {
   const [showInscrever, setShowInscrever] = useState(false);
   const [showParticipantes, setShowParticipantes] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [showPedir, setShowPedir] = useState(false);
+  const [escolherAveInsc, setEscolherAveInsc] = useState<string | null>(null);
+  const [isCoAdmin, setIsCoAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!grupo || !user) return;
+    if (grupo.admin_user_id === user.id) { setIsCoAdmin(true); return; }
+    supabase.from('torneio_grupo_membros')
+      .select('papel').eq('grupo_id', grupo.id).eq('user_id', user.id).eq('status', 'Ativo').maybeSingle()
+      .then(({ data }) => setIsCoAdmin(data?.papel === 'admin'));
+  }, [grupo, user]);
 
   if (loading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando…</p>;
   if (!bateria || !grupo) return <p className="text-sm text-muted-foreground text-center py-12">Evento não encontrado</p>;
