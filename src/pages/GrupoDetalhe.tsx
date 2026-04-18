@@ -89,7 +89,7 @@ export default function GrupoDetalhe() {
         {([
           { key: 'visao', label: 'Visão Geral' },
           { key: 'membros', label: `Membros (${ativos.length})` },
-          { key: 'baterias', label: `Baterias (${baterias.length})` },
+          { key: 'baterias', label: `Eventos (${baterias.length})` },
           { key: 'ranking', label: 'Ranking' },
         ] as { key: Tab; label: string }[]).map(t => (
           <button

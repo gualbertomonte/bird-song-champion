@@ -10,7 +10,7 @@ export default function RankingAcumuladoTable({ ranking, top }: { ranking: Ranki
     return (
       <div className="p-6 rounded-2xl bg-muted/30 border border-border text-center">
         <Trophy className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-        <p className="text-sm text-muted-foreground">Nenhuma bateria encerrada ainda</p>
+        <p className="text-sm text-muted-foreground">Nenhum evento encerrado ainda</p>
       </div>
     );
   }
@@ -23,7 +23,7 @@ export default function RankingAcumuladoTable({ ranking, top }: { ranking: Ranki
             <th className="text-left px-3 py-2.5">#</th>
             <th className="text-left px-3 py-2.5">Ave</th>
             <th className="text-left px-3 py-2.5">Anilha</th>
-            <th className="text-center px-3 py-2.5">Baterias</th>
+            <th className="text-center px-3 py-2.5">Eventos</th>
             <th className="text-right px-3 py-2.5">Total</th>
           </tr>
         </thead>
