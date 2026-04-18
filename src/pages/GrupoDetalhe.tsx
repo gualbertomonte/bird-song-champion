@@ -235,27 +235,60 @@ export default function GrupoDetalhe() {
   );
 }
 
-function MembroRow({ userId, papel, isYou }: { userId: string; papel: string; isYou: boolean }) {
+function MembroRow({ userId, papel, isYou, isSuperAdmin, viewerIsSuperAdmin, viewerIsAdmin, grupoId, onChange }: {
+  userId: string; papel: string; isYou: boolean;
+  isSuperAdmin: boolean; viewerIsSuperAdmin: boolean; viewerIsAdmin: boolean;
+  grupoId: string; onChange: () => void;
+}) {
   const [info, setInfo] = useState<{ nome?: string; email?: string }>({});
-  useState(() => {
+  useEffect(() => {
     Promise.all([
       supabase.from('criador_profile').select('nome_criadouro').eq('user_id', userId).maybeSingle(),
       supabase.from('profiles').select('email').eq('user_id', userId).maybeSingle(),
     ]).then(([c, p]: any) => setInfo({ nome: c.data?.nome_criadouro, email: p.data?.email }));
-  });
+  }, [userId]);
+
+  const promover = async () => {
+    if (!confirm('Promover este membro a admin do grupo?')) return;
+    const { error } = await supabase.rpc('promover_membro_admin' as any, { _grupo_id: grupoId, _user_id: userId });
+    if (error) toast.error(error.message); else { toast.success('Promovido a admin'); onChange(); }
+  };
+  const rebaixar = async () => {
+    if (!confirm('Rebaixar este admin a membro comum?')) return;
+    const { error } = await supabase.rpc('rebaixar_membro_admin' as any, { _grupo_id: grupoId, _user_id: userId });
+    if (error) toast.error(error.message); else { toast.success('Rebaixado a membro'); onChange(); }
+  };
+
+  const ehAdmin = papel === 'admin' || isSuperAdmin;
+
   return (
     <div className="p-3 rounded-xl bg-card border border-border flex items-center gap-3">
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-secondary/30 to-accent/20 flex items-center justify-center text-sm font-semibold text-secondary uppercase">
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-secondary/30 to-accent/20 flex items-center justify-center text-sm font-semibold text-secondary uppercase flex-shrink-0">
         {(info.nome || info.email || '?').charAt(0)}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate flex items-center gap-1">
+        <p className="text-sm font-medium truncate flex items-center gap-1 flex-wrap">
           {info.nome || info.email || '...'}
-          {papel === 'admin' && <Crown className="w-3 h-3 text-secondary" />}
+          {ehAdmin && <Crown className="w-3 h-3 text-secondary" />}
+          {isSuperAdmin && <span className="text-[9px] text-secondary font-semibold">principal</span>}
           {isYou && <span className="text-[10px] text-muted-foreground">(você)</span>}
         </p>
         {info.email && <p className="text-[10px] text-muted-foreground truncate">{info.email}</p>}
       </div>
+      {!isYou && !isSuperAdmin && (
+        <div className="flex flex-col gap-1 flex-shrink-0">
+          {viewerIsAdmin && papel !== 'admin' && (
+            <button onClick={promover} className="text-[10px] px-2 py-1 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 inline-flex items-center gap-1" title="Promover a admin">
+              <ShieldPlus className="w-3 h-3" /> Promover
+            </button>
+          )}
+          {viewerIsSuperAdmin && papel === 'admin' && (
+            <button onClick={rebaixar} className="text-[10px] px-2 py-1 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 inline-flex items-center gap-1" title="Remover admin">
+              <ShieldMinus className="w-3 h-3" /> Rebaixar
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
