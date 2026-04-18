@@ -19,7 +19,7 @@ export default function BateriaDetalhe() {
   const { user } = useAuth();
   const { birds } = useAppState();
   const { bateria, grupo, inscricoes, pontuacoes, loading } = useBateria(bateriaId);
-  const [tab, setTab] = useState<Tab>('inscricoes');
+  const [tab, setTab] = useState<Tab>('participantes');
   const [showInscrever, setShowInscrever] = useState(false);
   const [showParticipantes, setShowParticipantes] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
