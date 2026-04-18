@@ -60,7 +60,7 @@ export interface BateriaInscricao {
   id: string;
   bateria_id: string;
   membro_user_id: string;
-  bird_id: string;
+  bird_id: string | null;
   bird_snapshot: any;
   status: InscricaoBateriaStatus;
   estacao: number | null;
