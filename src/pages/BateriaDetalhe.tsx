@@ -162,11 +162,9 @@ export default function BateriaDetalhe() {
                   <Zap className="w-3 h-3" /> {isElim ? 'Editar configuração' : 'Ativar eliminatória'}
                 </button>
               )}
-              {aceitaInscricao && (
-                <button onClick={() => setShowParticipantes(true)} className="text-xs px-3 py-1.5 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
-                  <Users className="w-3 h-3" /> Selecionar participantes
-                </button>
-              )}
+              <button onClick={() => setShowParticipantes(true)} className="text-xs px-3 py-1.5 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
+                <Users className="w-3 h-3" /> Selecionar participantes
+              </button>
               {isElim && bateria.fase_atual === 'classificatoria' && (
                 <button onClick={async () => {
                   if (!confirm(`Aplicar corte? Aves abaixo de ${bateria.classif_corte_minimo} cantos serão eliminadas e a final começará.`)) return;
@@ -189,10 +187,17 @@ export default function BateriaDetalhe() {
 
       {tab === 'participantes' && (
         <section className="space-y-3">
-          {isAdmin && aceitaInscricao && (
-            <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
-              <Users className="w-4 h-4" /> Adicionar participantes
-            </button>
+          {isAdmin && bateria.status !== 'Encerrada' && (
+            <div className="space-y-2">
+              <button onClick={() => setShowParticipantes(true)} className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto">
+                <Users className="w-4 h-4" /> Adicionar participantes
+              </button>
+              {!aceitaInscricao && (
+                <p className="text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg">
+                  ⚠ Novos participantes entrarão sem estação sorteada — refaça o sorteio se necessário.
+                </p>
+              )}
+            </div>
           )}
 
           {/* Pedidos pendentes — destaque para admin */}
