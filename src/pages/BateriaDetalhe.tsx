@@ -89,7 +89,8 @@ export default function BateriaDetalhe() {
 
       <div className="flex gap-1 border-b border-border overflow-x-auto no-scrollbar">
         {([
-          { key: 'inscricoes', label: `Inscrições (${inscricoes.length})` },
+          { key: 'participantes', label: `Participantes (${inscricoes.length})` },
+          { key: 'inscricoes', label: 'Inscrições' },
           { key: 'sorteio', label: 'Sorteio' },
           { key: 'pontuacao', label: 'Pontuação' },
           { key: 'classificacao', label: 'Classificação' },
