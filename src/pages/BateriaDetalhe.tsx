@@ -145,18 +145,36 @@ export default function BateriaDetalhe() {
             <p className="text-sm text-muted-foreground text-center py-8">Nenhuma inscrição ainda</p>
           ) : (
             <div className="space-y-2">
-              {inscricoes.map(ins => (
+              {inscricoes.map(ins => {
+                const placeholder = ins.bird_snapshot?.placeholder === true;
+                return (
                 <div key={ins.id} className="p-3 rounded-xl bg-card border border-border flex items-center gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{ins.bird_snapshot?.nome}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{ins.bird_snapshot?.codigo_anilha}</p>
+                    <p className="font-medium truncate">
+                      {placeholder ? <span className="text-muted-foreground italic">Aguardando ave do membro</span> : ins.bird_snapshot?.nome}
+                    </p>
+                    {!placeholder && <p className="text-xs text-muted-foreground font-mono">{ins.bird_snapshot?.codigo_anilha}</p>}
                     {ins.motivo_rejeicao && <p className="text-[11px] text-destructive mt-1">Rejeitada: {ins.motivo_rejeicao}</p>}
+                    {isElim && ins.status === 'Aprovada' && (
+                      <div className="flex gap-2 mt-1 text-[10px] text-muted-foreground">
+                        <span>Fase 1: <b className="text-foreground">{ins.pontos_classif ?? '—'}</b></span>
+                        <span>Fase 2: <b className="text-foreground">{ins.pontos_final ?? '—'}</b></span>
+                        {bateria.fase_atual !== 'classificatoria' && (
+                          ins.classificado_final
+                            ? <span className="text-secondary font-semibold">Classificada</span>
+                            : <span className="text-destructive font-semibold">Eliminada</span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
-                    ins.status === 'Aprovada' ? 'bg-secondary/20 text-secondary' :
-                    ins.status === 'Rejeitada' ? 'bg-destructive/10 text-destructive' :
-                    'bg-muted text-muted-foreground'
-                  }`}>{ins.status}</span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
+                      ins.status === 'Aprovada' ? 'bg-secondary/20 text-secondary' :
+                      ins.status === 'Rejeitada' ? 'bg-destructive/10 text-destructive' :
+                      'bg-muted text-muted-foreground'
+                    }`}>{ins.status}</span>
+                    {ins.convidado_pelo_admin && <span className="text-[9px] text-primary">convidado</span>}
+                  </div>
                   {isAdmin && ins.status === 'Pendente' && (
                     <div className="flex gap-1">
                       <button onClick={async () => {
@@ -175,7 +193,8 @@ export default function BateriaDetalhe() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
