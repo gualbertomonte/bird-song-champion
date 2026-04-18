@@ -205,7 +205,7 @@ export default function GrupoDetalhe() {
         <ConvidarMembroModal
           grupoId={grupo.id}
           grupoNome={grupo.nome}
-          conviteToken={(grupo as any).convite_token}
+          conviteToken={grupo.convite_token}
           membrosUserIds={membros.map(m => m.user_id)}
           convitesUserIds={convites.map(c => c.convidado_user_id)}
           initialTab={convidarTab}
