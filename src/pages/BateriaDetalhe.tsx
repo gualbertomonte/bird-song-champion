@@ -162,11 +162,9 @@ export default function BateriaDetalhe() {
                   <Zap className="w-3 h-3" /> {isElim ? 'Editar configuração' : 'Ativar eliminatória'}
                 </button>
               )}
-              {aceitaInscricao && (
-                <button onClick={() => setShowParticipantes(true)} className="text-xs px-3 py-1.5 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
-                  <Users className="w-3 h-3" /> Selecionar participantes
-                </button>
-              )}
+              <button onClick={() => setShowParticipantes(true)} className="text-xs px-3 py-1.5 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
+                <Users className="w-3 h-3" /> Selecionar participantes
+              </button>
               {isElim && bateria.fase_atual === 'classificatoria' && (
                 <button onClick={async () => {
                   if (!confirm(`Aplicar corte? Aves abaixo de ${bateria.classif_corte_minimo} cantos serão eliminadas e a final começará.`)) return;
