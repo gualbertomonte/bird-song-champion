@@ -1,75 +1,64 @@
 
-User quer dois recursos no evento (bateria):
+User está em `/grupos/:id/baterias/:bid` e pede 3 coisas:
 
-1. **Selecionar quem participa** do evento (admin convida/escolhe membros).
-2. **Eliminatórias com 2 fases configuráveis** pelo admin:
-   - Fase 1 (Classificatória): duração X min, corte por mínimo de cantos (ex: 10 min, corte <20).
-   - Fase 2 (Final): só os classificados, duração Y min, vence quem cantar mais.
-3. **Ajustar o teclado de pontuação** para refletir as fases (pontuar fase 1, ver corte, pontuar fase 2).
+1. **Ajustar todos os links para convite** — links que apontam para `/grupos/:id/baterias/:bid` ou usam "bateria" devem refletir nova nomenclatura "evento". Notificações ainda mandam pra `/grupos/:id/baterias/:bid` (rota antiga). Provável causa: links de convite/notificação com texto "bateria" ou rotas inconsistentes. Vou padronizar:
+   - Manter rota `/grupos/:id/baterias/:bid` (não quebrar URLs antigos) **mas** adicionar alias `/grupos/:id/eventos/:bid`.
+   - Ajustar todos os textos de notificação e mensagens para "evento" em vez de "bateria".
+   - Verificar `criar_bateria`, `aprovar_inscricao_bateria`, `encerrar_bateria` (RPCs) — geram notificações com "bateria". Atualizar texto.
+   - Verificar `EntrarGrupo.tsx`, `ConvidarMembroModal` — links de convite OK, mas confirmar mensagem WhatsApp.
 
-## Plano
+2. **Cada evento poderá ter config diferente; permitir alterar dentro do evento** — hoje `ConfigEliminatoriaModal` existe mas só aparece antes de iniciar. Precisa:
+   - Permitir editar formato/durações/corte **a qualquer momento** (admin), com aviso se já tem pontuações.
+   - Botão "Editar configuração" sempre visível para admin no `BateriaDetalhe`.
+   - Backend: `definir_formato_eliminatoria` já existe — só remover restrição de status se houver, ou ajustar mensagens.
 
-### Backend (1 migration)
+3. **Dentro do evento mostrar participantes** — `BateriaDetalhe` já lista inscrições, mas pelo relato falta uma seção clara "Participantes" mostrando:
+   - Nome do criador (não só ave)
+   - Ave inscrita + estação
+   - Status fase 1 / fase 2
+   - Quem foi convidado pelo admin vs quem se inscreveu sozinho
 
-**Novas colunas em `torneio_baterias`:**
-- `formato text default 'simples'` — `'simples'` (atual) ou `'eliminatoria'`
-- `fase_atual text default 'unica'` — `'classificatoria' | 'final' | 'unica'`
-- `classif_duracao_min int` (ex: 10)
-- `classif_corte_minimo numeric` (ex: 20) — quem fizer abaixo é eliminado
-- `final_duracao_min int` (ex: 15)
+## Plano de implementação
 
-**Nova coluna em `bateria_inscricoes`:**
-- `convidado_pelo_admin boolean default false` — marca participantes selecionados pelo admin
-- `pontos_classif numeric` — cantos da fase 1 (mantém histórico)
-- `pontos_final numeric` — cantos da fase 2
-- `classificado_final boolean default false` — passou para a final
-
-**Novas RPCs:**
-- `convidar_membros_evento(_bateria_id, _user_ids uuid[])` — admin pré-cria inscrições "Aprovadas + convidado_pelo_admin" para os membros escolhidos (cada um depois associa a ave dele OU admin associa direto se já tiver bird_id padrão).
-- `definir_formato_eliminatoria(_bateria_id, _classif_duracao, _classif_corte, _final_duracao)` — só admin, salva config.
-- `aplicar_corte_classificatoria(_bateria_id)` — marca `classificado_final=true` para inscrições com `pontos_classif >= classif_corte_minimo` e muda `fase_atual='final'`.
-- `registrar_pontuacao_fase(_inscricao_id, _pontos, _fase)` — substitui o atual; grava em `pontos_classif` ou `pontos_final` conforme `_fase`. Mantém `bateria_pontuacoes.pontos = classif + final` para o ranking acumulado continuar funcionando.
+### Backend (1 migration pequena)
+- Atualizar textos das notificações nas funções `criar_bateria`, `aprovar_inscricao_bateria`, `encerrar_bateria`: trocar "bateria" → "evento".
+- Atualizar `criar_bateria` para gerar link `/grupos/:id/eventos/:bid` (nova rota).
+- Garantir que `definir_formato_eliminatoria` permita reconfigurar a qualquer momento (já permite, vou só validar).
+- Nova RPC `get_participantes_evento(_bateria_id)` retornando: `inscricao_id, membro_user_id, nome_criador, codigo_criadouro, bird_nome, codigo_anilha, estacao, status, classificado_final, pontos_classif, pontos_final, convidado_pelo_admin` — com join em `criador_profile` (que admin não tem RLS pra ler de outros membros via select direto). Isso resolve o problema de mostrar nomes.
 
 ### Frontend
 
-**`BateriaDetalhe.tsx` (admin):**
-- Novo bloco "Configuração do evento" (visível só pra admin antes de iniciar):
-  - Toggle "Eliminatória em 2 fases"
-  - Inputs: duração classificatória, corte mínimo, duração final
-  - Botão "Selecionar participantes" → modal lista membros do grupo com checkbox; salva via `convidar_membros_evento`
-- Card de "Fase atual" + botão "Aplicar corte e iniciar final" (quando estiver em classificatória)
-- Lista de inscrições mostra coluna "Fase 1 / Fase 2 / Status (Eliminado / Classificado)"
+**`src/App.tsx`**
+- Adicionar rota alias `/grupos/:id/eventos/:bid` → mesmo componente `BateriaDetalhe` (mantém `/baterias/:bid` funcionando).
 
-**`PontuarBateria.tsx` (mobile, fullscreen):**
-- Header novo: badge da fase atual ("Classificatória 10 min" ou "Final 15 min") com timer opcional
-- Ao salvar, chama `registrar_pontuacao_fase` com a fase atual
-- Indicador visual: aves abaixo do corte aparecem com ⚠️ "abaixo do corte"
-- Na fase final, lista só aparece com classificados (filter `classificado_final=true`)
-- Botão "Aplicar corte" no header (só admin) que dispara `aplicar_corte_classificatoria` e troca a tela para mostrar só os classificados
-- Mostra ranking ao vivo embaixo: top 3 por pontos da fase atual
+**`src/pages/BateriaDetalhe.tsx`**
+- Nova seção **"Participantes"** no topo (acima das inscrições atuais), usando a nova RPC, com:
+  - Avatar/inicial do criador
+  - Nome do criador + código
+  - Ave (nome + anilha) + estação
+  - Badges: "Convidado pelo admin", "Classificado para final", "Eliminado"
+  - Pontos fase 1 / fase 2 (se eliminatória)
+- Botão **"Editar configuração do evento"** sempre visível para admin (abre `ConfigEliminatoriaModal`), não só antes de iniciar.
+- Aviso visual quando reconfigurar com pontuações já lançadas: "Alterações afetarão eventos futuros. Pontuações atuais são preservadas."
 
-**Novo componente `SelecionarParticipantesModal.tsx`:**
-- Lista membros ativos do grupo + checkbox + busca
-- Botão "Confirmar X participantes"
+**`src/components/grupos/ConfigEliminatoriaModal.tsx`**
+- Permitir abrir mesmo com status `'Em andamento'` ou `'Sorteada'`.
+- Mostrar aviso se já tem pontuações registradas.
+
+**`src/pages/GrupoDetalhe.tsx`**
+- Trocar links internos `/grupos/:id/baterias/:bid` → `/grupos/:id/eventos/:bid` (UI consistente). Notificações antigas continuam funcionando pelo alias.
+
+**Outros arquivos com "bateria" em links visíveis ao usuário**
+- `NotificationBell.tsx` (se renderiza link bruto), mensagens já vêm do banco — atualizadas via migration.
+
+### Resumo
+- 1 migration: textos de notificação + nova RPC `get_participantes_evento`
+- 1 alias de rota
+- Bloco "Participantes" novo em `BateriaDetalhe`
+- Botão "Editar configuração" liberado a qualquer momento
+- Links internos do app passam a usar `/eventos/`
 
 ### Compatibilidade
-- Eventos antigos (`formato='simples'`) seguem funcionando normalmente.
-- Quem é `convidado_pelo_admin=true` aparece já como Aprovada; o membro só precisa associar uma ave (ou o admin pode associar).
-- Para evitar quebrar o ranking acumulado, `bateria_pontuacoes.pontos` continua sendo a fonte de verdade (=classif+final).
-
-### Resumo do que muda na pontuação
-Antes: 1 número por ave.
-Depois: 
-- Tela mostra fase atual ("Classificatória" / "Final") em destaque.
-- Teclado idêntico, mas o número vai pro campo certo (classif ou final).
-- Aves eliminadas são puladas automaticamente na fase final.
-- Botão grande "Aplicar corte" no fim da fase 1.
-
-### Arquivos
-- **Migration**: novas colunas + 4 RPCs + atualização de `registrar_pontuacao_bateria` (alias) + atualização de `get_ranking_acumulado_grupo` (sem mudança, soma via `bateria_pontuacoes`)
-- **`src/types/grupo.ts`**: novos campos
-- **`src/pages/BateriaDetalhe.tsx`**: bloco de config + seleção de participantes + ações de fase
-- **`src/pages/PontuarBateria.tsx`**: header de fase, filtro por fase, botão "aplicar corte"
-- **Novo `src/components/grupos/SelecionarParticipantesModal.tsx`**
-- **Novo `src/components/grupos/ConfigEliminatoriaModal.tsx`**
-- **`src/integrations/supabase/types.ts`**: regenerado automaticamente
+- URLs antigas `/baterias/:id` continuam funcionando (rota mantida).
+- Notificações antigas no banco continuam clicáveis.
+- Nenhuma quebra de dados.
