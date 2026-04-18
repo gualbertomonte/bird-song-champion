@@ -85,9 +85,11 @@ export default function BateriaDetalhe() {
                bateria.fase_atual === 'final' ? `Final ${bateria.final_duracao_min}min` : 'Eliminatória'}
             </span>
           )}
-          <button onClick={compartilharLink} className="text-xs px-3 py-1 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
-            <Share2 className="w-3 h-3" /> Compartilhar
-          </button>
+          {isAdmin && (
+            <button onClick={compartilharLink} className="text-xs px-3 py-1 rounded-lg border border-secondary/30 text-secondary hover:bg-secondary/10 flex items-center gap-1">
+              <Share2 className="w-3 h-3" /> Compartilhar
+            </button>
+          )}
           {isAdmin && bateria.status !== 'Encerrada' && (
             <button onClick={async () => {
               if (!confirm('Encerrar este evento? Pontuação será bloqueada.')) return;

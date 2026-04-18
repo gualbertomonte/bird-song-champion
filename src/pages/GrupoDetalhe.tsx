@@ -80,13 +80,15 @@ export default function GrupoDetalhe() {
           {grupo.descricao && <p className="text-sm text-muted-foreground">{grupo.descricao}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => abrirConvidar('link')}
-            className="text-xs px-3 py-1.5 rounded-full border border-secondary/40 text-secondary hover:bg-secondary/10 inline-flex items-center gap-1"
-            title="Compartilhar grupo"
-          >
-            <Share2 className="w-3 h-3" /> Compartilhar
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => abrirConvidar('link')}
+              className="text-xs px-3 py-1.5 rounded-full border border-secondary/40 text-secondary hover:bg-secondary/10 inline-flex items-center gap-1"
+              title="Compartilhar grupo"
+            >
+              <Share2 className="w-3 h-3" /> Compartilhar
+            </button>
+          )}
           {isAdmin ? (
             <button onClick={excluirGrupo} className="text-xs text-destructive hover:underline flex items-center gap-1">
               <Trash2 className="w-3 h-3" /> Excluir grupo
