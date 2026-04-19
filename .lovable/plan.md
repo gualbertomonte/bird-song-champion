@@ -1,39 +1,71 @@
 
-User está em `/grupos/:id/eventos/:bid` (status "Sorteada", formato simples). Vejo na imagem:
-- Aba "Participantes (2)" mostra **2 linhas** porque o mesmo criador (Gualberto) inscreveu 2 aves (FOGUINHO e CHEFINHO).
-- "Ferramentas do organizador" só mostra "Formato simples (1 fase)" + botão "Ativar eliminatória" — **não tem botão para adicionar participantes**.
 
-Vou verificar o código de `BateriaDetalhe.tsx` para confirmar onde está o botão "Selecionar participantes" e por que não aparece, e o `ParticipantesEvento.tsx` para entender o agrupamento.
+User quer melhorar o Dashboard (rota `/`). Já vi o arquivo `Dashboard.tsx` no contexto. Vou propor melhorias visuais e funcionais alinhadas ao novo sistema de cores/botões padronizados.
 
-## Diagnóstico
+## Diagnóstico atual
 
-**Problema 1 — botão de adicionar participantes sumiu:**
-Provavelmente o botão "Selecionar participantes" está condicionado ao status (`Inscricoes` ou `Agendada`) e some quando o evento já foi sorteado. User quer poder adicionar a qualquer momento (consistente com "editar configuração a qualquer momento" feito antes).
+O Dashboard tem boa estrutura, mas:
+1. **Saudação genérica** — só "Bom dia, [criadouro]" sem contexto útil.
+2. **Stats cards** repetem o mesmo ícone `TrendingUp` decorativo sem significado.
+3. **Distribuição do plantel** — pie chart pequeno, ocupa metade da tela mas mostra pouca info.
+4. **Alertas de saúde** misturam vermifugação + ovos incubando no mesmo card (confuso).
+5. **Ranking interno** mostra média, mas não destaca a ave campeã visualmente.
+6. **FAB** funciona, mas atalhos "Nova Ave / Torneio / Ninhada" poderiam ser mais visíveis em desktop.
+7. **Falta visão temporal** — sem gráfico de evolução (torneios por mês, eclosões, etc.).
+8. **Cores antigas** — usa `text-success`, `text-info` etc. com fundos `bg-secondary/10` que ficaram apagados após a mudança de tema clara.
 
-**Problema 2 — nome do criador duplicado:**
-`ParticipantesEvento` lista 1 linha por inscrição. Se um criador tem 2 aves, aparecem 2 linhas com o mesmo nome. User quer **agrupar por criador**, mostrando o nome 1 vez e listando as aves abaixo.
+## Plano de melhorias
 
-## Plano
+### 1. Hero do dashboard mais informativo
+- Saudação + nome do criadouro + data de hoje.
+- 3 mini-métricas inline: total de aves, evolução vs. mês passado, próximos eventos.
+- Botão CTA primário "Nova ave" no canto direito (desktop), substituindo parcialmente o FAB.
 
-### Frontend
+### 2. Stats cards repaginados
+- Trocar ícone decorativo `TrendingUp` por **delta real** (ex: "+3 esta semana" em verde).
+- Aumentar contraste do número (já usa `number-serif`, melhorar tamanho).
+- Cada card vira link clicável para a página correspondente (Plantel, Berçário, Torneios).
+- Adicionar 1 card extra: **"Alertas Ativos"** (saúde + doses atrasadas) para chamar atenção.
 
-**`src/pages/BateriaDetalhe.tsx`**
-- Botão "Selecionar participantes" (e "Adicionar participante") **sempre visível para admin**, em qualquer status exceto `Encerrada`. Adicionar ao bloco "Ferramentas do organizador" ao lado de "Ativar eliminatória".
-- Se status for `Sorteada`/`Em andamento`, mostrar aviso curto: "Novos participantes entrarão sem estação sorteada — refaça o sorteio se necessário."
+### 3. Reorganizar grid principal em 3 colunas (desktop)
+```text
+┌──────────────┬──────────────┬──────────────┐
+│ Distribuição │  Próximas    │  Doses hoje  │
+│ do plantel   │  eclosões    │  (pendentes) │
+└──────────────┴──────────────┴──────────────┘
+┌──────────────────────────┬──────────────────┐
+│  Ranking top 5 aves      │  Alertas saúde   │
+│  (com pódio visual)      │  (só vermífugo)  │
+└──────────────────────────┴──────────────────┘
+┌─────────────────────────────────────────────┐
+│  Atividade dos últimos 30 dias              │
+│  (gráfico de linha: torneios + eclosões)    │
+└─────────────────────────────────────────────┘
+```
 
-**`src/components/grupos/ParticipantesEvento.tsx`**
-- Agrupar `lista` por `membro_user_id`. Renderizar 1 card por criador com:
-  - Header: avatar + nome + código + badge global de status (ex: "convidado pelo admin" se todas).
-  - Sub-lista de aves: cada ave em mini-linha com 🐦 nome · anilha · estação · status individual (Aprovada/PendenteAve/Rejeitada) · pontos fase 1/2 se eliminatória · classificada/eliminada.
-- Mantém o realtime e contador de aves "(N aves)" ao lado do nome.
-- Em mobile, cards empilham; aves viram lista vertical compacta.
+### 4. Pódio do ranking
+Top 3 aves em destaque visual (1º maior + medalha dourada, 2º prata, 3º bronze), seguidos de 4º e 5º em formato lista compacta.
 
-### Backend
-Nenhuma mudança — RPC `get_participantes_evento` já retorna tudo necessário (1 linha por inscrição, com `membro_user_id` para agrupar no front).
+### 5. Gráfico temporal novo
+Linha simples com 2 séries (torneios registrados + eclosões) nos últimos 30 dias usando Recharts (já instalado).
 
-### Resumo
-- 1 ajuste em `BateriaDetalhe.tsx`: liberar botão de adicionar participantes a qualquer momento (exceto Encerrada).
-- 1 refator em `ParticipantesEvento.tsx`: agrupar por criador.
+### 6. Aplicar novo sistema de cores
+- Trocar `bg-secondary/10` apagado por `bg-card` + `border` mais visível.
+- Usar `btn-primary`, `btn-outline-gold` nos CTAs.
+- Garantir que `text-muted-foreground` esteja com o novo contraste alto.
+- Estados hover claros em todos os cards clicáveis (`hover:border-secondary/40 hover:shadow-md`).
 
-### Compatibilidade
-Sem mudanças de banco. Só UI.
+### 7. FAB simplificado
+Manter só em mobile (já tem `md:bottom-6`). Em desktop, atalhos ficam no hero como botões visíveis.
+
+## Arquivos afetados
+- `src/pages/Dashboard.tsx` — refator principal.
+- Possivelmente novo componente `src/components/dashboard/AtividadeChart.tsx` para encapsular o gráfico temporal.
+- Possivelmente novo `src/components/dashboard/PodiumRanking.tsx` para o pódio.
+
+## Sem mudanças de banco
+Tudo usa dados já disponíveis em `useAppState()` (birds, tournaments, healthRecords, nests). Nenhuma migração ou RPC necessária.
+
+## Compatibilidade
+Mantém todas as rotas e links existentes. Só melhora visual e adiciona 1 gráfico novo.
+
