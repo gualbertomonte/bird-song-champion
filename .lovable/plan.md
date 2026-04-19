@@ -1,71 +1,47 @@
 
 
-User quer melhorar o Dashboard (rota `/`). Já vi o arquivo `Dashboard.tsx` no contexto. Vou propor melhorias visuais e funcionais alinhadas ao novo sistema de cores/botões padronizados.
+User pediu "todas as melhorias possíveis". Isso é amplo demais para uma única execução segura. Vou propor um plano em fases priorizáveis para o usuário escolher por onde começar.
 
-## Diagnóstico atual
+## Diagnóstico geral
 
-O Dashboard tem boa estrutura, mas:
-1. **Saudação genérica** — só "Bom dia, [criadouro]" sem contexto útil.
-2. **Stats cards** repetem o mesmo ícone `TrendingUp` decorativo sem significado.
-3. **Distribuição do plantel** — pie chart pequeno, ocupa metade da tela mas mostra pouca info.
-4. **Alertas de saúde** misturam vermifugação + ovos incubando no mesmo card (confuso).
-5. **Ranking interno** mostra média, mas não destaca a ave campeã visualmente.
-6. **FAB** funciona, mas atalhos "Nova Ave / Torneio / Ninhada" poderiam ser mais visíveis em desktop.
-7. **Falta visão temporal** — sem gráfico de evolução (torneios por mês, eclosões, etc.).
-8. **Cores antigas** — usa `text-success`, `text-info` etc. com fundos `bg-secondary/10` que ficaram apagados após a mudança de tema clara.
+Áreas com potencial de melhoria identificadas:
 
-## Plano de melhorias
+**Visual residual** — várias páginas (Plantel, Saude, Bercario, Grupos, Torneios, Emprestimos, Amigos, Perfil, modais) ainda usam classes cruas (`bg-primary`, `text-primary`, `bg-secondary/10`) que ficaram apagadas após a mudança de tema.
 
-### 1. Hero do dashboard mais informativo
-- Saudação + nome do criadouro + data de hoje.
-- 3 mini-métricas inline: total de aves, evolução vs. mês passado, próximos eventos.
-- Botão CTA primário "Nova ave" no canto direito (desktop), substituindo parcialmente o FAB.
+**UX/Acessibilidade** — empty states inconsistentes, loadings variados, ações destrutivas sem confirmação, foco/teclado pouco trabalhados.
 
-### 2. Stats cards repaginados
-- Trocar ícone decorativo `TrendingUp` por **delta real** (ex: "+3 esta semana" em verde).
-- Aumentar contraste do número (já usa `number-serif`, melhorar tamanho).
-- Cada card vira link clicável para a página correspondente (Plantel, Berçário, Torneios).
-- Adicionar 1 card extra: **"Alertas Ativos"** (saúde + doses atrasadas) para chamar atenção.
+**Performance** — sem code-splitting, sem `staleTime` no React Query, imagens sem lazy loading, listas grandes sem paginação.
 
-### 3. Reorganizar grid principal em 3 colunas (desktop)
-```text
-┌──────────────┬──────────────┬──────────────┐
-│ Distribuição │  Próximas    │  Doses hoje  │
-│ do plantel   │  eclosões    │  (pendentes) │
-└──────────────┴──────────────┴──────────────┘
-┌──────────────────────────┬──────────────────┐
-│  Ranking top 5 aves      │  Alertas saúde   │
-│  (com pódio visual)      │  (só vermífugo)  │
-└──────────────────────────┴──────────────────┘
-┌─────────────────────────────────────────────┐
-│  Atividade dos últimos 30 dias              │
-│  (gráfico de linha: torneios + eclosões)    │
-└─────────────────────────────────────────────┘
-```
+**Funcionalidades faltantes** — busca/filtro no Plantel, exportar PDF, toggle light/dark, PWA offline.
 
-### 4. Pódio do ranking
-Top 3 aves em destaque visual (1º maior + medalha dourada, 2º prata, 3º bronze), seguidos de 4º e 5º em formato lista compacta.
+## Plano em 4 fases (escolher por onde começar)
 
-### 5. Gráfico temporal novo
-Linha simples com 2 séries (torneios registrados + eclosões) nos últimos 30 dias usando Recharts (já instalado).
+### Fase A — Polimento visual
+Varredura nas páginas principais trocando classes cruas pelas variantes padronizadas (`btn-primary`, `btn-outline-gold`, `btn-danger`, `card-premium`). Padronizar empty states e skeletons. Garantir contraste consistente em todo o app.
 
-### 6. Aplicar novo sistema de cores
-- Trocar `bg-secondary/10` apagado por `bg-card` + `border` mais visível.
-- Usar `btn-primary`, `btn-outline-gold` nos CTAs.
-- Garantir que `text-muted-foreground` esteja com o novo contraste alto.
-- Estados hover claros em todos os cards clicáveis (`hover:border-secondary/40 hover:shadow-md`).
+### Fase B — UX e acessibilidade
+- `AlertDialog` em ações destrutivas (deletar ave, encerrar evento, sair do grupo).
+- Toasts mais informativos com contexto de erro.
+- Indicador visual de scroll horizontal em tabelas (ranking, plantel).
+- Foco visível e Esc/Enter nos modais.
 
-### 7. FAB simplificado
-Manter só em mobile (já tem `md:bottom-6`). Em desktop, atalhos ficam no hero como botões visíveis.
+### Fase C — Performance
+- `React.lazy` + `Suspense` no `App.tsx` (code-splitting por rota).
+- `staleTime: 30_000` global no `QueryClient`.
+- `loading="lazy"` em fotos de aves.
+- Paginação simples no Plantel (20 por página) se houver muitas aves.
 
-## Arquivos afetados
-- `src/pages/Dashboard.tsx` — refator principal.
-- Possivelmente novo componente `src/components/dashboard/AtividadeChart.tsx` para encapsular o gráfico temporal.
-- Possivelmente novo `src/components/dashboard/PodiumRanking.tsx` para o pódio.
+### Fase D — Funcionalidades novas (escolher 1 ou 2)
+- **Busca/filtro no Plantel** — campo por nome/anilha + filtros por espécie, sexo, status.
+- **Exportar PDF** — ranking acumulado do grupo e resultado de evento.
+- **Toggle light/dark** — salva preferência no perfil.
+- **PWA offline** — service worker para leitura sem internet.
 
-## Sem mudanças de banco
-Tudo usa dados já disponíveis em `useAppState()` (birds, tournaments, healthRecords, nests). Nenhuma migração ou RPC necessária.
+## Recomendação
 
-## Compatibilidade
-Mantém todas as rotas e links existentes. Só melhora visual e adiciona 1 gráfico novo.
+Sugiro executar **Fase A + Fase C juntas** primeiro (são as de maior impacto visual e técnico, com baixo risco), depois Fase B, e por último escolher 1 funcionalidade da Fase D.
+
+## Próximo passo
+
+Confirme qual(is) fase(s) executar primeiro. Se aprovar "Fase A + C" sem mais comentários, eu sigo com essas duas. Se quiser priorizar diferente (ex: "só visual" ou "só performance" ou "tudo de uma vez aceitando o risco"), é só dizer.
 
