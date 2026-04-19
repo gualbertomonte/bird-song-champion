@@ -9,6 +9,16 @@ import LoanBadge from '@/components/LoanBadge';
 import { generatePlantelReportPDF } from '@/lib/pdf';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -210,7 +220,7 @@ export default function Plantel() {
             <div key={bird.id} className="card-hover group animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
               <div className="h-40 bg-gradient-to-br from-primary/30 via-muted/20 to-card flex items-center justify-center relative overflow-hidden">
                 {getPhoto(bird) ? (
-                  <img src={getPhoto(bird)!} alt={bird.nome} className="w-full h-full object-cover" />
+                  <img src={getPhoto(bird)!} alt={bird.nome} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 ) : (
                   <Bird className="w-12 h-12 text-secondary/20" />
                 )}
@@ -284,7 +294,7 @@ export default function Plantel() {
                   <tr key={bird.id} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
                     <td className="p-3">
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                        {getPhoto(bird) ? <img src={getPhoto(bird)!} className="w-full h-full object-cover" /> : <Bird className="w-4 h-4 text-muted-foreground" />}
+                        {getPhoto(bird) ? <img src={getPhoto(bird)!} alt={bird.nome} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <Bird className="w-4 h-4 text-muted-foreground" />}
                       </div>
                     </td>
                     <td className="p-3 font-mono text-xs">{bird.codigo_anilha}</td>
@@ -333,18 +343,25 @@ export default function Plantel() {
       )}
 
       {/* Delete confirmation */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
-          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-sm p-6 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <h2 className="font-bold text-lg">Confirmar exclusão</h2>
-            <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir esta ave? Esta ação não pode ser desfeita.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={() => confirmDelete(deleteConfirm)} className="px-4 py-2 text-sm rounded-lg bg-destructive text-destructive-foreground hover:opacity-90">Excluir</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta ave? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirm && confirmDelete(deleteConfirm)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Form Modal */}
       {showForm && (
