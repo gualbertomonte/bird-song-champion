@@ -1,47 +1,43 @@
 
 
-User pediu "todas as melhorias possíveis". Isso é amplo demais para uma única execução segura. Vou propor um plano em fases priorizáveis para o usuário escolher por onde começar.
+User pergunta: "consigo receber no e-mail a cada usuário inscrito?"
 
-## Diagnóstico geral
+Interpretação: o usuário quer ser notificado por e-mail quando alguém novo se cadastrar no sistema (signup). Ele é o admin/dono do app e quer saber a cada novo usuário criado.
 
-Áreas com potencial de melhoria identificadas:
+Verificando contexto:
+- Projeto tem Lovable Cloud (Supabase) com auth
+- Já existem 2 edge functions de email: `send-transfer-email` e `send-loan-email` usando Microsoft Outlook connector
+- Não há infraestrutura de e-mail Lovable configurada (nenhum domínio mencionado)
+- Tabela `profiles` existe e provavelmente é populada via trigger `handle_new_user` no signup
 
-**Visual residual** — várias páginas (Plantel, Saude, Bercario, Grupos, Torneios, Emprestimos, Amigos, Perfil, modais) ainda usam classes cruas (`bg-primary`, `text-primary`, `bg-secondary/10`) que ficaram apagadas após a mudança de tema.
+Solução proposta: criar uma edge function `notify-admin-new-signup` que envia e-mail ao admin quando um novo usuário se cadastra. Como já existe integração Outlook funcionando, posso reutilizar o mesmo padrão.
 
-**UX/Acessibilidade** — empty states inconsistentes, loadings variados, ações destrutivas sem confirmação, foco/teclado pouco trabalhados.
+Duas formas de disparar:
+1. Trigger no banco (`auth.users` insert) → chama edge function via `pg_net` — mais robusto
+2. Frontend após signup → chama edge function — mais simples mas depende do client
 
-**Performance** — sem code-splitting, sem `staleTime` no React Query, imagens sem lazy loading, listas grandes sem paginação.
+Vou propor a opção 1 (trigger) por ser mais confiável (funciona mesmo se o usuário fecha o navegador antes do redirect, ou se signup vier de OAuth).
 
-**Funcionalidades faltantes** — busca/filtro no Plantel, exportar PDF, toggle light/dark, PWA offline.
+Preciso saber: qual e-mail receberá as notificações.
 
-## Plano em 4 fases (escolher por onde começar)
+## Plano
 
-### Fase A — Polimento visual
-Varredura nas páginas principais trocando classes cruas pelas variantes padronizadas (`btn-primary`, `btn-outline-gold`, `btn-danger`, `card-premium`). Padronizar empty states e skeletons. Garantir contraste consistente em todo o app.
+### O que será feito
+Criar notificação por e-mail enviada **automaticamente para você** sempre que um novo usuário se cadastrar no Plantel Pro+.
 
-### Fase B — UX e acessibilidade
-- `AlertDialog` em ações destrutivas (deletar ave, encerrar evento, sair do grupo).
-- Toasts mais informativos com contexto de erro.
-- Indicador visual de scroll horizontal em tabelas (ranking, plantel).
-- Foco visível e Esc/Enter nos modais.
+### Como funciona
+1. Nova edge function `notify-admin-new-signup` reutilizando o conector Outlook já configurado (mesmo padrão de `send-loan-email`).
+2. Trigger no banco que dispara essa função sempre que um novo registro aparece em `profiles` (criado pelo `handle_new_user` após signup).
+3. E-mail conterá: nome, e-mail do novo usuário, data/hora do cadastro e total acumulado de usuários.
 
-### Fase C — Performance
-- `React.lazy` + `Suspense` no `App.tsx` (code-splitting por rota).
-- `staleTime: 30_000` global no `QueryClient`.
-- `loading="lazy"` em fotos de aves.
-- Paginação simples no Plantel (20 por página) se houver muitas aves.
+### Arquivos / mudanças
+- **Nova**: `supabase/functions/notify-admin-new-signup/index.ts`
+- **Migração**: criar trigger `on_new_profile_notify_admin` em `public.profiles` que chama a function via `pg_net`
+- **Secret novo**: `ADMIN_NOTIFY_EMAIL` (seu e-mail) — solicitado via add_secret após aprovação
 
-### Fase D — Funcionalidades novas (escolher 1 ou 2)
-- **Busca/filtro no Plantel** — campo por nome/anilha + filtros por espécie, sexo, status.
-- **Exportar PDF** — ranking acumulado do grupo e resultado de evento.
-- **Toggle light/dark** — salva preferência no perfil.
-- **PWA offline** — service worker para leitura sem internet.
+### O que preciso de você
+Confirmar **qual e-mail** receberá as notificações. Se for o mesmo já cadastrado no seu perfil de criador, posso usar esse — senão, me diga qual.
 
-## Recomendação
-
-Sugiro executar **Fase A + Fase C juntas** primeiro (são as de maior impacto visual e técnico, com baixo risco), depois Fase B, e por último escolher 1 funcionalidade da Fase D.
-
-## Próximo passo
-
-Confirme qual(is) fase(s) executar primeiro. Se aprovar "Fase A + C" sem mais comentários, eu sigo com essas duas. Se quiser priorizar diferente (ex: "só visual" ou "só performance" ou "tudo de uma vez aceitando o risco"), é só dizer.
+### Alternativa mais simples (sem trigger no banco)
+Se preferir, posso disparar do frontend logo após o signup em `Signup.tsx`. Funciona, mas se o usuário fechar a aba antes do redirect ou criar conta via Google OAuth, o e-mail pode falhar. Por isso recomendo o trigger.
 
