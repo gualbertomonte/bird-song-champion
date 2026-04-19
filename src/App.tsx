@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, forwardRef, ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,33 +9,41 @@ import { AppProvider } from "@/context/AppContext";
 import AppLayout from "@/components/AppLayout";
 import { Bird } from "lucide-react";
 
+// Helper: lazy + forwardRef wrapper to silence dev-only "Function components cannot be given refs" warning
+function lazyPage(loader: () => Promise<{ default: ComponentType<any> }>) {
+  const Lazy = lazy(loader);
+  const Wrapped = forwardRef<unknown, any>((props, _ref) => <Lazy {...props} />);
+  Wrapped.displayName = "LazyPage";
+  return Wrapped;
+}
+
 // Lazy-loaded pages — code-splitting por rota
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const Plantel = lazy(() => import("@/pages/Plantel"));
-const BirdDetail = lazy(() => import("@/pages/BirdDetail"));
-const Torneios = lazy(() => import("@/pages/Torneios"));
-const TorneioNovo = lazy(() => import("@/pages/TorneioNovo"));
-const TorneioDetalhe = lazy(() => import("@/pages/TorneioDetalhe"));
-const ConviteTorneio = lazy(() => import("@/pages/ConviteTorneio"));
-const EntrarGrupo = lazy(() => import("@/pages/EntrarGrupo"));
-const HistoricoTorneios = lazy(() => import("@/pages/HistoricoTorneios"));
-const Grupos = lazy(() => import("@/pages/Grupos"));
-const GrupoNovo = lazy(() => import("@/pages/GrupoNovo"));
-const GrupoDetalhe = lazy(() => import("@/pages/GrupoDetalhe"));
-const BateriaDetalhe = lazy(() => import("@/pages/BateriaDetalhe"));
-const PontuarBateria = lazy(() => import("@/pages/PontuarBateria"));
-const BateriaPublica = lazy(() => import("@/pages/BateriaPublica"));
-const Saude = lazy(() => import("@/pages/Saude"));
-const Bercario = lazy(() => import("@/pages/Bercario"));
-const Perfil = lazy(() => import("@/pages/Perfil"));
-const ArvoreGenealogica = lazy(() => import("@/pages/ArvoreGenealogica"));
-const Emprestimos = lazy(() => import("@/pages/Emprestimos"));
-const Amigos = lazy(() => import("@/pages/Amigos"));
-const Login = lazy(() => import("@/pages/Login"));
-const Signup = lazy(() => import("@/pages/Signup"));
-const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Dashboard = lazyPage(() => import("@/pages/Dashboard"));
+const Plantel = lazyPage(() => import("@/pages/Plantel"));
+const BirdDetail = lazyPage(() => import("@/pages/BirdDetail"));
+const Torneios = lazyPage(() => import("@/pages/Torneios"));
+const TorneioNovo = lazyPage(() => import("@/pages/TorneioNovo"));
+const TorneioDetalhe = lazyPage(() => import("@/pages/TorneioDetalhe"));
+const ConviteTorneio = lazyPage(() => import("@/pages/ConviteTorneio"));
+const EntrarGrupo = lazyPage(() => import("@/pages/EntrarGrupo"));
+const HistoricoTorneios = lazyPage(() => import("@/pages/HistoricoTorneios"));
+const Grupos = lazyPage(() => import("@/pages/Grupos"));
+const GrupoNovo = lazyPage(() => import("@/pages/GrupoNovo"));
+const GrupoDetalhe = lazyPage(() => import("@/pages/GrupoDetalhe"));
+const BateriaDetalhe = lazyPage(() => import("@/pages/BateriaDetalhe"));
+const PontuarBateria = lazyPage(() => import("@/pages/PontuarBateria"));
+const BateriaPublica = lazyPage(() => import("@/pages/BateriaPublica"));
+const Saude = lazyPage(() => import("@/pages/Saude"));
+const Bercario = lazyPage(() => import("@/pages/Bercario"));
+const Perfil = lazyPage(() => import("@/pages/Perfil"));
+const ArvoreGenealogica = lazyPage(() => import("@/pages/ArvoreGenealogica"));
+const Emprestimos = lazyPage(() => import("@/pages/Emprestimos"));
+const Amigos = lazyPage(() => import("@/pages/Amigos"));
+const Login = lazyPage(() => import("@/pages/Login"));
+const Signup = lazyPage(() => import("@/pages/Signup"));
+const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazyPage(() => import("@/pages/ResetPassword"));
+const NotFound = lazyPage(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
