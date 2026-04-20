@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Shield, LayoutDashboard, Users, ScrollText, FileText, Settings } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, ScrollText, FileText, Settings, LogOut, Bird } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import SystemBanner from '@/components/SystemBanner';
 
 const items = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -10,38 +12,79 @@ const items = [
 ];
 
 export default function AdminLayout({ children }: { children?: React.ReactNode }) {
+  const { signOut, user } = useAuth();
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary/20 to-accent/10 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-secondary" />
+    <div className="min-h-screen bg-background flex flex-col">
+      <SystemBanner />
+
+      <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-secondary to-accent flex items-center justify-center shadow-lg shadow-secondary/20">
+              <Bird className="w-4 h-4 text-secondary-foreground" />
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="heading-serif font-semibold text-[15px] text-foreground">Plantel Pro+</span>
+              <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Modo Administrador</span>
+            </div>
           </div>
-          <div>
-            <h1 className="heading-serif text-2xl font-semibold text-foreground">Modo Administrador</h1>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Painel de Controle PlantelPro</p>
-          </div>
+
+          <div className="flex-1" />
+
+          {user?.email && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/60">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-secondary/30 to-accent/20 flex items-center justify-center text-[10px] font-semibold text-secondary uppercase">
+                {user.email.charAt(0)}
+              </div>
+              <span className="text-xs text-muted-foreground truncate max-w-[180px]">{user.email}</span>
+            </div>
+          )}
+
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Sair</span>
+          </button>
         </div>
-        <nav className="flex gap-1 bg-muted/40 p-1 rounded-xl">
-          {items.map(it => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-card text-secondary shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`
-              }
-            >
-              <it.icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{it.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-      {children ?? <Outlet />}
+      </header>
+
+      <main className="flex-1 p-3 sm:p-4 md:p-6">
+        <div className="space-y-6 max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary/20 to-accent/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-secondary" />
+              </div>
+              <div>
+                <h1 className="heading-serif text-2xl font-semibold text-foreground">Painel de Controle</h1>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Administração PlantelPro</p>
+              </div>
+            </div>
+            <nav className="flex gap-1 bg-muted/40 p-1 rounded-xl overflow-x-auto">
+              {items.map(it => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                      isActive
+                        ? 'bg-card text-secondary shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`
+                  }
+                >
+                  <it.icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{it.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+          {children ?? <Outlet />}
+        </div>
+      </main>
     </div>
   );
 }
