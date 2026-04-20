@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users, Users2, Shield
+  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users, Users2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState, MobileNavKey } from '@/context/AppContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
 import NotificationBell from '@/components/NotificationBell';
 import SystemBanner from '@/components/SystemBanner';
 
