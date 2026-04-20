@@ -35,6 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     };
 
+    const logAccess = async () => {
+      try {
+        await supabase.functions.invoke('log-access', { body: { event: 'login' } });
+      } catch { /* silencioso */ }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -42,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && session) {
         // defer to avoid deadlock
         setTimeout(() => checkBloqueado(session), 0);
+        setTimeout(logAccess, 0);
       }
     });
 
