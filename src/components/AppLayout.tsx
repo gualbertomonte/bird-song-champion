@@ -38,16 +38,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { loading, mobileNavConfig } = useAppState();
-  const { isAdmin } = useIsAdmin();
 
   const mobileNavItems = mobileNavConfig
     .filter(c => c.visible)
     .map(c => ({ key: c.key, ...ALL_MOBILE_ITEMS[c.key] }))
     .filter(i => i.to);
 
-  const allNavItems = isAdmin
-    ? [...navItems, { to: '/admin/dashboard', icon: Shield, label: 'Admin' }]
-    : navItems;
+  const allNavItems = navItems;
 
   return (
     <div className="min-h-screen flex bg-background">
