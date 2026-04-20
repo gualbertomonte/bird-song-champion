@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_logs: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          event: string
+          id: string
+          ip: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          event?: string
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          event?: string
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_logs: {
         Row: {
           acao: string
@@ -1200,6 +1230,15 @@ export type Database = {
           total_emprestimos: number
           total_torneios: number
           user_id: string
+        }[]
+      }
+      admin_metricas_telemetria: { Args: never; Returns: Json }
+      admin_serie_acessos: {
+        Args: { _dias?: number }
+        Returns: {
+          acessos: number
+          dia: string
+          usuarios_unicos: number
         }[]
       }
       admin_serie_novos_usuarios: {
