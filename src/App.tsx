@@ -110,6 +110,63 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RoleRouter() {
+  const { isAdmin, loading } = useIsAdmin();
+  if (loading) return <FullScreenLoader />;
+
+  if (isAdmin) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+            <Route path="/admin/usuarios/:id" element={<AdminUsuarioDetalhe />} />
+            <Route path="/admin/logs" element={<AdminLogs />} />
+            <Route path="/admin/relatorios" element={<AdminRelatorios />} />
+            <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
+  return (
+    <AppProvider>
+      <AppLayout>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/plantel" element={<Plantel />} />
+            <Route path="/ave/:id" element={<BirdDetail />} />
+            <Route path="/arvore" element={<ArvoreGenealogica />} />
+            <Route path="/torneios" element={<Torneios />} />
+            <Route path="/torneios/novo" element={<TorneioNovo />} />
+            <Route path="/torneios/:id" element={<TorneioDetalhe />} />
+            <Route path="/historico-torneios" element={<HistoricoTorneios />} />
+            <Route path="/grupos" element={<Grupos />} />
+            <Route path="/grupos/novo" element={<GrupoNovo />} />
+            <Route path="/grupos/:id" element={<GrupoDetalhe />} />
+            <Route path="/grupos/:id/baterias/:bateriaId" element={<BateriaDetalhe />} />
+            <Route path="/grupos/:id/eventos/:bateriaId" element={<BateriaDetalhe />} />
+            <Route path="/grupos/:id/baterias/:bateriaId/pontuar" element={<PontuarBateria />} />
+            <Route path="/grupos/:id/eventos/:bateriaId/pontuar" element={<PontuarBateria />} />
+            <Route path="/saude" element={<Saude />} />
+            <Route path="/bercario" element={<Bercario />} />
+            <Route path="/emprestimos" element={<Emprestimos />} />
+            <Route path="/amigos" element={<Amigos />} />
+            <Route path="/perfil" element={<Perfil />} />
+            <Route path="/admin/*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </AppLayout>
+    </AppProvider>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -131,42 +188,7 @@ const App = () => (
               {/* Protected routes */}
               <Route path="/*" element={
                 <ProtectedRoute>
-                  <AppProvider>
-                    <AppLayout>
-                      <Suspense fallback={<PageLoader />}>
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/plantel" element={<Plantel />} />
-                          <Route path="/ave/:id" element={<BirdDetail />} />
-                          <Route path="/arvore" element={<ArvoreGenealogica />} />
-                          <Route path="/torneios" element={<Torneios />} />
-                          <Route path="/torneios/novo" element={<TorneioNovo />} />
-                          <Route path="/torneios/:id" element={<TorneioDetalhe />} />
-                          <Route path="/historico-torneios" element={<HistoricoTorneios />} />
-                          <Route path="/grupos" element={<Grupos />} />
-                          <Route path="/grupos/novo" element={<GrupoNovo />} />
-                          <Route path="/grupos/:id" element={<GrupoDetalhe />} />
-                          <Route path="/grupos/:id/baterias/:bateriaId" element={<BateriaDetalhe />} />
-                          <Route path="/grupos/:id/eventos/:bateriaId" element={<BateriaDetalhe />} />
-                          <Route path="/grupos/:id/baterias/:bateriaId/pontuar" element={<PontuarBateria />} />
-                          <Route path="/grupos/:id/eventos/:bateriaId/pontuar" element={<PontuarBateria />} />
-                          <Route path="/saude" element={<Saude />} />
-                          <Route path="/bercario" element={<Bercario />} />
-                          <Route path="/emprestimos" element={<Emprestimos />} />
-                          <Route path="/amigos" element={<Amigos />} />
-                          <Route path="/perfil" element={<Perfil />} />
-                          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-                          <Route path="/admin/dashboard" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
-                          <Route path="/admin/usuarios" element={<AdminRoute><AdminLayout><AdminUsuarios /></AdminLayout></AdminRoute>} />
-                          <Route path="/admin/usuarios/:id" element={<AdminRoute><AdminLayout><AdminUsuarioDetalhe /></AdminLayout></AdminRoute>} />
-                          <Route path="/admin/logs" element={<AdminRoute><AdminLayout><AdminLogs /></AdminLayout></AdminRoute>} />
-                          <Route path="/admin/relatorios" element={<AdminRoute><AdminLayout><AdminRelatorios /></AdminLayout></AdminRoute>} />
-                          <Route path="/admin/configuracoes" element={<AdminRoute><AdminLayout><AdminConfiguracoes /></AdminLayout></AdminRoute>} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Suspense>
-                    </AppLayout>
-                  </AppProvider>
+                  <RoleRouter />
                 </ProtectedRoute>
               } />
             </Routes>
