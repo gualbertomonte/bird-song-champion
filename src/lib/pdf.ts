@@ -33,7 +33,7 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   doc.setTextColor(...C_GOLD);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(profile.nome_criadouro || 'Plantel Pro+', 14, 12);
+  doc.text(profile.nome_criadouro || 'MeuPlantelPro', 14, 12);
 
   // Metadados
   doc.setTextColor(...C_CREAM);
@@ -45,11 +45,11 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
   if (meta.length) doc.text(meta.join('  ·  '), 14, 19);
 
-  // Selo "Plantel Pro+" no canto direito
+  // Selo "MeuPlantelPro" no canto direito
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...C_GOLD);
-  doc.text('PLANTEL PRO+', w - 14, 12, { align: 'right' });
+  doc.text('MEUPLANTELPRO', w - 14, 12, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...C_CREAM);
@@ -86,7 +86,7 @@ function footer(doc: jsPDF) {
     // Texto
     doc.setFontSize(8);
     doc.setTextColor(...C_MUTED);
-    doc.text(`Plantel Pro+ · Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, h - 7);
+    doc.text(`MeuPlantelPro · Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, h - 7);
     doc.text(`Página ${i} de ${pageCount}`, w - 14, h - 7, { align: 'right' });
   }
 }

@@ -128,7 +128,7 @@ export default function BirdDetail() {
           birdName: bird.nome,
           birdSpecies: bird.nome_cientifico,
           birdCode: bird.codigo_anilha,
-          senderName: user?.email || 'Usuário Plantel Pro+',
+          senderName: user?.email || 'Usuário MeuPlantelPro',
         },
       }).catch(err => console.error('Email error:', err));
 
@@ -466,7 +466,7 @@ export default function BirdDetail() {
                       <BirdIcon className="w-5 h-5" style={{ color: '#C9A961' }} />
                     </div>
                     <div className="leading-tight">
-                      <div className="font-bold text-[13px]" style={{ color: '#C9A961', fontFamily: 'Fraunces, Georgia, serif', letterSpacing: '-0.01em' }}>{profile.nome_criadouro || 'Plantel Pro+'}</div>
+                      <div className="font-bold text-[13px]" style={{ color: '#C9A961', fontFamily: 'Fraunces, Georgia, serif', letterSpacing: '-0.01em' }}>{profile.nome_criadouro || 'MeuPlantelPro'}</div>
                       {profile.codigo_criadouro && (
                         <div className="text-[9px] font-mono" style={{ color: 'rgba(245,241,232,0.55)' }}>COD {profile.codigo_criadouro}</div>
                       )}
@@ -521,7 +521,7 @@ export default function BirdDetail() {
                 {/* Rodapé com QR */}
                 <div className="flex justify-between items-end mt-5 pt-3" style={{ borderTop: '1px solid rgba(201,169,97,0.18)' }}>
                   <div className="space-y-0.5">
-                    <div className="text-[9px] uppercase tracking-[0.18em] font-semibold" style={{ color: 'rgba(201,169,97,0.7)' }}>Verificado · Plantel Pro+</div>
+                    <div className="text-[9px] uppercase tracking-[0.18em] font-semibold" style={{ color: 'rgba(201,169,97,0.7)' }}>Verificado · MeuPlantelPro</div>
                     <div className="text-[9px]" style={{ color: 'rgba(245,241,232,0.4)' }}>ID: {bird.id.slice(0, 8).toUpperCase()}</div>
                     <div className="text-[9px]" style={{ color: 'rgba(245,241,232,0.4)' }}>Emitido em {new Date().toLocaleDateString('pt-BR')}</div>
                   </div>

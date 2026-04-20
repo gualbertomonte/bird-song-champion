@@ -164,7 +164,7 @@ export default function BateriaPublica() {
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground pt-4 pb-8">
-          Atualiza automaticamente · <Link to="/" className="text-secondary hover:underline">PlantelPro</Link>
+          Atualiza automaticamente · <Link to="/" className="text-secondary hover:underline">MeuPlantelPro</Link>
         </p>
       </div>
     </div>

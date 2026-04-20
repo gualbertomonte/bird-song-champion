@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# MeuPlantelPro
 
-TODO: Document your project here
+Gestão completa de plantel de pássaros, torneios de canto e saúde avícola.

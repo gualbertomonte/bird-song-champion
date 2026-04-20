@@ -40,7 +40,7 @@ function buildContent(p: Payload) {
     devolucao_confirmada: '✅ Devolução confirmada',
   }
   const subtitle: Record<LoanEmailKind, string> = {
-    novo_emprestimo: `${p.ownerName || 'Um criador'} emprestou uma ave para você no Plantel Pro+. Os filhotes gerados durante o período do empréstimo ficarão registrados no SEU plantel.`,
+    novo_emprestimo: `${p.ownerName || 'Um criador'} emprestou uma ave para você no MeuPlantelPro. Os filhotes gerados durante o período do empréstimo ficarão registrados no SEU plantel.`,
     solicitacao_devolucao: `${p.ownerName || 'O dono da ave'} solicitou a devolução da ave que está em seu plantel.`,
     devolucao_confirmada: `${p.borrowerName || 'O recebedor'} confirmou a devolução. A ave voltou ao seu plantel.`,
   }
@@ -59,7 +59,7 @@ function buildContent(p: Payload) {
           <a href="${SITE_URL}/emprestimos" style="display: inline-block; background: linear-gradient(135deg, #D4AF37, #B8962E); color: #0A0F0D; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none;">Abrir Empréstimos</a>
         </div>
       </div>
-      <p style="color: #666; font-size: 11px; text-align: center; margin-top: 16px;">E-mail automático do Plantel Pro+.</p>
+      <p style="color: #666; font-size: 11px; text-align: center; margin-top: 16px;">E-mail automático do MeuPlantelPro.</p>
     </div>
   `
   return { subject: `${titles[p.kind]} — ${p.birdName || p.birdCode || ''}`, html }

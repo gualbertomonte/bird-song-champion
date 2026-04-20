@@ -37,7 +37,7 @@ export default function Login() {
           <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-secondary/20 via-card to-card flex items-center justify-center ring-gold">
             <Bird className="w-9 h-9 text-secondary" />
           </div>
-          <h1 className="heading-serif text-3xl font-semibold text-foreground">Plantel Pro+</h1>
+          <h1 className="heading-serif text-3xl font-semibold text-foreground">MeuPlantelPro</h1>
           <p className="text-sm text-muted-foreground heading-serif italic px-4">
             Cuide do seu plantel com a tranquilidade que ele merece.
           </p>
