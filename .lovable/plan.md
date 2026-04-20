@@ -1,165 +1,75 @@
 
 
-# Painel Admin PlantelPro — Plano
+# Remover funções de criador do administrador
 
-Escopo grande. Vou entregar em **3 fases**, com a Fase 1 cobrindo ~70% do valor (dashboard + gestão) e fases 2-3 como complementos. Você aprova fase a fase.
+## Objetivo
 
-## Limitações honestas antes de começar
+O usuário admin (`plantel.pro@outlook.com.br`) só serve para controlar o sistema. Hoje ele vê todo o menu de criador (Dashboard, Plantel, Árvore, Berçário, Empréstimos, Torneios, Saúde, Amigos, Perfil) + um item "Admin". Vamos isolar o admin no painel administrativo.
 
-Algumas métricas pedidas **não são possíveis hoje** sem instrumentar telemetria nova:
+## Comportamento final
 
-| Pedido | Status | Motivo |
-|---|---|---|
-| Tempo médio de sessão | ❌ Não dá | Não há tracking de sessão no app |
-| Mobile vs desktop por user-agent | ⚠️ Parcial | Só temos `last_sign_in_at` em `auth.users`; user-agent não é persistido. Precisaria criar tabela `access_logs` e logar a cada login |
-| Curva de retenção (D7/D30/D60) | ⚠️ Aproximação | Só temos 1 timestamp (`last_sign_in_at`), não histórico de logins. Posso aproximar via "cadastrados há X dias que logaram nos últimos Y" |
-| Churn rate real | ⚠️ Aproximação | Mesmo motivo — vira "% sem login há 60d" |
-| IP em logs admin | ⚠️ Edge function | Precisa proxy via edge function pra capturar IP |
-| Reset de senha pelo admin | ✅ Via edge function service-role |
-| Excluir usuário | ✅ Via edge function service-role |
-| Bloquear/banir | ✅ Via edge function (`auth.admin.updateUserById` com `ban_duration`) |
+- Ao logar como admin → cai direto em `/admin/dashboard`.
+- Admin **não** vê o `AppLayout` de criador. Não vê sidebar de Plantel/Torneios/Berçário etc.
+- Tentativas de acessar rotas de criador (`/`, `/plantel`, `/torneios`, `/bercario`, …) → redireciona para `/admin/dashboard`.
+- Usuários não-admin continuam exatamente como hoje. Nenhum impacto na experiência do criador.
+- Botão "Sair" e troca de tema continuam acessíveis dentro do `AdminLayout`.
 
-**Recomendo aceitar as aproximações** na Fase 1 e, se quiser métricas reais de sessão/dispositivo, fazer Fase 2 com tabela `access_logs` + hook no login.
+## Mudanças técnicas
 
----
+### 1. `src/App.tsx` — separar árvore de rotas por papel
 
-## FASE 1 — Dashboard + Gestão (esta entrega)
+Dentro de `ProtectedRoute`, decidir por `useIsAdmin()`:
 
-### 1.1 Banco
+- **Se admin**: montar apenas as rotas `/admin/*` envolvidas no `AdminLayout`. Qualquer outra rota → `<Navigate to="/admin/dashboard" replace />`. Não envolver em `AppProvider`/`AppLayout` (que carregam dados de plantel desnecessários).
+- **Se não-admin**: comportamento atual (`AppProvider` + `AppLayout` + rotas de criador). Rotas `/admin/*` → `<Navigate to="/" replace />`.
 
-Migration nova:
+Criar um pequeno `RoleRouter` interno para encapsular essa decisão e mostrar `PageLoader` enquanto `useIsAdmin` carrega.
 
-```sql
--- Bloqueio lógico de usuário (camada app, complementa ban do auth)
-ALTER TABLE public.profiles ADD COLUMN bloqueado boolean NOT NULL DEFAULT false;
-ALTER TABLE public.profiles ADD COLUMN bloqueado_em timestamptz;
-ALTER TABLE public.profiles ADD COLUMN bloqueado_motivo text;
+### 2. `src/components/admin/AdminLayout.tsx` — virar layout completo
 
--- Log de ações administrativas
-CREATE TABLE public.admin_logs (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  admin_user_id uuid NOT NULL,
-  acao text NOT NULL,         -- 'bloquear', 'desbloquear', 'reset_senha', 'excluir', 'export_csv', 'view_user'
-  alvo_user_id uuid,
-  alvo_email text,
-  detalhes jsonb DEFAULT '{}'::jsonb,
-  ip text,
-  user_agent text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.admin_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY admin_logs_select ON public.admin_logs FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY admin_logs_insert ON public.admin_logs FOR INSERT TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'admin') AND admin_user_id = auth.uid());
-```
+Hoje é só um header com sub-nav, assumindo que está dentro do `AppLayout`. Como o admin não vai mais passar pelo `AppLayout`, o `AdminLayout` precisa ser standalone:
 
-Função SQL agregadora (SECURITY DEFINER, gate por `has_role(admin)`):
+- Wrapper `min-h-screen bg-background` com header próprio contendo: logo PlantelPro, badge "Modo Administrador", e-mail do admin, botão **Sair** (`useAuth().signOut`).
+- Manter a sub-nav atual (Dashboard, Usuários, Logs, Relatórios, Configurações).
+- Renderizar `<SystemBanner />` no topo (mesmo banner global, para o admin ver o que publicou).
+- Continua suportando `children` e `<Outlet />` para não quebrar as rotas atuais.
 
-```sql
-CREATE FUNCTION public.admin_dashboard_metricas() RETURNS jsonb ...
-```
-Retorna em uma única chamada:
-- `total_usuarios`, `novos_7d`, `novos_30d`, `crescimento_mes_pct`
-- `ativos_30d`, `inativos_60d` (counts + pct)
-- `media_aves_por_usuario`, `total_aves`
-- `usuarios_com_torneio` (distinct em `torneio_participantes` + `torneio_grupo_membros` + `bateria_inscricoes`)
-- `usuarios_com_emprestimo_ou_transferencia` (distinct em `bird_loans` + `pending_transfers`)
-- `convites_enviados` (sum de `torneio_convites` + `torneio_grupo_convites` + `friendships` + `bird_loans`)
-- `convites_aceitos` + taxa
-- `media_amigos_por_usuario` (de `friendships` aceitas)
-- `bloqueados_count`
+### 3. `src/components/AppLayout.tsx` — remover atalho "Admin"
 
-Função série temporal:
-```sql
-CREATE FUNCTION public.admin_serie_novos_usuarios(_dias int) RETURNS TABLE(dia date, total int)
-```
-Para gráfico de linha (últimos 30/60/90 dias).
+- Remover o item `Admin` injetado em `allNavItems` (linhas 49-51) e o import de `Shield`/`useIsAdmin` que ficam órfãos. Como admin nunca mais entra aqui, esse atalho perde o sentido.
 
-Função métricas individuais (sem dados sensíveis):
-```sql
-CREATE FUNCTION public.admin_user_detalhe(_user_id uuid) RETURNS jsonb
--- retorna: total_aves, total_torneios, total_emprestimos_dados, recebidos,
--- total_amigos, total_grupos, total_baterias_participou, ultimo_login, bloqueado
-```
+### 4. `src/context/AuthContext.tsx` — sem mudanças
 
-Atualiza `admin_listar_usuarios()` para incluir: `bloqueado`, `total_torneios`, `total_emprestimos`.
+O fluxo de login continua igual; o redirecionamento para `/admin/dashboard` é resolvido pelas rotas do passo 1 (admin que cair em `/` é redirecionado).
 
-### 1.2 Edge functions (service-role, gate por `has_role(admin)`)
+### 5. `PublicRoute` (login/signup) — ajuste leve
 
-Cada uma valida JWT, checa role admin via service client, executa, e grava em `admin_logs`:
+Hoje, após login, redireciona para `?redirect=` ou `/`. Para admin, `/` será redirecionado novamente para `/admin/dashboard` pelo `RoleRouter`, então não precisa mudar nada — o duplo redirect resolve sozinho.
 
-- `admin-bloquear-usuario` — flip `profiles.bloqueado` + `auth.admin.updateUserById({ ban_duration: '876000h' })` ou `'none'`
-- `admin-resetar-senha` — `auth.admin.generateLink({ type: 'recovery', email })` e retorna o link (ou dispara via Outlook connector)
-- `admin-excluir-usuario` — bloqueia se `total_aves > 0` exigindo `confirm: true`; usa `auth.admin.deleteUser(id)` (cascata por FKs nos `user_id`)
-- `admin-export-usuarios` — retorna CSV com filtros aplicados
-
-Bloqueio efetivo no app: `AuthContext` checa `profiles.bloqueado` no login; se true → signOut + toast "Conta bloqueada".
-
-### 1.3 Frontend
-
-Nova estrutura de rotas:
-```
-/admin                  → redirect para /admin/dashboard
-/admin/dashboard        → cards + gráficos (NOVO)
-/admin/usuarios         → lista melhorada (existe, vou expandir)
-/admin/usuarios/:id     → detalhe individual (NOVO)
-/admin/logs             → tabela admin_logs (NOVO)
-```
-
-Layout admin com sub-nav própria (`AdminLayout.tsx`) usando os mesmos tokens de cor mas com header "Modo Administrador".
-
-Componentes:
-- `AdminDashboard.tsx` — grid de KPI cards + `LineChart` (Recharts já presente via `chart.tsx`) novos usuários por dia + barra "convites enviados vs aceitos"
-- `AdminUsuarios.tsx` (refator) — adiciona filtros (status ativo/inativo/bloqueado, faixa de aves, range de cadastro), botão Export CSV, menu de ações por linha (bloquear/reset senha/excluir/ver detalhes) com `AlertDialog` de confirmação
-- `AdminUsuarioDetalhe.tsx` — métricas agregadas do usuário, **sem listar aves/anilhas**
-- `AdminLogs.tsx` — tabela paginada de `admin_logs` com filtros
-
-Sidebar: já tem item "Admin Usuários"; vou trocar por grupo expansível "Admin" → Dashboard, Usuários, Logs (só visível com `isAdmin`).
-
-### 1.4 Privacidade (garantia)
-
-Nenhuma rota/função expõe `birds.*`, `health_records.*`, `treatments.*`, pedigree, anilhas. Só `count(*)` agregado. Detalhe individual mostra **apenas contagens**.
-
----
-
-## FASE 2 (depois) — Telemetria real
-
-- Tabela `access_logs(user_id, created_at, user_agent, ip, device_type)`
-- Edge function `log-access` chamada do `AuthContext` em cada login
-- Métricas reais: mobile vs desktop, retenção D7/D30/D60 baseada em logins distintos, recovery requests
-- Job pg_cron diário pra agregação
-
-## FASE 3 (depois) — Configurações + Agendamento
-
-- Tabela `system_config` (limite de aves, feature flags, mensagem global)
-- Banner global de aviso lido de `system_config`
-- pg_cron semanal → edge function `admin-relatorio-semanal` → e-mail via Outlook connector
-
----
-
-## Diagrama de telas (Fase 1)
+## Diagrama
 
 ```text
-┌─ Sidebar ──────┐  ┌─ /admin/dashboard ──────────────────────────┐
-│ ...            │  │ [Total][Novos 7d][Ativos][Aves/usuário]     │
-│ ▼ Admin        │  │ [Crescimento %][Inativos][Convites][Amigos] │
-│   • Dashboard  │  │ ┌──────────── novos usuários (linha) ─────┐ │
-│   • Usuários   │  │ │                                          │ │
-│   • Logs       │  │ └──────────────────────────────────────────┘ │
-└────────────────┘  │ ┌─ Engajamento ─┐ ┌─ Convites/Conversão ──┐ │
-                    │ └───────────────┘ └─────────────────────-─┘ │
-                    └──────────────────────────────────────────────┘
+LOGIN
+  │
+  ├── não-admin ──► AppProvider + AppLayout
+  │                  ├── /              Dashboard criador
+  │                  ├── /plantel       …
+  │                  └── /admin/*       → Navigate("/")
+  │
+  └── admin     ──► AdminLayout (standalone, com Sair + Banner)
+                     ├── /admin/dashboard
+                     ├── /admin/usuarios[/:id]
+                     ├── /admin/logs
+                     ├── /admin/relatorios
+                     ├── /admin/configuracoes
+                     └── qualquer outra rota → Navigate("/admin/dashboard")
 ```
 
----
+## Arquivos tocados
 
-## Confirme antes de eu codar
+- `src/App.tsx` (refator de rotas, novo `RoleRouter`)
+- `src/components/admin/AdminLayout.tsx` (vira layout completo com header + Sair + Banner)
+- `src/components/AppLayout.tsx` (remove item "Admin" e imports órfãos)
 
-1. **OK com aproximações** de retenção/churn/dispositivo na Fase 1? (alternativa: pular esses cards e fazer Fase 2 antes)
-2. **Reset de senha**: gerar link e exibir pro admin copiar, ou disparar e-mail automático via Outlook connector?
-3. **Excluir usuário**: bloquear se tiver aves (sugiro sim) ou permitir cascata destrutiva com dupla confirmação?
-4. **Bloqueio**: usar `auth.admin` ban (impede login no auth) **e** flag `profiles.bloqueado`, ou só a flag (mais leve, validada no client)?
-
-Responda e eu executo a Fase 1 inteira.
+Sem migrations, sem mudanças de RLS, sem alteração nas políticas de admin existentes.
 
