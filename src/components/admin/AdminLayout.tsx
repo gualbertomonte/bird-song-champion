@@ -1,10 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Shield, LayoutDashboard, Users, ScrollText } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, ScrollText, FileText, Settings } from 'lucide-react';
 
 const items = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/usuarios', icon: Users, label: 'Usuários' },
   { to: '/admin/logs', icon: ScrollText, label: 'Logs' },
+  { to: '/admin/relatorios', icon: FileText, label: 'Relatórios' },
+  { to: '/admin/configuracoes', icon: Settings, label: 'Configurações' },
 ];
 
 export default function AdminLayout({ children }: { children?: React.ReactNode }) {

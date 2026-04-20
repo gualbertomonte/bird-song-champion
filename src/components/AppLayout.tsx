@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useAppState, MobileNavKey } from '@/context/AppContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import NotificationBell from '@/components/NotificationBell';
+import SystemBanner from '@/components/SystemBanner';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -139,6 +140,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
+        <SystemBanner />
         <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60 px-4 md:px-6 h-16 flex items-center gap-4">
           <button onClick={() => setMobileOpen(true)} className="md:hidden text-foreground">
             <Menu className="w-5 h-5" />
