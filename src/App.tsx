@@ -41,6 +41,10 @@ const ArvoreGenealogica = lazyPage(() => import("@/pages/ArvoreGenealogica"));
 const Emprestimos = lazyPage(() => import("@/pages/Emprestimos"));
 const Amigos = lazyPage(() => import("@/pages/Amigos"));
 const AdminUsuarios = lazyPage(() => import("@/pages/AdminUsuarios"));
+const AdminDashboard = lazyPage(() => import("@/pages/AdminDashboard"));
+const AdminUsuarioDetalhe = lazyPage(() => import("@/pages/AdminUsuarioDetalhe"));
+const AdminLogs = lazyPage(() => import("@/pages/AdminLogs"));
+const AdminLayout = lazyPage(() => import("@/components/admin/AdminLayout"));
 const Login = lazyPage(() => import("@/pages/Login"));
 const Signup = lazyPage(() => import("@/pages/Signup"));
 const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
@@ -149,7 +153,11 @@ const App = () => (
                           <Route path="/emprestimos" element={<Emprestimos />} />
                           <Route path="/amigos" element={<Amigos />} />
                           <Route path="/perfil" element={<Perfil />} />
-                          <Route path="/admin/usuarios" element={<AdminRoute><AdminUsuarios /></AdminRoute>} />
+                          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                          <Route path="/admin/dashboard" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
+                          <Route path="/admin/usuarios" element={<AdminRoute><AdminLayout><AdminUsuarios /></AdminLayout></AdminRoute>} />
+                          <Route path="/admin/usuarios/:id" element={<AdminRoute><AdminLayout><AdminUsuarioDetalhe /></AdminLayout></AdminRoute>} />
+                          <Route path="/admin/logs" element={<AdminRoute><AdminLayout><AdminLogs /></AdminLayout></AdminRoute>} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          acao: string
+          admin_user_id: string
+          alvo_email: string | null
+          alvo_user_id: string | null
+          created_at: string
+          detalhes: Json | null
+          id: string
+          ip: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          acao: string
+          admin_user_id: string
+          alvo_email?: string | null
+          alvo_user_id?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          acao?: string
+          admin_user_id?: string
+          alvo_email?: string | null
+          alvo_user_id?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       bateria_inscricoes: {
         Row: {
           bateria_id: string
@@ -495,6 +531,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bloqueado: boolean
+          bloqueado_em: string | null
+          bloqueado_motivo: string | null
           created_at: string
           display_name: string | null
           email: string
@@ -502,6 +541,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bloqueado?: boolean
+          bloqueado_em?: string | null
+          bloqueado_motivo?: string | null
           created_at?: string
           display_name?: string | null
           email: string
@@ -509,6 +551,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bloqueado?: boolean
+          bloqueado_em?: string | null
+          bloqueado_motivo?: string | null
           created_at?: string
           display_name?: string | null
           email?: string
@@ -1140,9 +1185,11 @@ export type Database = {
         Returns: Json
       }
       aceitar_convite_torneio: { Args: { _token: string }; Returns: Json }
+      admin_dashboard_metricas: { Args: never; Returns: Json }
       admin_listar_usuarios: {
         Args: never
         Returns: {
+          bloqueado: boolean
           codigo_criadouro: string
           created_at: string
           display_name: string
@@ -1150,9 +1197,19 @@ export type Database = {
           last_sign_in_at: string
           nome_criadouro: string
           total_aves: number
+          total_emprestimos: number
+          total_torneios: number
           user_id: string
         }[]
       }
+      admin_serie_novos_usuarios: {
+        Args: { _dias?: number }
+        Returns: {
+          dia: string
+          total: number
+        }[]
+      }
+      admin_user_detalhe: { Args: { _user_id: string }; Returns: Json }
       aplicar_corte_classificatoria: {
         Args: { _bateria_id: string }
         Returns: Json
