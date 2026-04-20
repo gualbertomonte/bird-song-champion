@@ -592,6 +592,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_config: {
+        Row: {
+          banner_ativo: boolean
+          banner_atualizado_em: string | null
+          banner_atualizado_por: string | null
+          banner_mensagem: string | null
+          banner_tipo: string
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          banner_ativo?: boolean
+          banner_atualizado_em?: string | null
+          banner_atualizado_por?: string | null
+          banner_mensagem?: string | null
+          banner_tipo?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          banner_ativo?: boolean
+          banner_atualizado_em?: string | null
+          banner_atualizado_por?: string | null
+          banner_mensagem?: string | null
+          banner_tipo?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       torneio_audit_log: {
         Row: {
           acao: string
@@ -1205,6 +1235,33 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_reports: {
+        Row: {
+          csv_conteudo: string | null
+          gerado_em: string
+          id: string
+          metricas: Json
+          periodo_fim: string
+          periodo_inicio: string
+        }
+        Insert: {
+          csv_conteudo?: string | null
+          gerado_em?: string
+          id?: string
+          metricas?: Json
+          periodo_fim: string
+          periodo_inicio: string
+        }
+        Update: {
+          csv_conteudo?: string | null
+          gerado_em?: string
+          id?: string
+          metricas?: Json
+          periodo_fim?: string
+          periodo_inicio?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1215,7 +1272,12 @@ export type Database = {
         Returns: Json
       }
       aceitar_convite_torneio: { Args: { _token: string }; Returns: Json }
+      admin_atualizar_banner: {
+        Args: { _ativo: boolean; _mensagem: string; _tipo?: string }
+        Returns: undefined
+      }
       admin_dashboard_metricas: { Args: never; Returns: Json }
+      admin_gerar_relatorio_semanal: { Args: never; Returns: string }
       admin_listar_usuarios: {
         Args: never
         Returns: {
@@ -1333,6 +1395,7 @@ export type Database = {
         Returns: undefined
       }
       generate_codigo_criadouro: { Args: never; Returns: string }
+      gerar_relatorio_semanal: { Args: never; Returns: string }
       get_bateria_publica: { Args: { _bateria_id: string }; Returns: Json }
       get_grupo_convite_publico: { Args: { _token: string }; Returns: Json }
       get_participantes_evento: {
