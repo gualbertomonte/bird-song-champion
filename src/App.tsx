@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { AppProvider } from "@/context/AppContext";
 import AppLayout from "@/components/AppLayout";
 import { Bird } from "lucide-react";
@@ -86,7 +87,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { useIsAdmin } = require('@/hooks/useIsAdmin');
   const { isAdmin, loading } = useIsAdmin();
   if (loading) return <PageLoader />;
   if (!isAdmin) return <Navigate to="/" replace />;
