@@ -5,8 +5,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Users, UserPlus, TrendingUp, TrendingDown, Activity, UserX,
   Bird as BirdIcon, Trophy, Handshake, Mail, Heart, ShieldAlert,
+  Smartphone, Monitor, Tablet, Repeat, LogOut,
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart, Bar, Legend,
+} from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -38,6 +42,24 @@ export default function AdminDashboard() {
       const { data, error } = await supabase.rpc('admin_serie_novos_usuarios', { _dias: 30 });
       if (error) throw error;
       return (data || []) as { dia: string; total: number }[];
+    },
+  });
+
+  const { data: tele } = useQuery({
+    queryKey: ['admin-telemetria'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_metricas_telemetria');
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: serieAcessos } = useQuery({
+    queryKey: ['admin-serie-acessos', 30],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_serie_acessos', { _dias: 30 });
+      if (error) throw error;
+      return (data || []) as { dia: string; acessos: number; usuarios_unicos: number }[];
     },
   });
 
@@ -136,6 +158,71 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
       </Card>
+
+      {/* === FASE 2: Telemetria real === */}
+      {tele && (
+        <>
+          <section>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Dispositivo (últimos 30 dias)
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Kpi icon={Smartphone} label="Mobile" value={tele.dispositivo_30d.mobile}
+                subtitle={`${tele.dispositivo_30d.pct_mobile}% dos ativos`} tone="primary" />
+              <Kpi icon={Monitor} label="Desktop" value={tele.dispositivo_30d.desktop}
+                subtitle={`${tele.dispositivo_30d.pct_desktop}%`} tone="secondary" />
+              <Kpi icon={Tablet} label="Tablet" value={tele.dispositivo_30d.tablet}
+                subtitle={`${tele.dispositivo_30d.pct_tablet}%`} tone="muted" />
+              <Kpi icon={Activity} label="Eventos (30d)" value={tele.eventos_30d}
+                subtitle={`${tele.total_eventos} no total`} tone="success" />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Retenção & Churn (telemetria real)
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Kpi icon={Repeat} label="Retenção D7" value={`${tele.retencao.d7.pct}%`}
+                subtitle={`${tele.retencao.d7.retornaram}/${tele.retencao.d7.cohort} cadastrados`} tone="success" />
+              <Kpi icon={Repeat} label="Retenção D30" value={`${tele.retencao.d30.pct}%`}
+                subtitle={`${tele.retencao.d30.retornaram}/${tele.retencao.d30.cohort}`} tone="secondary" />
+              <Kpi icon={Repeat} label="Retenção D60" value={`${tele.retencao.d60.pct}%`}
+                subtitle={`${tele.retencao.d60.retornaram}/${tele.retencao.d60.cohort}`} tone="primary" />
+              <Kpi icon={LogOut} label="Churn rate" value={`${tele.churn.pct}%`}
+                subtitle={`${tele.churn.churned}/${tele.churn.base} sumiram >60d`} tone="warning" />
+            </div>
+          </section>
+
+          <Card className="p-6">
+            <div className="mb-4">
+              <h3 className="heading-serif text-lg font-semibold text-foreground">Acessos — últimos 30 dias</h3>
+              <p className="text-xs text-muted-foreground">Total de logins e usuários únicos por dia</p>
+            </div>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={serieAcessos || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="dia" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(d) => format(parseISO(d), 'dd/MM', { locale: ptBR })} />
+                  <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 12, fontSize: 12,
+                    }}
+                    labelFormatter={(d) => format(parseISO(d as string), "dd 'de' MMMM", { locale: ptBR })}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="acessos" name="Acessos" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="usuarios_unicos" name="Usuários únicos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
