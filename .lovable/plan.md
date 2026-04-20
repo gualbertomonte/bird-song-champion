@@ -1,75 +1,119 @@
 
 
-# Remover funções de criador do administrador
+# Renomear "PlantelPro" → "MeuPlantelPro"
 
-## Objetivo
+## Stack real (não é Node/Laravel)
 
-O usuário admin (`plantel.pro@outlook.com.br`) só serve para controlar o sistema. Hoje ele vê todo o menu de criador (Dashboard, Plantel, Árvore, Berçário, Empréstimos, Torneios, Saúde, Amigos, Perfil) + um item "Admin". Vamos isolar o admin no painel administrativo.
+Antes de tudo: este projeto é **React + Vite + TypeScript + Tailwind**, com backend gerenciado (Lovable Cloud / Supabase) via edge functions Deno. Não existe Express, Laravel, `composer.json`, `config/app.php`, `docker-compose.yml`, nem nginx no repo. O guia abaixo é adaptado à stack real — itens irrelevantes do pedido foram descartados (não inventados).
 
-## Comportamento final
+A marca atual no código é **"Plantel Pro+"** (com espaço e "+"), não "PlantelPro" puro. Vou padronizar tudo para **"MeuPlantelPro"**.
 
-- Ao logar como admin → cai direto em `/admin/dashboard`.
-- Admin **não** vê o `AppLayout` de criador. Não vê sidebar de Plantel/Torneios/Berçário etc.
-- Tentativas de acessar rotas de criador (`/`, `/plantel`, `/torneios`, `/bercario`, …) → redireciona para `/admin/dashboard`.
-- Usuários não-admin continuam exatamente como hoje. Nenhum impacto na experiência do criador.
-- Botão "Sair" e troca de tema continuam acessíveis dentro do `AdminLayout`.
+## 1. Frontend — textos visíveis
 
-## Mudanças técnicas
+| Arquivo | Trechos a alterar |
+|---|---|
+| `index.html` | `<title>`, `<meta name="description">`, `apple-mobile-web-app-title`, `og:title`, `twitter:title`, `og:description`, `twitter:description` |
+| `public/manifest.webmanifest` | `name`, `short_name`, `description` |
+| `src/components/AppLayout.tsx` | Logo lateral: `Plantel Pro+` e tagline `Aviário Premium` (manter ou ajustar?) |
+| `src/components/admin/AdminLayout.tsx` | Header: `Plantel Pro+` + `Modo Administrador` |
+| `src/components/SystemBanner.tsx` | Verificar se referencia o nome |
+| `src/pages/Login.tsx`, `Signup.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx` | Títulos, headings, mensagens de boas-vindas |
+| `src/pages/Index.tsx`, `NotFound.tsx` | Possíveis menções |
+| `src/pages/Perfil.tsx`, `AdminConfiguracoes.tsx` | Cabeçalhos |
+| Toasts e mensagens em hooks/páginas | Buscar globalmente |
 
-### 1. `src/App.tsx` — separar árvore de rotas por papel
+Estratégia: rodar `grep -ri "plantel" src/ index.html public/` e revisar **caso a caso** (não fazer sed cego — alguns "plantel" são da palavra de domínio "plantel de aves" e devem ser mantidos).
 
-Dentro de `ProtectedRoute`, decidir por `useIsAdmin()`:
+Substituições explícitas:
+- `Plantel Pro+` → `MeuPlantelPro`
+- `Plantel Pro` → `MeuPlantelPro`
+- `PlantelPro` → `MeuPlantelPro`
+- `plantelpro` (em URLs de exemplo) → `meuplantelpro`
 
-- **Se admin**: montar apenas as rotas `/admin/*` envolvidas no `AdminLayout`. Qualquer outra rota → `<Navigate to="/admin/dashboard" replace />`. Não envolver em `AppProvider`/`AppLayout` (que carregam dados de plantel desnecessários).
-- **Se não-admin**: comportamento atual (`AppProvider` + `AppLayout` + rotas de criador). Rotas `/admin/*` → `<Navigate to="/" replace />`.
+**Não tocar**: a palavra "plantel" sozinha (ex.: "Gestão de plantel", rota `/plantel`, página `Plantel.tsx`) — é o conceito do produto, não a marca.
 
-Criar um pequeno `RoleRouter` interno para encapsular essa decisão e mostrar `PageLoader` enquanto `useIsAdmin` carrega.
+## 2. Backend (Edge Functions Deno)
 
-### 2. `src/components/admin/AdminLayout.tsx` — virar layout completo
+Arquivos: `supabase/functions/*/index.ts`.
 
-Hoje é só um header com sub-nav, assumindo que está dentro do `AppLayout`. Como o admin não vai mais passar pelo `AppLayout`, o `AdminLayout` precisa ser standalone:
+| Função | O que mudar |
+|---|---|
+| `notify-admin-new-signup/index.ts` | `subject: "🎉 Novo usuário no Plantel Pro+"`, HTML do e-mail (`<h1>`, botão "Abrir Plantel Pro+"), `SITE_URL = 'https://plantelpro.lovable.app'` |
+| `send-loan-email/index.ts` | Assunto, corpo, rodapé, links |
+| `send-transfer-email/index.ts` | Assunto, corpo, rodapé, links |
+| `check-health-alerts/index.ts` | Mensagens de notificação |
+| Demais funções `admin-*` | Verificar mensagens de log/resposta |
 
-- Wrapper `min-h-screen bg-background` com header próprio contendo: logo PlantelPro, badge "Modo Administrador", e-mail do admin, botão **Sair** (`useAuth().signOut`).
-- Manter a sub-nav atual (Dashboard, Usuários, Logs, Relatórios, Configurações).
-- Renderizar `<SystemBanner />` no topo (mesmo banner global, para o admin ver o que publicou).
-- Continua suportando `children` e `<Outlet />` para não quebrar as rotas atuais.
+`SITE_URL` deve apontar para `https://meuplantelpro.com.br` (ver §5 sobre domínio).
 
-### 3. `src/components/AppLayout.tsx` — remover atalho "Admin"
+## 3. Banco de dados
 
-- Remover o item `Admin` injetado em `allNavItems` (linhas 49-51) e o import de `Shield`/`useIsAdmin` que ficam órfãos. Como admin nunca mais entra aqui, esse atalho perde o sentido.
+Auditoria primeiro, mudança depois. Vou rodar uma query no migration:
 
-### 4. `src/context/AuthContext.tsx` — sem mudanças
-
-O fluxo de login continua igual; o redirecionamento para `/admin/dashboard` é resolvido pelas rotas do passo 1 (admin que cair em `/` é redirecionado).
-
-### 5. `PublicRoute` (login/signup) — ajuste leve
-
-Hoje, após login, redireciona para `?redirect=` ou `/`. Para admin, `/` será redirecionado novamente para `/admin/dashboard` pelo `RoleRouter`, então não precisa mudar nada — o duplo redirect resolve sozinho.
-
-## Diagrama
-
-```text
-LOGIN
-  │
-  ├── não-admin ──► AppProvider + AppLayout
-  │                  ├── /              Dashboard criador
-  │                  ├── /plantel       …
-  │                  └── /admin/*       → Navigate("/")
-  │
-  └── admin     ──► AdminLayout (standalone, com Sair + Banner)
-                     ├── /admin/dashboard
-                     ├── /admin/usuarios[/:id]
-                     ├── /admin/logs
-                     ├── /admin/relatorios
-                     ├── /admin/configuracoes
-                     └── qualquer outra rota → Navigate("/admin/dashboard")
+```sql
+SELECT key, value FROM public.system_config;  -- procurar string "Plantel"
+SELECT id, mensagem FROM public.weekly_reports LIMIT 5;
 ```
 
-## Arquivos tocados
+- **Não há tabela com nome `plantel_pro_*`** no schema atual (já verificado pela arquitetura). Nada a renomear estruturalmente.
+- Se `system_config` tiver `banner_mensagem` ou textos contendo "Plantel Pro+", criar migration `UPDATE public.system_config SET banner_mensagem = REPLACE(banner_mensagem, 'Plantel Pro+', 'MeuPlantelPro')`.
+- Funções RPC com mensagens de erro hardcoded em português: revisar `admin_*` functions; se contiverem o nome, atualizar.
 
-- `src/App.tsx` (refator de rotas, novo `RoleRouter`)
-- `src/components/admin/AdminLayout.tsx` (vira layout completo com header + Sair + Banner)
-- `src/components/AppLayout.tsx` (remove item "Admin" e imports órfãos)
+## 4. Configuração / metadados
 
-Sem migrations, sem mudanças de RLS, sem alteração nas políticas de admin existentes.
+| Arquivo | Ação |
+|---|---|
+| `package.json` | Campo `name` (atualmente provavelmente `vite_react_shadcn_ts` — confirmar e renomear se relevante) |
+| `README.md` | Reescrever cabeçalho com nome novo + descrição |
+| `public/robots.txt` | Verificar se tem nome |
+| `.env` | **NÃO TOCAR** — gerenciado automaticamente, não tem nome de marca |
+| `supabase/config.toml` | `project_id` fica como está (é ID interno, não marca) |
+
+Não existem: `.env.example`, `docker-compose.yml`, `nginx.conf`, `composer.json`, `config/app.php`. Pular.
+
+## 5. Domínio `meuplantelpro.com.br`
+
+Domínio customizado é configurado no painel Lovable, não em código:
+1. **Settings → Domains → Connect Domain** → digitar `meuplantelpro.com.br` e `www.meuplantelpro.com.br`.
+2. No registrador (.com.br = Registro.br), criar:
+   - `A @ → 185.158.133.1`
+   - `A www → 185.158.133.1`
+   - `TXT _lovable → lovable_verify=…` (valor dado pelo painel)
+3. Aguardar verificação + SSL automático (até 72h, normalmente minutos).
+4. Atualizar `SITE_URL` nas edge functions de e-mail (passo §2) **depois** que o domínio estiver Active.
+
+Posso atualizar o código, mas a parte de DNS você executa fora do Lovable.
+
+## 6. Pós-renomeação
+
+- Hard refresh do navegador (Ctrl+Shift+R) para invalidar PWA antigo — `short_name` mudou, o navegador vai re-registrar o manifest.
+- Usuários com app instalado via PWA verão o novo nome após reabrir; ícone só muda se o ícone for trocado também (favicon/icon-512 estão sem texto, então não precisa).
+- Edge functions redeploiam automaticamente ao salvar.
+- Sem `npm run build` manual — Lovable rebuilda sozinho.
+
+## 7. Checklist final
+
+- [ ] `index.html`: title, meta description, og/twitter, apple-mobile-web-app-title
+- [ ] `manifest.webmanifest`: name, short_name, description
+- [ ] Sidebar criador (`AppLayout.tsx`)
+- [ ] Header admin (`AdminLayout.tsx`)
+- [ ] Páginas de auth (Login, Signup, Forgot, Reset)
+- [ ] Edge functions de e-mail: assunto, corpo, botão CTA, SITE_URL
+- [ ] `system_config.banner_mensagem` (se aplicável)
+- [ ] `package.json` name
+- [ ] `README.md`
+- [ ] `grep -ri "plantel pro" src/ index.html public/ supabase/` retorna 0 ocorrências
+- [ ] `grep -ri "plantelpro" src/ index.html public/ supabase/` só mostra subdomínio antigo onde for histórico
+- [ ] Domínio `meuplantelpro.com.br` adicionado no painel Lovable e Active
+- [ ] Hard refresh confirma novo nome no título da aba e na tela inicial PWA
+- [ ] Enviar e-mail de teste (convite/empréstimo) e verificar assunto + corpo + link CTA
+
+## Decisões que preciso de você antes de executar
+
+1. **Tagline "Aviário Premium"** abaixo do logo — manter, trocar por outra, ou remover?
+2. **Logo/ícone** (`public/icon-512.png`, `favicon.ico`) — manter os atuais ou você vai me enviar arte nova com a marca "MeuPlantelPro"?
+3. **`SITE_URL` nas edge functions** — devo já trocar para `https://meuplantelpro.com.br` agora (e-mails ficarão com link quebrado até o DNS propagar) ou manter `https://plantelpro.lovable.app` até o domínio estar Active?
+4. **`system_config.banner_mensagem`** atual — quer que eu rode um `UPDATE` cego de REPLACE, ou prefere revisar manualmente em `/admin/configuracoes`?
+
+Responda os 4 e eu executo a renomeação inteira numa só passada.
 
