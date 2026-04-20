@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users, Users2
+  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users, Users2, Shield
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState, MobileNavKey } from '@/context/AppContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import NotificationBell from '@/components/NotificationBell';
 
 const navItems = [
@@ -37,11 +38,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { loading, mobileNavConfig } = useAppState();
+  const { isAdmin } = useIsAdmin();
 
   const mobileNavItems = mobileNavConfig
     .filter(c => c.visible)
     .map(c => ({ key: c.key, ...ALL_MOBILE_ITEMS[c.key] }))
     .filter(i => i.to);
+
+  const allNavItems = isAdmin
+    ? [...navItems, { to: '/admin/usuarios', icon: Shield, label: 'Admin Usuários' }]
+    : navItems;
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -69,7 +75,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-          {navItems.map(item => {
+          {allNavItems.map(item => {
             const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
             return (
               <Link

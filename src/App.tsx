@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { AppProvider } from "@/context/AppContext";
 import AppLayout from "@/components/AppLayout";
 import { Bird } from "lucide-react";
@@ -39,6 +40,7 @@ const Perfil = lazyPage(() => import("@/pages/Perfil"));
 const ArvoreGenealogica = lazyPage(() => import("@/pages/ArvoreGenealogica"));
 const Emprestimos = lazyPage(() => import("@/pages/Emprestimos"));
 const Amigos = lazyPage(() => import("@/pages/Amigos"));
+const AdminUsuarios = lazyPage(() => import("@/pages/AdminUsuarios"));
 const Login = lazyPage(() => import("@/pages/Login"));
 const Signup = lazyPage(() => import("@/pages/Signup"));
 const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
@@ -81,6 +83,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (loading) return <FullScreenLoader />;
 
   if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAdmin, loading } = useIsAdmin();
+  if (loading) return <PageLoader />;
+  if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -140,6 +149,7 @@ const App = () => (
                           <Route path="/emprestimos" element={<Emprestimos />} />
                           <Route path="/amigos" element={<Amigos />} />
                           <Route path="/perfil" element={<Perfil />} />
+                          <Route path="/admin/usuarios" element={<AdminRoute><AdminUsuarios /></AdminRoute>} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>
