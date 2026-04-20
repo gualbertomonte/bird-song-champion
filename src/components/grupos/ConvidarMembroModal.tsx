@@ -31,7 +31,7 @@ export default function ConvidarMembroModal({
   const [enviando, setEnviando] = useState(false);
 
   const link = `${window.location.origin}/entrar/grupo/${conviteToken}`;
-  const msgWhatsapp = `Você foi convidado para o grupo "${grupoNome}" no Plantel Pro+. Entre por aqui: ${link}`;
+  const msgWhatsapp = `Você foi convidado para o grupo "${grupoNome}" no MeuPlantelPro. Entre por aqui: ${link}`;
 
   const copiar = async () => {
     try {

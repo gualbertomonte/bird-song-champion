@@ -49,11 +49,11 @@ Deno.serve(async (req) => {
       ? new Date(payload.signupAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
       : new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
 
-    const subject = `🎉 Novo usuário no Plantel Pro+: ${payload.newUserName || payload.newUserEmail}`
+    const subject = `🎉 Novo usuário no MeuPlantelPro: ${payload.newUserName || payload.newUserEmail}`
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #0B3B2A, #0A0F0D); padding: 24px; border-radius: 12px; color: white;">
-          <h1 style="color: #D4AF37; margin: 0 0 16px;">🎉 Novo cadastro no Plantel Pro+</h1>
+          <h1 style="color: #D4AF37; margin: 0 0 16px;">🎉 Novo cadastro no MeuPlantelPro</h1>
           <p style="color: #ccc; margin: 0 0 20px;">Um novo criador acaba de se inscrever no sistema.</p>
           <table style="width: 100%; border-collapse: collapse;">
             <tr><td style="padding: 8px 0; color: #999; width: 140px;">Nome:</td><td style="padding: 8px 0; color: #fff; font-weight: bold;">${payload.newUserName || '—'}</td></tr>
@@ -63,10 +63,10 @@ Deno.serve(async (req) => {
           </table>
           <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;" />
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${SITE_URL}" style="display: inline-block; background: linear-gradient(135deg, #D4AF37, #B8962E); color: #0A0F0D; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none;">Abrir Plantel Pro+</a>
+            <a href="${SITE_URL}" style="display: inline-block; background: linear-gradient(135deg, #D4AF37, #B8962E); color: #0A0F0D; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none;">Abrir MeuPlantelPro</a>
           </div>
         </div>
-        <p style="color: #666; font-size: 11px; text-align: center; margin-top: 16px;">Notificação automática do Plantel Pro+.</p>
+        <p style="color: #666; font-size: 11px; text-align: center; margin-top: 16px;">Notificação automática do MeuPlantelPro.</p>
       </div>
     `
 

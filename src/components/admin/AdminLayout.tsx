@@ -25,7 +25,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
               <Bird className="w-4 h-4 text-secondary-foreground" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="heading-serif font-semibold text-[15px] text-foreground">Plantel Pro+</span>
+              <span className="heading-serif font-semibold text-[15px] text-foreground">MeuPlantelPro</span>
               <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Modo Administrador</span>
             </div>
           </div>
@@ -60,7 +60,7 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
               </div>
               <div>
                 <h1 className="heading-serif text-2xl font-semibold text-foreground">Painel de Controle</h1>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Administração PlantelPro</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Administração MeuPlantelPro</p>
               </div>
             </div>
             <nav className="flex gap-1 bg-muted/40 p-1 rounded-xl overflow-x-auto">
