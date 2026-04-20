@@ -46,7 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     .filter(i => i.to);
 
   const allNavItems = isAdmin
-    ? [...navItems, { to: '/admin/usuarios', icon: Shield, label: 'Admin Usuários' }]
+    ? [...navItems, { to: '/admin/dashboard', icon: Shield, label: 'Admin' }]
     : navItems;
 
   return (
