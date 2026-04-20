@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bird, LayoutDashboard, Trophy, Heart, Egg, User, Search,
-  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users, Users2, Shield
+  ChevronLeft, ChevronRight, Menu, Sprout, Instagram, LogOut, Loader2, Handshake, Users, Users2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppState, MobileNavKey } from '@/context/AppContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
 import NotificationBell from '@/components/NotificationBell';
 import SystemBanner from '@/components/SystemBanner';
 
@@ -39,16 +38,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { loading, mobileNavConfig } = useAppState();
-  const { isAdmin } = useIsAdmin();
 
   const mobileNavItems = mobileNavConfig
     .filter(c => c.visible)
     .map(c => ({ key: c.key, ...ALL_MOBILE_ITEMS[c.key] }))
     .filter(i => i.to);
 
-  const allNavItems = isAdmin
-    ? [...navItems, { to: '/admin/dashboard', icon: Shield, label: 'Admin' }]
-    : navItems;
+  const allNavItems = navItems;
 
   return (
     <div className="min-h-screen flex bg-background">
