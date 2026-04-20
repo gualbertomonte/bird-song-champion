@@ -44,6 +44,8 @@ const AdminUsuarios = lazyPage(() => import("@/pages/AdminUsuarios"));
 const AdminDashboard = lazyPage(() => import("@/pages/AdminDashboard"));
 const AdminUsuarioDetalhe = lazyPage(() => import("@/pages/AdminUsuarioDetalhe"));
 const AdminLogs = lazyPage(() => import("@/pages/AdminLogs"));
+const AdminRelatorios = lazyPage(() => import("@/pages/AdminRelatorios"));
+const AdminConfiguracoes = lazyPage(() => import("@/pages/AdminConfiguracoes"));
 const AdminLayout = lazyPage(() => import("@/components/admin/AdminLayout"));
 const Login = lazyPage(() => import("@/pages/Login"));
 const Signup = lazyPage(() => import("@/pages/Signup"));
@@ -158,6 +160,8 @@ const App = () => (
                           <Route path="/admin/usuarios" element={<AdminRoute><AdminLayout><AdminUsuarios /></AdminLayout></AdminRoute>} />
                           <Route path="/admin/usuarios/:id" element={<AdminRoute><AdminLayout><AdminUsuarioDetalhe /></AdminLayout></AdminRoute>} />
                           <Route path="/admin/logs" element={<AdminRoute><AdminLayout><AdminLogs /></AdminLayout></AdminRoute>} />
+                          <Route path="/admin/relatorios" element={<AdminRoute><AdminLayout><AdminRelatorios /></AdminLayout></AdminRoute>} />
+                          <Route path="/admin/configuracoes" element={<AdminRoute><AdminLayout><AdminConfiguracoes /></AdminLayout></AdminRoute>} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>
