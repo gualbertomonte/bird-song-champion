@@ -9,19 +9,22 @@ declare global {
 interface AdSenseBannerProps {
   slot: string;
   format?: string;
+  layoutKey?: string;
   responsive?: boolean;
   className?: string;
+  minHeight?: number;
 }
 
-// Publisher ID público do AdSense.
 const PUBLISHER_ID = "ca-pub-2835871674648959";
 
 export default function AdSenseBanner({
   slot,
   format = "auto",
+  layoutKey,
   responsive = true,
   className = "",
-}: AdSenseBannerProps) {
+  minHeight,
+}: AdSenseBannerProps): JSX.Element {
   const pushed = useRef(false);
   const isDev = import.meta.env.DEV;
   const isPlaceholder = PUBLISHER_ID.includes("PENDING") || slot.includes("PENDING");
@@ -39,7 +42,8 @@ export default function AdSenseBanner({
   if (isDev || isPlaceholder) {
     return (
       <div
-        className={`w-full max-w-3xl h-24 rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground ${className}`}
+        className={`w-full max-w-3xl rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground ${className}`}
+        style={{ minHeight: minHeight ?? 96 }}
         aria-hidden="true"
       >
         Anúncio — preview ({isDev ? "dev" : "aguardando aprovação AdSense"})
@@ -50,10 +54,11 @@ export default function AdSenseBanner({
   return (
     <ins
       className={`adsbygoogle block ${className}`}
-      style={{ display: "block" }}
+      style={{ display: "block", minHeight }}
       data-ad-client={PUBLISHER_ID}
       data-ad-slot={slot}
       data-ad-format={format}
+      data-ad-layout-key={layoutKey}
       data-full-width-responsive={responsive ? "true" : "false"}
     />
   );
