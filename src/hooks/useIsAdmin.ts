@@ -4,10 +4,11 @@ import { useAuth } from '@/context/AuthContext';
 
 export function useIsAdmin() {
   const { user } = useAuth();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['is-admin', user?.id],
     enabled: !!user?.id,
     staleTime: 60_000,
+    retry: 1,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('has_role', {
         _user_id: user!.id,
@@ -17,5 +18,5 @@ export function useIsAdmin() {
       return data === true;
     },
   });
-  return { isAdmin: !!data, loading: isLoading };
+  return { isAdmin: !!data, loading: isLoading, error: isError };
 }

@@ -298,14 +298,23 @@ export default function Dashboard() {
 
       {/* Banner de anúncio (rodapé do conteúdo) */}
       {showAds && (
-        <div className="mt-4 flex justify-center">
-          <AdSenseBanner
-            slot="7741257825"
-            format="fluid"
-            layoutKey="-fb+5w+4e-db+86"
-            className="w-full max-w-3xl"
-          />
-        </div>
+        <section
+          aria-label="Espaço publicitário"
+          className="mt-6 pt-4 border-t border-border/40"
+        >
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-center mb-2">
+            Publicidade
+          </p>
+          <div className="flex justify-center">
+            <AdSenseBanner
+              slot="7741257825"
+              format="fluid"
+              layoutKey="-fb+5w+4e-db+86"
+              className="max-w-3xl"
+              minHeight={140}
+            />
+          </div>
+        </section>
       )}
 
       {/* FAB (mobile only) */}
