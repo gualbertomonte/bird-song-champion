@@ -1454,6 +1454,10 @@ export type Database = {
         Args: { _torneio_id: string }
         Returns: boolean
       }
+      limpar_pontuacoes_torneio: {
+        Args: { _bateria?: number; _torneio_id: string }
+        Returns: undefined
+      }
       marcar_dose_aplicada: {
         Args: { _dose_id: string; _observacoes?: string }
         Returns: undefined
@@ -1462,6 +1466,7 @@ export type Database = {
         Args: { _grupo_id: string; _user_id: string }
         Returns: undefined
       }
+      reabrir_torneio: { Args: { _torneio_id: string }; Returns: undefined }
       rebaixar_membro_admin: {
         Args: { _grupo_id: string; _user_id: string }
         Returns: undefined
@@ -1479,6 +1484,7 @@ export type Database = {
         Returns: undefined
       }
       remover_amizade: { Args: { _friendship_id: string }; Returns: undefined }
+      resetar_torneio: { Args: { _torneio_id: string }; Returns: undefined }
       responder_convite_grupo: {
         Args: { _aceitar: boolean; _convite_id: string }
         Returns: undefined
