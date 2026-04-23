@@ -299,7 +299,12 @@ export default function Dashboard() {
       {/* Banner de anúncio (rodapé do conteúdo) */}
       {showAds && (
         <div className="mt-4 flex justify-center">
-          <AdSenseBanner slot="PENDING" className="w-full max-w-3xl" />
+          <AdSenseBanner
+            slot="7741257825"
+            format="fluid"
+            layoutKey="-fb+5w+4e-db+86"
+            className="w-full max-w-3xl"
+          />
         </div>
       )}
 
