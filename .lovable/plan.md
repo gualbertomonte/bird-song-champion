@@ -1,93 +1,54 @@
 
 
-# Adicionar Google AdSense — banner fixo no Dashboard
+# AdSense — já está implementado, nada a codar
 
-## Pré-requisito (você faz fora do Lovable)
+## Estado atual (verificado no código)
 
-1. Criar conta em https://www.google.com/adsense → adicionar o site `meuplantelpro.com.br`.
-2. AdSense exige **domínio próprio aprovado** — o subdomínio `plantelpro.lovable.app` é rejeitado. Por isso só faz sentido publicar os ads **depois** que `meuplantelpro.com.br` estiver Active.
-3. Aprovação leva de dias a semanas (Google revisa conteúdo, política, tráfego).
-4. Após aprovado, você pega:
-   - **Publisher ID** (formato `ca-pub-XXXXXXXXXXXXXXXX`) — público, vai no código.
-   - **Slot ID do bloco de anúncio** (formato `XXXXXXXXXX`) — público, vai no código.
+Tudo que você pediu já está em produção no código:
 
-Os dois são **chaves públicas** (não são secret), então ficam direto no código — sem `add_secret`, sem edge function.
-
-## Implementação no app
-
-### 1. Script do AdSense em `index.html`
-
-Adicionar no `<head>`, carregamento assíncrono:
-
+**`index.html`** — script global do AdSense carregado no `<head>`:
 ```html
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2835871674648959" crossorigin="anonymous"></script>
 ```
 
-Também atualizar `public/robots.txt` para garantir que o crawler do AdSense (`Mediapartners-Google`) tem acesso (geralmente já tem, mas confirmo).
+**`src/components/ads/AdSenseBanner.tsx`** — Publisher ID `ca-pub-2835871674648959` configurado.
 
-### 2. Componente `src/components/ads/AdSenseBanner.tsx`
-
-Novo componente reutilizável:
-- Recebe props `slot` e opcionais `format` / `responsive`.
-- Renderiza `<ins class="adsbygoogle">` com os atributos exigidos pelo AdSense.
-- No `useEffect`, chama `(window.adsbygoogle = window.adsbygoogle || []).push({})` para inicializar.
-- Em `import.meta.env.DEV` mostra um placeholder cinza ("Anúncio — preview") em vez de carregar o script real, evitando avisos do AdSense em desenvolvimento.
-
-### 3. Hook `src/hooks/useShowAds.ts`
-
-Centraliza a regra "quando mostrar ads":
-- `false` se `useIsAdmin()` retornar admin.
-- `false` enquanto `useAuth().loading` for true.
-- `true` caso contrário.
-
-Assim, se um dia mudarmos a regra (ex.: "usuários premium não veem ads"), só altera aqui.
-
-### 4. Integração no Dashboard
-
-Em `src/pages/Dashboard.tsx`, no rodapé do conteúdo:
-
+**`src/pages/Dashboard.tsx`** (linhas 300-308) — banner renderizado no rodapé com os IDs corretos do snippet que você enviou:
 ```tsx
-{showAds && (
-  <div className="mt-8 flex justify-center">
-    <AdSenseBanner slot="XXXXXXXXXX" />
-  </div>
-)}
+<AdSenseBanner
+  slot="7741257825"
+  format="fluid"
+  layoutKey="-fb+5w+4e-db+86"
+  className="w-full max-w-3xl"
+/>
 ```
 
-Banner responsivo, centralizado, com margem superior. Não fixo na tela (banner "sticky" no rodapé é mais agressivo e pode violar política do AdSense em mobile — melhor ser inline no fim do conteúdo). Se você quiser **realmente fixo na viewport**, me avise que eu ajusto, mas leia [política de ads pegajosos do Google](https://support.google.com/adsense/answer/1346295) antes.
+**`src/hooks/useShowAds.ts`** — admin nunca vê ads (regra que você aprovou).
 
-### 5. Admin não vê ads
+## Por que você ainda não vê anúncios
 
-Já garantido pelo `useShowAds` (passo 3) + pelo fato de que o admin nem entra no `Dashboard.tsx` (vai direto para `/admin/dashboard`, que não tem o componente). Dupla proteção.
+Não é problema de código. São 3 fatores externos:
 
-## O que NÃO vou fazer (e por quê)
+1. **Preview mostra placeholder** — `AdSenseBanner.tsx` detecta `import.meta.env.DEV` e renderiza o quadro tracejado "Anúncio — preview (dev)" em vez do `<ins>` real. Esperado.
+2. **Domínio precisa estar publicado e aprovado** — anúncios só servem em `meuplantelpro.com.br`, e só depois que o AdSense aprovou esse domínio.
+3. **Bloco novo demora 24-72h** para começar a servir mesmo após aprovação — calibração do Google.
 
-- **Não vou criar edge function** — AdSense é puro frontend, sem chamadas de API.
-- **Não vou guardar Publisher ID em secret** — é chave pública (aparece no `<script>` do `<head>`, qualquer um vê inspecionando).
-- **Não vou ativar antes do domínio** — o código fica pronto, mas o `<script>` do AdSense só renderá ads quando o site estiver no domínio aprovado.
-- **Não vou colocar ads em páginas de auth, admin ou checkout/torneio em andamento** — pode prejudicar UX e aprovação.
+## O que falta (você faz, não eu)
 
-## O que preciso de você para executar
+1. **Publish** (botão Publish → Update no canto superior direito). Não tenho ferramenta para publicar.
+2. Abrir `https://meuplantelpro.com.br` logado como **não-admin** e rolar até o final do Dashboard.
+3. Aguardar 24-72h e checar **AdSense → Anúncios → Por bloco → "Banner Dashboard"** para ver impressões.
 
-1. **Publisher ID** (`ca-pub-...`) — quando tiver a conta AdSense aprovada.
-2. **Slot ID** do bloco "Banner Dashboard" — criado no painel AdSense, formato display responsivo.
+## O que eu posso fazer depois que você publicar
 
-Sem esses dois, posso deixar o código pronto com placeholders (`ca-pub-PENDING` / `slot-PENDING`) e você só substitui depois. Funciona, só não exibe ads até trocar.
+Se quiser, abro o domínio com o browser tool e confirmo:
+- O `<ins class="adsbygoogle">` renderiza com `data-ad-slot="7741257825"`.
+- Não há erros `TagError` / `adsbygoogle` no console.
+- Request para `pagead2.googlesyndication.com` retorna 200.
 
-## Arquivos tocados
+Isso valida que o código está correto. Confirmação de **impressões registradas** só no painel AdSense (precisa do seu login Google).
 
-- `index.html` (script AdSense no head)
-- `public/robots.txt` (verificação — só edita se necessário)
-- `src/components/ads/AdSenseBanner.tsx` (novo)
-- `src/hooks/useShowAds.ts` (novo)
-- `src/pages/Dashboard.tsx` (renderiza o banner no rodapé)
+## Conclusão
 
-Sem migrations, sem edge functions, sem mudanças no backend.
-
-## Próximos passos (depois desta entrega)
-
-- Quando AdSense aprovar mais blocos, adicionar `<AdSenseBanner slot="..." />` em outras páginas relevantes (ex.: `Plantel`, `Bercario`).
-- Se virar plano pago, o `useShowAds` ganha checagem de `subscription_status`.
-
-**Posso prosseguir com Publisher ID e Slot pendentes (placeholder), ou você prefere pegar o AdSense aprovado primeiro e só então implementar?**
+**Nenhuma alteração de código é necessária.** Implementação está completa e correta. O bloqueio é operacional: publicar + aguardar AdSense.
 
