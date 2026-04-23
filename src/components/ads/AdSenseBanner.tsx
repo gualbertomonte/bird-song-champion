@@ -11,6 +11,7 @@ interface AdSenseBannerProps {
   format?: string;
   responsive?: boolean;
   className?: string;
+  layoutKey?: string;
 }
 
 // Publisher ID público do AdSense.
@@ -21,6 +22,7 @@ export default function AdSenseBanner({
   format = 'auto',
   responsive = true,
   className = '',
+  layoutKey,
 }: AdSenseBannerProps) {
   const pushed = useRef(false);
   const isDev = import.meta.env.DEV;
@@ -55,6 +57,7 @@ export default function AdSenseBanner({
       data-ad-slot={slot}
       data-ad-format={format}
       data-full-width-responsive={responsive ? 'true' : 'false'}
+      {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
     />
   );
 }
