@@ -1,119 +1,93 @@
 
 
-# Renomear "PlantelPro" → "MeuPlantelPro"
+# Adicionar Google AdSense — banner fixo no Dashboard
 
-## Stack real (não é Node/Laravel)
+## Pré-requisito (você faz fora do Lovable)
 
-Antes de tudo: este projeto é **React + Vite + TypeScript + Tailwind**, com backend gerenciado (Lovable Cloud / Supabase) via edge functions Deno. Não existe Express, Laravel, `composer.json`, `config/app.php`, `docker-compose.yml`, nem nginx no repo. O guia abaixo é adaptado à stack real — itens irrelevantes do pedido foram descartados (não inventados).
+1. Criar conta em https://www.google.com/adsense → adicionar o site `meuplantelpro.com.br`.
+2. AdSense exige **domínio próprio aprovado** — o subdomínio `plantelpro.lovable.app` é rejeitado. Por isso só faz sentido publicar os ads **depois** que `meuplantelpro.com.br` estiver Active.
+3. Aprovação leva de dias a semanas (Google revisa conteúdo, política, tráfego).
+4. Após aprovado, você pega:
+   - **Publisher ID** (formato `ca-pub-XXXXXXXXXXXXXXXX`) — público, vai no código.
+   - **Slot ID do bloco de anúncio** (formato `XXXXXXXXXX`) — público, vai no código.
 
-A marca atual no código é **"Plantel Pro+"** (com espaço e "+"), não "PlantelPro" puro. Vou padronizar tudo para **"MeuPlantelPro"**.
+Os dois são **chaves públicas** (não são secret), então ficam direto no código — sem `add_secret`, sem edge function.
 
-## 1. Frontend — textos visíveis
+## Implementação no app
 
-| Arquivo | Trechos a alterar |
-|---|---|
-| `index.html` | `<title>`, `<meta name="description">`, `apple-mobile-web-app-title`, `og:title`, `twitter:title`, `og:description`, `twitter:description` |
-| `public/manifest.webmanifest` | `name`, `short_name`, `description` |
-| `src/components/AppLayout.tsx` | Logo lateral: `Plantel Pro+` e tagline `Aviário Premium` (manter ou ajustar?) |
-| `src/components/admin/AdminLayout.tsx` | Header: `Plantel Pro+` + `Modo Administrador` |
-| `src/components/SystemBanner.tsx` | Verificar se referencia o nome |
-| `src/pages/Login.tsx`, `Signup.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx` | Títulos, headings, mensagens de boas-vindas |
-| `src/pages/Index.tsx`, `NotFound.tsx` | Possíveis menções |
-| `src/pages/Perfil.tsx`, `AdminConfiguracoes.tsx` | Cabeçalhos |
-| Toasts e mensagens em hooks/páginas | Buscar globalmente |
+### 1. Script do AdSense em `index.html`
 
-Estratégia: rodar `grep -ri "plantel" src/ index.html public/` e revisar **caso a caso** (não fazer sed cego — alguns "plantel" são da palavra de domínio "plantel de aves" e devem ser mantidos).
+Adicionar no `<head>`, carregamento assíncrono:
 
-Substituições explícitas:
-- `Plantel Pro+` → `MeuPlantelPro`
-- `Plantel Pro` → `MeuPlantelPro`
-- `PlantelPro` → `MeuPlantelPro`
-- `plantelpro` (em URLs de exemplo) → `meuplantelpro`
-
-**Não tocar**: a palavra "plantel" sozinha (ex.: "Gestão de plantel", rota `/plantel`, página `Plantel.tsx`) — é o conceito do produto, não a marca.
-
-## 2. Backend (Edge Functions Deno)
-
-Arquivos: `supabase/functions/*/index.ts`.
-
-| Função | O que mudar |
-|---|---|
-| `notify-admin-new-signup/index.ts` | `subject: "🎉 Novo usuário no Plantel Pro+"`, HTML do e-mail (`<h1>`, botão "Abrir Plantel Pro+"), `SITE_URL = 'https://plantelpro.lovable.app'` |
-| `send-loan-email/index.ts` | Assunto, corpo, rodapé, links |
-| `send-transfer-email/index.ts` | Assunto, corpo, rodapé, links |
-| `check-health-alerts/index.ts` | Mensagens de notificação |
-| Demais funções `admin-*` | Verificar mensagens de log/resposta |
-
-`SITE_URL` deve apontar para `https://meuplantelpro.com.br` (ver §5 sobre domínio).
-
-## 3. Banco de dados
-
-Auditoria primeiro, mudança depois. Vou rodar uma query no migration:
-
-```sql
-SELECT key, value FROM public.system_config;  -- procurar string "Plantel"
-SELECT id, mensagem FROM public.weekly_reports LIMIT 5;
+```html
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 ```
 
-- **Não há tabela com nome `plantel_pro_*`** no schema atual (já verificado pela arquitetura). Nada a renomear estruturalmente.
-- Se `system_config` tiver `banner_mensagem` ou textos contendo "Plantel Pro+", criar migration `UPDATE public.system_config SET banner_mensagem = REPLACE(banner_mensagem, 'Plantel Pro+', 'MeuPlantelPro')`.
-- Funções RPC com mensagens de erro hardcoded em português: revisar `admin_*` functions; se contiverem o nome, atualizar.
+Também atualizar `public/robots.txt` para garantir que o crawler do AdSense (`Mediapartners-Google`) tem acesso (geralmente já tem, mas confirmo).
 
-## 4. Configuração / metadados
+### 2. Componente `src/components/ads/AdSenseBanner.tsx`
 
-| Arquivo | Ação |
-|---|---|
-| `package.json` | Campo `name` (atualmente provavelmente `vite_react_shadcn_ts` — confirmar e renomear se relevante) |
-| `README.md` | Reescrever cabeçalho com nome novo + descrição |
-| `public/robots.txt` | Verificar se tem nome |
-| `.env` | **NÃO TOCAR** — gerenciado automaticamente, não tem nome de marca |
-| `supabase/config.toml` | `project_id` fica como está (é ID interno, não marca) |
+Novo componente reutilizável:
+- Recebe props `slot` e opcionais `format` / `responsive`.
+- Renderiza `<ins class="adsbygoogle">` com os atributos exigidos pelo AdSense.
+- No `useEffect`, chama `(window.adsbygoogle = window.adsbygoogle || []).push({})` para inicializar.
+- Em `import.meta.env.DEV` mostra um placeholder cinza ("Anúncio — preview") em vez de carregar o script real, evitando avisos do AdSense em desenvolvimento.
 
-Não existem: `.env.example`, `docker-compose.yml`, `nginx.conf`, `composer.json`, `config/app.php`. Pular.
+### 3. Hook `src/hooks/useShowAds.ts`
 
-## 5. Domínio `meuplantelpro.com.br`
+Centraliza a regra "quando mostrar ads":
+- `false` se `useIsAdmin()` retornar admin.
+- `false` enquanto `useAuth().loading` for true.
+- `true` caso contrário.
 
-Domínio customizado é configurado no painel Lovable, não em código:
-1. **Settings → Domains → Connect Domain** → digitar `meuplantelpro.com.br` e `www.meuplantelpro.com.br`.
-2. No registrador (.com.br = Registro.br), criar:
-   - `A @ → 185.158.133.1`
-   - `A www → 185.158.133.1`
-   - `TXT _lovable → lovable_verify=…` (valor dado pelo painel)
-3. Aguardar verificação + SSL automático (até 72h, normalmente minutos).
-4. Atualizar `SITE_URL` nas edge functions de e-mail (passo §2) **depois** que o domínio estiver Active.
+Assim, se um dia mudarmos a regra (ex.: "usuários premium não veem ads"), só altera aqui.
 
-Posso atualizar o código, mas a parte de DNS você executa fora do Lovable.
+### 4. Integração no Dashboard
 
-## 6. Pós-renomeação
+Em `src/pages/Dashboard.tsx`, no rodapé do conteúdo:
 
-- Hard refresh do navegador (Ctrl+Shift+R) para invalidar PWA antigo — `short_name` mudou, o navegador vai re-registrar o manifest.
-- Usuários com app instalado via PWA verão o novo nome após reabrir; ícone só muda se o ícone for trocado também (favicon/icon-512 estão sem texto, então não precisa).
-- Edge functions redeploiam automaticamente ao salvar.
-- Sem `npm run build` manual — Lovable rebuilda sozinho.
+```tsx
+{showAds && (
+  <div className="mt-8 flex justify-center">
+    <AdSenseBanner slot="XXXXXXXXXX" />
+  </div>
+)}
+```
 
-## 7. Checklist final
+Banner responsivo, centralizado, com margem superior. Não fixo na tela (banner "sticky" no rodapé é mais agressivo e pode violar política do AdSense em mobile — melhor ser inline no fim do conteúdo). Se você quiser **realmente fixo na viewport**, me avise que eu ajusto, mas leia [política de ads pegajosos do Google](https://support.google.com/adsense/answer/1346295) antes.
 
-- [ ] `index.html`: title, meta description, og/twitter, apple-mobile-web-app-title
-- [ ] `manifest.webmanifest`: name, short_name, description
-- [ ] Sidebar criador (`AppLayout.tsx`)
-- [ ] Header admin (`AdminLayout.tsx`)
-- [ ] Páginas de auth (Login, Signup, Forgot, Reset)
-- [ ] Edge functions de e-mail: assunto, corpo, botão CTA, SITE_URL
-- [ ] `system_config.banner_mensagem` (se aplicável)
-- [ ] `package.json` name
-- [ ] `README.md`
-- [ ] `grep -ri "plantel pro" src/ index.html public/ supabase/` retorna 0 ocorrências
-- [ ] `grep -ri "plantelpro" src/ index.html public/ supabase/` só mostra subdomínio antigo onde for histórico
-- [ ] Domínio `meuplantelpro.com.br` adicionado no painel Lovable e Active
-- [ ] Hard refresh confirma novo nome no título da aba e na tela inicial PWA
-- [ ] Enviar e-mail de teste (convite/empréstimo) e verificar assunto + corpo + link CTA
+### 5. Admin não vê ads
 
-## Decisões que preciso de você antes de executar
+Já garantido pelo `useShowAds` (passo 3) + pelo fato de que o admin nem entra no `Dashboard.tsx` (vai direto para `/admin/dashboard`, que não tem o componente). Dupla proteção.
 
-1. **Tagline "Aviário Premium"** abaixo do logo — manter, trocar por outra, ou remover?
-2. **Logo/ícone** (`public/icon-512.png`, `favicon.ico`) — manter os atuais ou você vai me enviar arte nova com a marca "MeuPlantelPro"?
-3. **`SITE_URL` nas edge functions** — devo já trocar para `https://meuplantelpro.com.br` agora (e-mails ficarão com link quebrado até o DNS propagar) ou manter `https://plantelpro.lovable.app` até o domínio estar Active?
-4. **`system_config.banner_mensagem`** atual — quer que eu rode um `UPDATE` cego de REPLACE, ou prefere revisar manualmente em `/admin/configuracoes`?
+## O que NÃO vou fazer (e por quê)
 
-Responda os 4 e eu executo a renomeação inteira numa só passada.
+- **Não vou criar edge function** — AdSense é puro frontend, sem chamadas de API.
+- **Não vou guardar Publisher ID em secret** — é chave pública (aparece no `<script>` do `<head>`, qualquer um vê inspecionando).
+- **Não vou ativar antes do domínio** — o código fica pronto, mas o `<script>` do AdSense só renderá ads quando o site estiver no domínio aprovado.
+- **Não vou colocar ads em páginas de auth, admin ou checkout/torneio em andamento** — pode prejudicar UX e aprovação.
+
+## O que preciso de você para executar
+
+1. **Publisher ID** (`ca-pub-...`) — quando tiver a conta AdSense aprovada.
+2. **Slot ID** do bloco "Banner Dashboard" — criado no painel AdSense, formato display responsivo.
+
+Sem esses dois, posso deixar o código pronto com placeholders (`ca-pub-PENDING` / `slot-PENDING`) e você só substitui depois. Funciona, só não exibe ads até trocar.
+
+## Arquivos tocados
+
+- `index.html` (script AdSense no head)
+- `public/robots.txt` (verificação — só edita se necessário)
+- `src/components/ads/AdSenseBanner.tsx` (novo)
+- `src/hooks/useShowAds.ts` (novo)
+- `src/pages/Dashboard.tsx` (renderiza o banner no rodapé)
+
+Sem migrations, sem edge functions, sem mudanças no backend.
+
+## Próximos passos (depois desta entrega)
+
+- Quando AdSense aprovar mais blocos, adicionar `<AdSenseBanner slot="..." />` em outras páginas relevantes (ex.: `Plantel`, `Bercario`).
+- Se virar plano pago, o `useShowAds` ganha checagem de `subscription_status`.
+
+**Posso prosseguir com Publisher ID e Slot pendentes (placeholder), ou você prefere pegar o AdSense aprovado primeiro e só então implementar?**
 
