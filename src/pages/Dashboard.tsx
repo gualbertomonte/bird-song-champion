@@ -6,7 +6,7 @@ import { useState } from 'react';
 import DosesHojeCard from '@/components/DosesHojeCard';
 import PodiumRanking from '@/components/dashboard/PodiumRanking';
 import AtividadeChart from '@/components/dashboard/AtividadeChart';
-import AdSenseBanner from '@/components/ads/AdSenseBanner';
+import AdSenseBanner from '@/components/ads/GoogleAdBanner';
 import { useShowAds } from '@/hooks/useShowAds';
 
 export default function Dashboard() {
