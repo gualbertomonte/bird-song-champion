@@ -13,8 +13,8 @@ interface AdSenseBannerProps {
   className?: string;
 }
 
-// Publisher ID público — substituir quando o AdSense for aprovado.
-const PUBLISHER_ID = 'ca-pub-PENDING';
+// Publisher ID público do AdSense.
+const PUBLISHER_ID = 'ca-pub-2835871674648959';
 
 export default function AdSenseBanner({
   slot,
