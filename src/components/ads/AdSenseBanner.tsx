@@ -1,36 +1,69 @@
 import { useEffect, useRef } from "react";
 
-// ... global
+declare global {
+  interface Window {
+    adsbygoogle?: Array<Record<string, unknown>>;
+  }
+}
 
-export default function AdSenseBanner({ slot, format = "fluid", responsive = true, className = "" }) {
+const PUBLISHER_ID = "ca-pub-2835871674648959";
+
+interface AdSenseBannerProps {
+  slot: string;
+  format?: string;
+  responsive?: boolean;
+  layoutKey?: string;
+  className?: string;
+  minHeight?: number;
+}
+
+export default function AdSenseBanner({
+  slot,
+  format = "auto",
+  responsive = true,
+  layoutKey,
+  className = "",
+  minHeight = 100,
+}: AdSenseBannerProps) {
   const pushed = useRef(false);
-  const scriptLoaded = useRef(false);
   const isDev = import.meta.env.DEV;
   const isPlaceholder = PUBLISHER_ID.includes("PENDING") || slot.includes("PENDING");
 
-  // Carrega o script do AdSense uma única vez
   useEffect(() => {
-    if (scriptLoaded.current || isDev || isPlaceholder) return;
-    const script = document.createElement("script");
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${PUBLISHER_ID}`;
-    script.async = true;
-    script.crossOrigin = "anonymous";
-    script.onload = () => {
-      scriptLoaded.current = true;
-    };
-    document.head.appendChild(script);
-  }, [isDev, isPlaceholder]);
-
-  // Faz o push após o script carregado e o elemento existir no DOM
-  useEffect(() => {
-    if (isDev || isPlaceholder || !scriptLoaded.current || pushed.current) return;
+    if (isDev || isPlaceholder || pushed.current) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
       pushed.current = true;
     } catch (e) {
       console.warn("[AdSense] push failed", e);
     }
-  }, [isDev, isPlaceholder, scriptLoaded.current]);
+  }, [isDev, isPlaceholder]);
 
-  // ... placeholder e retorno do ins
+  if (isDev || isPlaceholder) {
+    return (
+      <div
+        className={`relative w-full rounded-lg border border-dashed border-border/60 bg-muted/20 flex items-center justify-center ${className}`}
+        style={{ minHeight }}
+        aria-label="Espaço publicitário (preview)"
+      >
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
+          Anúncio (preview)
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`w-full ${className}`} style={{ minHeight }}>
+      <ins
+        className="adsbygoogle"
+        style={{ display: "block", minHeight }}
+        data-ad-client={PUBLISHER_ID}
+        data-ad-slot={slot}
+        data-ad-format={format}
+        {...(layoutKey ? { "data-ad-layout-key": layoutKey } : {})}
+        {...(responsive ? { "data-full-width-responsive": "true" } : {})}
+      />
+    </div>
+  );
 }
