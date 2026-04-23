@@ -172,6 +172,9 @@ export default function TorneioDetalhe() {
               <Plus className="w-4 h-4" /> Inscrever ave
             </button>
           </div>
+          {isOrganizer && torneio.status !== 'Rascunho' && (
+            <AcoesAdministrativasTorneio torneio={torneio} pontuacoes={pontuacoes} onChange={refresh} />
+          )}
         </div>
       )}
 
