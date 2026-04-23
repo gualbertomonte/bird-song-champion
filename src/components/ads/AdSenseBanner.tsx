@@ -11,6 +11,7 @@ interface AdSenseBannerProps {
   format?: string;
   responsive?: boolean;
   className?: string;
+  layoutKey?: string;
 }
 
 // Publisher ID público do AdSense.
