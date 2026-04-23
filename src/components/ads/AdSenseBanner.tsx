@@ -24,7 +24,7 @@ const AdSenseBanner = ({
   responsive = true,
   className = "",
   minHeight,
-}: AdSenseBannerProps) => {
+}: AdSenseBannerProps): any => {
   const pushed = useRef(false);
   const isDev = import.meta.env.DEV;
   const isPlaceholder = PUBLISHER_ID.includes("PENDING") || slot.includes("PENDING");
