@@ -1,78 +1,58 @@
 
 
-# Resetar torneios — proposta
+# Diagnóstico e correção AdSense
 
-## Problema
+## Estado do código: correto
 
-Hoje o organizador só consegue **encerrar** um torneio (status vira `Encerrado`, pontuações ficam bloqueadas). Não há como:
-- Voltar atrás se encerrou por engano.
-- Limpar pontuações para refazer uma bateria mal lançada.
-- Reaproveitar o mesmo torneio em outra data sem recriar tudo.
+Verifiquei e o snippet do Google está 100% replicado no projeto:
+- `index.html` linha 30 — script global do AdSense com `ca-pub-2835871674648959`
+- `src/components/ads/AdSenseBanner.tsx` — gera `<ins>` com todos os atributos do snippet (slot `7741257825`, format `fluid`, layoutKey `-fb+5w+4e-db+86`)
+- `src/pages/Dashboard.tsx` linhas 307-313 — banner renderizado no rodapé
 
-## Ideia: 3 níveis de "reset", cada um com escopo claro
+**Não há bug de código.** O motivo dos anúncios não aparecerem é operacional.
 
-Em vez de um único botão genérico, ofereço 3 ações distintas no painel do organizador (aba **Visão Geral** ou novo bloco "Zona de risco"):
+## Causa raiz (3 fatores combinados)
 
-### 1. Reabrir torneio encerrado
-- **Quem:** apenas organizador.
-- **Quando aparece:** status `Encerrado`.
-- **O que faz:** volta o status para `Em andamento`, limpa `encerrado_em`, desbloqueia novas pontuações. **Mantém** todas as pontuações, inscrições e sorteio.
-- **Uso típico:** encerrei sem querer / esqueci de lançar a última bateria.
+### 1. Você é admin → banner nunca renderiza pra você
+Os logs confirmam: sua conta `plantel.pro@outlook.com.br` retorna `true` em `has_role('admin')`. A regra `useShowAds()` oculta o componente para admins, então o `<ins>` nem chega no DOM da sua sessão. Google não tem onde preencher.
 
-### 2. Limpar pontuações (reset parcial)
-- **Quem:** organizador.
-- **Quando aparece:** status `Sorteado`, `Em andamento` ou `Encerrado` (com confirmação extra).
-- **O que faz:** apaga registros de `torneio_pontuacoes` (todas ou de uma bateria específica via dropdown). **Mantém** inscrições aprovadas e sorteio de estacas. Volta status para `Em andamento`.
-- **Uso típico:** lancei pontos errados, quero refazer só a bateria 2.
+### 2. Você testa no preview do Lovable, não no domínio publicado
+A rota atual é `/admin/dashboard` em `lovableproject.com`. O AdSense só serve em domínios aprovados (`meuplantelpro.com.br`). No preview o componente cai no branch `isDev` e mostra o quadro tracejado.
 
-### 3. Resetar torneio completo
-- **Quem:** organizador.
-- **Quando aparece:** qualquer status exceto `Rascunho`.
-- **O que faz:** apaga pontuações + zera estações sorteadas + volta status para `Inscricoes`. **Mantém** inscrições e convites (não obriga reconvidar todo mundo).
-- **Confirmação:** modal pedindo digitar o nome do torneio (estilo GitHub delete).
-- **Uso típico:** quero rodar o mesmo torneio de novo do zero, com os mesmos participantes.
+### 3. Falta `public/ads.txt`
+Sem `ads.txt` no domínio, AdSense pode marcar o site como não autorizado e zerar o fill rate. Vou criar.
 
-## Auditoria
+## O que vou alterar
 
-Cada uma das 3 ações grava em `torneio_audit_log` com `acao` distinta (`reabertura`, `limpeza_pontuacoes`, `reset_completo`), incluindo `bateria` no caso de limpeza parcial. Assim fica rastreável quem fez e quando — útil em caso de contestação.
+Apenas **uma** mudança de código:
 
-## Onde aparece na UI
+- **Criar `public/ads.txt`** com o conteúdo padrão exigido pelo Google:
+  ```
+  google.com, pub-2835871674648959, DIRECT, f08c47fec0942fa0
+  ```
+  Esse arquivo fica acessível em `https://meuplantelpro.com.br/ads.txt` após publicar.
 
-Novo bloco no fim da aba **Visão Geral**, visível só para o organizador, intitulado **"Ações administrativas"**:
+Não mexerei em `index.html`, `AdSenseBanner.tsx`, `useShowAds.ts` nem `Dashboard.tsx` — todos estão corretos.
 
-```text
-┌─ Ações administrativas ──────────────────────────┐
-│  [Reabrir torneio]      (só se Encerrado)        │
-│  [Limpar pontuações ▾]  bateria: [todas ▾]       │
-│  [Resetar torneio]      ⚠ destrutivo             │
-└──────────────────────────────────────────────────┘
-```
+## O que você precisa fazer (eu não consigo)
 
-## Implementação técnica
+1. **Publicar** (botão Publish → Update). Sem publicar, `ads.txt` não vai pro domínio.
+2. Abrir aba anônima em `https://meuplantelpro.com.br/dashboard` e logar com **uma conta não-admin** (ou criar uma nova). Rolar até o final do Dashboard.
+3. Confirmar no painel AdSense → Sites → `meuplantelpro.com.br` que o status é "Pronto" (não "Requer atenção"). Se aparecer aviso de ads.txt, vai sumir em 24-48h após o passo 1.
+4. Verificar no painel AdSense → Anúncios → "Banner Dashboard" se está **ativado** (às vezes o bloco é criado mas fica desativado).
 
-**Backend (3 novas RPCs SQL com `SECURITY DEFINER`):**
-- `reabrir_torneio(_torneio_id uuid)` — valida organizador, valida status atual = `Encerrado`, atualiza torneio, grava audit.
-- `limpar_pontuacoes_torneio(_torneio_id uuid, _bateria int DEFAULT NULL)` — valida organizador, deleta de `torneio_pontuacoes` (filtrando por bateria se passado), volta status se estava `Encerrado`, grava audit.
-- `resetar_torneio(_torneio_id uuid)` — valida organizador, deleta pontuações, zera campo `estacao` em todas as inscrições, volta status para `Inscricoes`, limpa `encerrado_em`, grava audit.
+## Checagem opcional pós-publicação
 
-**Frontend:**
-- `src/pages/TorneioDetalhe.tsx`: novo componente `AcoesAdministrativasTorneio` com os 3 botões + modais de confirmação.
-- Reusar padrão do `confirm()` atual mas para a ação 3 usar modal customizado (`AlertDialog` do shadcn) que exige digitar o nome.
-- Após cada ação: `toast.success(...)` + `refresh()`.
+Se quiser, depois que você publicar eu uso o browser tool em `https://meuplantelpro.com.br` (sem login, ou com conta de teste) e confirmo:
+- `<ins class="adsbygoogle">` está no DOM com os atributos certos
+- Request para `pagead2.googlesyndication.com/...` retorna 200
+- Console não tem `TagError` nem `No slot size for availableWidth=0`
+- `https://meuplantelpro.com.br/ads.txt` retorna 200 com o conteúdo certo
 
-## Arquivos a alterar
+## Resultado esperado
 
-- **Migration nova:** 3 funções RPC + grants para `authenticated`.
-- `src/pages/TorneioDetalhe.tsx`: novo bloco "Ações administrativas".
-- (Opcional) `src/types/torneio.ts`: adicionar tipos das novas ações de auditoria.
-
-## Fora de escopo (propositalmente)
-
-- **Apagar inscrições/convites:** já dá para deletar o torneio inteiro (RLS atual permite delete em `Rascunho`/`Inscricoes`). Não vale criar reset que faça isso.
-- **Resetar torneios de outros organizadores:** segurança via `organizer_user_id = auth.uid()` dentro da RPC.
-- **Admin global resetar qualquer torneio:** não pediram, e mistura papéis.
-
-## Resultado
-
-Organizador ganha controle total sobre o ciclo de vida do torneio sem precisar recriar do zero, com 3 ações de granularidade crescente e tudo auditado.
+Depois de publicar com `ads.txt` + acessar como não-admin no domínio real:
+- Bloco "Espaço publicitário" aparece no rodapé do Dashboard
+- Em até alguns minutos, anúncio real começa a ser servido (ou fica em "unfilled" se não houver inventário no momento)
+- Impressões começam a registrar no painel AdSense em algumas horas
 
