@@ -6,10 +6,13 @@ import { useState } from 'react';
 import DosesHojeCard from '@/components/DosesHojeCard';
 import PodiumRanking from '@/components/dashboard/PodiumRanking';
 import AtividadeChart from '@/components/dashboard/AtividadeChart';
+import AdSenseBanner from '@/components/ads/AdSenseBanner';
+import { useShowAds } from '@/hooks/useShowAds';
 
 export default function Dashboard() {
   const { birds, tournaments, healthRecords, nests, profile } = useAppState();
   const [showFab, setShowFab] = useState(false);
+  const showAds = useShowAds();
 
   const ativas = birds.filter(b => b.status === 'Ativo').length;
   const bercario = birds.filter(b => b.status === 'Berçário').length;
@@ -292,6 +295,13 @@ export default function Dashboard() {
         <p className="text-xs text-muted-foreground mb-4">Torneios registrados e eclosões diárias.</p>
         <AtividadeChart tournaments={tournaments} nests={nests} />
       </div>
+
+      {/* Banner de anúncio (rodapé do conteúdo) */}
+      {showAds && (
+        <div className="mt-4 flex justify-center">
+          <AdSenseBanner slot="PENDING" className="w-full max-w-3xl" />
+        </div>
+      )}
 
       {/* FAB (mobile only) */}
       <div className="fixed bottom-20 right-4 sm:right-6 z-40 md:hidden">
