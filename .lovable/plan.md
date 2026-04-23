@@ -1,54 +1,65 @@
 
+Corrigir a exibição do banner AdSense no Dashboard para que ele apareça visualmente mesmo quando o Google ainda não entregou o anúncio, e evitar que a lógica atual esconda o bloco por engano.
 
-# AdSense — já está implementado, nada a codar
+## O que vou ajustar
 
-## Estado atual (verificado no código)
+1. Tornar o banner visível no layout
+- Envolver o AdSense em um container com altura mínima fixa no rodapé do Dashboard.
+- Manter largura responsiva, mas reservar espaço visual para evitar o comportamento atual de “sumir” quando o `<ins>` fica com altura zero.
+- Exibir um estado de fallback discreto em produção quando o script carregar mas o anúncio ainda não vier.
 
-Tudo que você pediu já está em produção no código:
+2. Fortalecer o componente `AdSenseBanner`
+- Detectar se o script do AdSense está disponível antes de dar `push`.
+- Adicionar estados como:
+  - carregando script
+  - aguardando preenchimento do anúncio
+  - bloqueado/sem inventário
+- Evitar que o componente fique invisível sem feedback quando houver “no fill”, bloqueador de anúncios ou atraso de propagação.
 
-**`index.html`** — script global do AdSense carregado no `<head>`:
-```html
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2835871674648959" crossorigin="anonymous"></script>
-```
+3. Corrigir a regra de visibilidade dos anúncios
+- Revisar `useIsAdmin` e `useShowAds` para não esconder o banner indefinidamente se a checagem de admin falhar.
+- Manter a regra “admin não vê anúncio”, mas tratar erro de RPC como erro de verificação, não como motivo para ocultar o banner para usuários comuns.
 
-**`src/components/ads/AdSenseBanner.tsx`** — Publisher ID `ca-pub-2835871674648959` configurado.
+4. Melhorar a integração no Dashboard
+- Renderizar o banner em uma seção própria no fim da página, com espaçamento e estrutura estáveis.
+- Se necessário, trocar o wrapper atual por um card leve ou bloco “Espaço publicitário” para garantir área renderizável e facilitar depuração visual.
 
-**`src/pages/Dashboard.tsx`** (linhas 300-308) — banner renderizado no rodapé com os IDs corretos do snippet que você enviou:
-```tsx
-<AdSenseBanner
-  slot="7741257825"
-  format="fluid"
-  layoutKey="-fb+5w+4e-db+86"
-  className="w-full max-w-3xl"
-/>
-```
+## Arquivos a alterar
 
-**`src/hooks/useShowAds.ts`** — admin nunca vê ads (regra que você aprovou).
+- `src/components/ads/AdSenseBanner.tsx`
+- `src/hooks/useShowAds.ts`
+- `src/hooks/useIsAdmin.ts`
+- `src/pages/Dashboard.tsx`
 
-## Por que você ainda não vê anúncios
+## Motivo técnico provável
 
-Não é problema de código. São 3 fatores externos:
+Pelo código atual, o problema mais provável é a combinação de dois fatores:
 
-1. **Preview mostra placeholder** — `AdSenseBanner.tsx` detecta `import.meta.env.DEV` e renderiza o quadro tracejado "Anúncio — preview (dev)" em vez do `<ins>` real. Esperado.
-2. **Domínio precisa estar publicado e aprovado** — anúncios só servem em `meuplantelpro.com.br`, e só depois que o AdSense aprovou esse domínio.
-3. **Bloco novo demora 24-72h** para começar a servir mesmo após aprovação — calibração do Google.
+1. O `<ins class="adsbygoogle">` não reserva altura própria.
+- Se o Google ainda não preencher o slot, o bloco colapsa para altura zero e parece que “não existe”.
 
-## O que falta (você faz, não eu)
+2. A regra `useShowAds()` pode ocultar o anúncio se a verificação de admin não concluir corretamente.
+- Hoje o hook depende de `useIsAdmin()`; se essa consulta falhar ou atrasar, o banner pode nem ser renderizado.
 
-1. **Publish** (botão Publish → Update no canto superior direito). Não tenho ferramenta para publicar.
-2. Abrir `https://meuplantelpro.com.br` logado como **não-admin** e rolar até o final do Dashboard.
-3. Aguardar 24-72h e checar **AdSense → Anúncios → Por bloco → "Banner Dashboard"** para ver impressões.
+## O que continuará dependendo do Google
 
-## O que eu posso fazer depois que você publicar
+Mesmo com a correção visual:
+- o anúncio real pode demorar para aparecer;
+- blocos novos podem levar 24–72h para começar a preencher;
+- bloqueadores de anúncio podem impedir a renderização;
+- aprovação do domínio e inventário continuam sendo externos ao app.
 
-Se quiser, abro o domínio com o browser tool e confirmo:
-- O `<ins class="adsbygoogle">` renderiza com `data-ad-slot="7741257825"`.
-- Não há erros `TagError` / `adsbygoogle` no console.
-- Request para `pagead2.googlesyndication.com` retorna 200.
+## Resultado esperado
 
-Isso valida que o código está correto. Confirmação de **impressões registradas** só no painel AdSense (precisa do seu login Google).
+Depois da implementação:
+- o rodapé do Dashboard sempre mostrará a área do banner para usuários comuns;
+- quando houver entrega do Google, o anúncio aparece no local correto;
+- quando ainda não houver entrega, o usuário verá um fallback claro em vez de um espaço “sumido”;
+- admins continuarão sem ver anúncios.
 
-## Conclusão
+## Validação depois da implementação
 
-**Nenhuma alteração de código é necessária.** Implementação está completa e correta. O bloqueio é operacional: publicar + aguardar AdSense.
-
+1. Abrir o Dashboard como usuário não-admin no domínio real.
+2. Confirmar que o bloco do banner aparece no rodapé.
+3. Verificar no console se o script do AdSense carregou sem erro.
+4. Confirmar que a ausência de inventário não derruba a UI nem faz o bloco desaparecer.
