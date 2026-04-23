@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Trophy, Calendar, Users, Shuffle, Lock, Check, X,
   Plus, Trash2, Mail, Link as LinkIcon, Medal, FileText, Loader2, Download, UserPlus,
+  RotateCcw, Unlock, Eraser, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
