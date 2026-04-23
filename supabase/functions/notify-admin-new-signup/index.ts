@@ -1,9 +1,19 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/microsoft_outlook'
+
+const esc = (s: unknown): string =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 
 async function sendWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -31,6 +41,25 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
+    // Require authenticated caller (the newly-signed-up user invokes this with their JWT)
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+    const ANON = Deno.env.get('SUPABASE_ANON_KEY')!
+    const userClient = createClient(SUPABASE_URL, ANON, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: { user } } = await userClient.auth.getUser()
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured')
     const MICROSOFT_OUTLOOK_API_KEY = Deno.env.get('MICROSOFT_OUTLOOK_API_KEY')
@@ -39,7 +68,9 @@ Deno.serve(async (req) => {
     if (!ADMIN_NOTIFY_EMAIL) throw new Error('ADMIN_NOTIFY_EMAIL is not configured')
 
     const payload = await req.json() as Payload
-    if (!payload.newUserEmail) {
+    // Trust the authenticated user's identity over the client-supplied values
+    const newUserEmail = user.email || payload.newUserEmail
+    if (!newUserEmail) {
       return new Response(JSON.stringify({ error: 'newUserEmail required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -49,24 +80,29 @@ Deno.serve(async (req) => {
       ? new Date(payload.signupAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
       : new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
 
-    const subject = `🎉 Novo usuário no MeuPlantelPro: ${payload.newUserName || payload.newUserEmail}`
+    const safeName = esc(payload.newUserName || '—')
+    const safeEmail = esc(newUserEmail)
+    const safeWhen = esc(when)
+    const safeTotal = payload.totalUsers ? esc(payload.totalUsers) : ''
+
+    const subject = `🎉 Novo usuário no Meu Plantel Pro: ${safeName !== '—' ? safeName : safeEmail}`
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #0B3B2A, #0A0F0D); padding: 24px; border-radius: 12px; color: white;">
-          <h1 style="color: #D4AF37; margin: 0 0 16px;">🎉 Novo cadastro no MeuPlantelPro</h1>
+          <h1 style="color: #D4AF37; margin: 0 0 16px;">🎉 Novo cadastro no Meu Plantel Pro</h1>
           <p style="color: #ccc; margin: 0 0 20px;">Um novo criador acaba de se inscrever no sistema.</p>
           <table style="width: 100%; border-collapse: collapse;">
-            <tr><td style="padding: 8px 0; color: #999; width: 140px;">Nome:</td><td style="padding: 8px 0; color: #fff; font-weight: bold;">${payload.newUserName || '—'}</td></tr>
-            <tr><td style="padding: 8px 0; color: #999;">E-mail:</td><td style="padding: 8px 0; color: #D4AF37; font-family: monospace;">${payload.newUserEmail}</td></tr>
-            <tr><td style="padding: 8px 0; color: #999;">Quando:</td><td style="padding: 8px 0; color: #fff;">${when}</td></tr>
-            ${payload.totalUsers ? `<tr><td style="padding: 8px 0; color: #999;">Total de usuários:</td><td style="padding: 8px 0; color: #fff; font-weight: bold;">${payload.totalUsers}</td></tr>` : ''}
+            <tr><td style="padding: 8px 0; color: #999; width: 140px;">Nome:</td><td style="padding: 8px 0; color: #fff; font-weight: bold;">${safeName}</td></tr>
+            <tr><td style="padding: 8px 0; color: #999;">E-mail:</td><td style="padding: 8px 0; color: #D4AF37; font-family: monospace;">${safeEmail}</td></tr>
+            <tr><td style="padding: 8px 0; color: #999;">Quando:</td><td style="padding: 8px 0; color: #fff;">${safeWhen}</td></tr>
+            ${safeTotal ? `<tr><td style="padding: 8px 0; color: #999;">Total de usuários:</td><td style="padding: 8px 0; color: #fff; font-weight: bold;">${safeTotal}</td></tr>` : ''}
           </table>
           <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;" />
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${SITE_URL}" style="display: inline-block; background: linear-gradient(135deg, #D4AF37, #B8962E); color: #0A0F0D; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none;">Abrir MeuPlantelPro</a>
+            <a href="${SITE_URL}" style="display: inline-block; background: linear-gradient(135deg, #D4AF37, #B8962E); color: #0A0F0D; font-weight: bold; padding: 12px 32px; border-radius: 8px; text-decoration: none;">Abrir Meu Plantel Pro</a>
           </div>
         </div>
-        <p style="color: #666; font-size: 11px; text-align: center; margin-top: 16px;">Notificação automática do MeuPlantelPro.</p>
+        <p style="color: #666; font-size: 11px; text-align: center; margin-top: 16px;">Notificação automática do Meu Plantel Pro.</p>
       </div>
     `
 
