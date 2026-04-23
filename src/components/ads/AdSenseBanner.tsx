@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef } from "react";
 
 declare global {
   interface Window {
@@ -6,14 +6,14 @@ declare global {
   }
 }
 
-type AdSenseBannerProps = {
+interface AdSenseBannerProps {
   slot: string;
   format?: string;
   layoutKey?: string;
   responsive?: boolean;
   className?: string;
   minHeight?: number;
-};
+}
 
 const PUBLISHER_ID = "ca-pub-2835871674648959";
 
@@ -24,7 +24,7 @@ const AdSenseBanner = ({
   responsive = true,
   className = "",
   minHeight,
-}: AdSenseBannerProps): ReactElement => {
+}: AdSenseBannerProps): any => {
   const pushed = useRef(false);
   const isDev = import.meta.env.DEV;
   const isPlaceholder = PUBLISHER_ID.includes("PENDING") || slot.includes("PENDING");
@@ -66,3 +66,4 @@ const AdSenseBanner = ({
 };
 
 export default AdSenseBanner;
+
