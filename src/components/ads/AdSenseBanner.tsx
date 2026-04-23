@@ -2,28 +2,25 @@ import { useEffect, useRef } from "react";
 
 declare global {
   interface Window {
-    adsbygoogle?: Array<Record<string, unknown>>;
+    adsbygoogle?: unknown[];
   }
 }
-
-const PUBLISHER_ID = "ca-pub-2835871674648959";
 
 interface AdSenseBannerProps {
   slot: string;
   format?: string;
   responsive?: boolean;
-  layoutKey?: string;
   className?: string;
-  minHeight?: number;
 }
+
+// Publisher ID público do AdSense.
+const PUBLISHER_ID = "ca-pub-2835871674648959";
 
 export default function AdSenseBanner({
   slot,
   format = "auto",
   responsive = true,
-  layoutKey,
   className = "",
-  minHeight = 100,
 }: AdSenseBannerProps) {
   const pushed = useRef(false);
   const isDev = import.meta.env.DEV;
@@ -42,28 +39,22 @@ export default function AdSenseBanner({
   if (isDev || isPlaceholder) {
     return (
       <div
-        className={`relative w-full rounded-lg border border-dashed border-border/60 bg-muted/20 flex items-center justify-center ${className}`}
-        style={{ minHeight }}
-        aria-label="Espaço publicitário (preview)"
+        className={`w-full max-w-3xl h-24 rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground ${className}`}
+        aria-hidden="true"
       >
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
-          Anúncio (preview)
-        </span>
+        Anúncio — preview ({isDev ? "dev" : "aguardando aprovação AdSense"})
       </div>
     );
   }
 
   return (
-    <div className={`w-full ${className}`} style={{ minHeight }}>
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block", minHeight }}
-        data-ad-client={PUBLISHER_ID}
-        data-ad-slot={slot}
-        data-ad-format={format}
-        {...(layoutKey ? { "data-ad-layout-key": layoutKey } : {})}
-        {...(responsive ? { "data-full-width-responsive": "true" } : {})}
-      />
-    </div>
+    <ins
+      className={`adsbygoogle block ${className}`}
+      style={{ display: "block" }}
+      data-ad-client={PUBLISHER_ID}
+      data-ad-slot={slot}
+      data-ad-format={format}
+      data-full-width-responsive={responsive ? "true" : "false"}
+    />
   );
 }
