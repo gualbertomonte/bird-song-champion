@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Trophy, Calendar, Users, Shuffle, Lock, Check, X,
   Plus, Trash2, Mail, Link as LinkIcon, Medal, FileText, Loader2, Download, UserPlus,
+  RotateCcw, Unlock, Eraser, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -172,6 +173,9 @@ export default function TorneioDetalhe() {
               <Plus className="w-4 h-4" /> Inscrever ave
             </button>
           </div>
+          {isOrganizer && torneio.status !== 'Rascunho' && (
+            <AcoesAdministrativasTorneio torneio={torneio} pontuacoes={pontuacoes} onChange={refresh} />
+          )}
         </div>
       )}
 
@@ -645,6 +649,172 @@ function InscreverModal({ torneioId, birds, onClose }: { torneioId: string; bird
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ============ Ações administrativas (Reabrir / Limpar / Resetar) ============
+function AcoesAdministrativasTorneio({
+  torneio,
+  pontuacoes,
+  onChange,
+}: {
+  torneio: any;
+  pontuacoes: any[];
+  onChange: () => void;
+}) {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [bateriaSel, setBateriaSel] = useState<string>('todas');
+  const [resetOpen, setResetOpen] = useState(false);
+  const [confirmName, setConfirmName] = useState('');
+
+  const baterias = useMemo(() => {
+    const set = new Set<number>();
+    pontuacoes.forEach(p => set.add(p.bateria));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [pontuacoes]);
+
+  const reabrir = async () => {
+    if (!confirm('Reabrir este torneio encerrado? As pontuações ficarão liberadas para edição.')) return;
+    setLoading('reabrir');
+    const { error } = await supabase.rpc('reabrir_torneio', { _torneio_id: torneio.id });
+    setLoading(null);
+    if (error) toast.error(error.message);
+    else { toast.success('Torneio reaberto.'); onChange(); }
+  };
+
+  const limpar = async () => {
+    const bat = bateriaSel === 'todas' ? null : Number(bateriaSel);
+    const msg = bat == null
+      ? 'Apagar TODAS as pontuações deste torneio? Inscrições e sorteio serão mantidos.'
+      : `Apagar todas as pontuações da bateria ${bat}? Esta ação é irreversível.`;
+    if (!confirm(msg)) return;
+    setLoading('limpar');
+    const { error } = await supabase.rpc('limpar_pontuacoes_torneio', {
+      _torneio_id: torneio.id,
+      _bateria: bat,
+    });
+    setLoading(null);
+    if (error) toast.error(error.message);
+    else { toast.success('Pontuações apagadas.'); onChange(); }
+  };
+
+  const resetar = async () => {
+    if (confirmName.trim() !== torneio.nome.trim()) {
+      toast.error('Nome do torneio não confere.');
+      return;
+    }
+    setLoading('resetar');
+    const { error } = await supabase.rpc('resetar_torneio', { _torneio_id: torneio.id });
+    setLoading(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Torneio resetado para Inscrições.');
+    setResetOpen(false);
+    setConfirmName('');
+    onChange();
+  };
+
+  return (
+    <div className="card-premium p-5 space-y-4 border border-destructive/30">
+      <div>
+        <h2 className="heading-serif font-semibold text-base flex items-center gap-2 text-destructive">
+          <AlertTriangle className="w-4 h-4" /> Ações administrativas
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Ações destrutivas restritas ao organizador. Tudo é registrado na auditoria.
+        </p>
+      </div>
+
+      {/* Reabrir */}
+      {torneio.status === 'Encerrado' && (
+        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/30">
+          <div className="text-sm">
+            <p className="font-medium">Reabrir torneio</p>
+            <p className="text-xs text-muted-foreground">Volta para "Em andamento" e libera pontuações. Mantém todos os dados.</p>
+          </div>
+          <button onClick={reabrir} disabled={loading === 'reabrir'} className="btn-secondary text-sm whitespace-nowrap">
+            {loading === 'reabrir' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlock className="w-4 h-4" />}
+            Reabrir
+          </button>
+        </div>
+      )}
+
+      {/* Limpar pontuações */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/30">
+        <div className="text-sm flex-1">
+          <p className="font-medium">Limpar pontuações</p>
+          <p className="text-xs text-muted-foreground">Apaga pontuações (todas ou de uma bateria). Mantém inscrições e sorteio.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={bateriaSel}
+            onChange={(e) => setBateriaSel(e.target.value)}
+            className="text-xs px-2 py-1.5 rounded border bg-background"
+          >
+            <option value="todas">Todas as baterias</option>
+            {baterias.map(b => <option key={b} value={b}>Bateria {b}</option>)}
+          </select>
+          <button onClick={limpar} disabled={loading === 'limpar' || pontuacoes.length === 0} className="btn-secondary text-sm whitespace-nowrap">
+            {loading === 'limpar' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eraser className="w-4 h-4" />}
+            Limpar
+          </button>
+        </div>
+      </div>
+
+      {/* Resetar completo */}
+      <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+        <div className="text-sm">
+          <p className="font-medium text-destructive">Resetar torneio completo</p>
+          <p className="text-xs text-muted-foreground">Apaga pontuações, zera estações sorteadas e volta para "Inscrições". Mantém os participantes.</p>
+        </div>
+        <button onClick={() => setResetOpen(true)} className="btn-danger text-sm whitespace-nowrap">
+          <RotateCcw className="w-4 h-4" /> Resetar
+        </button>
+      </div>
+
+      {/* Modal confirmação reset */}
+      {resetOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-lg shadow-lg w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              <h3 className="font-semibold text-base">Confirmar reset completo</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Esta ação <strong>apaga todas as pontuações</strong> e <strong>zera o sorteio</strong> de estações.
+              As inscrições aprovadas serão mantidas.
+            </p>
+            <p className="text-sm">
+              Para confirmar, digite o nome do torneio: <strong>{torneio.nome}</strong>
+            </p>
+            <input
+              type="text"
+              value={confirmName}
+              onChange={(e) => setConfirmName(e.target.value)}
+              placeholder={torneio.nome}
+              className="w-full px-3 py-2 text-sm rounded border bg-background focus:outline-none focus:ring-2 focus:ring-destructive"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => { setResetOpen(false); setConfirmName(''); }}
+                className="px-4 py-2 text-sm rounded-lg border hover:bg-muted"
+                disabled={loading === 'resetar'}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={resetar}
+                disabled={loading === 'resetar' || confirmName.trim() !== torneio.nome.trim()}
+                className="btn-danger text-sm"
+              >
+                {loading === 'resetar' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                Resetar agora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
