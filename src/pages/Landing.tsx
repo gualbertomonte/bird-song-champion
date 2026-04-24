@@ -96,6 +96,7 @@ export default function Landing() {
             <h1 className="heading-serif text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight">
               O controle profissional que seu <span className="text-secondary">plantel merece</span>
             </h1>
+            <h2 className="sr-only">Gestão de plantel, torneios de canto, berçário e saúde avícola para criadores de trinca-ferro, curió e outras aves</h2>
             <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
               Cadastre aves, acompanhe eclosões, organize torneios e cuide da saúde — tudo em um só lugar, do celular ou do computador.
             </p>
