@@ -169,7 +169,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-sidebar/90 backdrop-blur-xl border-t border-sidebar-border safe-area-bottom">
+      <nav className="glass-strong fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-secondary/15 safe-area-bottom">
         <div className="flex justify-between items-stretch py-1.5 px-1 overflow-x-auto no-scrollbar">
           {mobileNavItems.map(item => {
             const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
