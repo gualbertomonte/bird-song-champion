@@ -91,7 +91,7 @@ export default function Landing() {
           <div className="space-y-6 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs text-secondary border border-secondary/20">
               <Sparkles className="w-3.5 h-3.5" />
-              Aviário Premium • Grátis para começar
+              Plantel Premium • Grátis para começar
             </div>
             <h1 className="heading-serif text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight">
               O controle profissional que seu <span className="text-secondary">plantel merece</span>
@@ -190,7 +190,7 @@ export default function Landing() {
       {/* RECURSOS */}
       <section id="recursos" className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="heading-serif text-3xl sm:text-4xl font-semibold">Tudo que seu aviário precisa</h2>
+          <h2 className="heading-serif text-3xl sm:text-4xl font-semibold">Tudo que seu plantel precisa</h2>
           <p className="text-muted-foreground mt-3">Funcionalidades pensadas pra criadores reais, do hobby ao profissional.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -302,7 +302,7 @@ export default function Landing() {
           <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-transparent to-secondary/5 pointer-events-none" />
           <div className="relative space-y-5">
             <h2 className="heading-serif text-3xl sm:text-5xl font-semibold leading-tight">
-              Pronto para elevar seu <span className="text-secondary">aviário</span>?
+              Pronto para elevar seu <span className="text-secondary">plantel</span>?
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Junte-se a centenas de criadores que já organizaram seu plantel com o MeuPlantelPro.
@@ -332,7 +332,7 @@ export default function Landing() {
           <div className="flex items-center gap-5 text-sm">
             <Link to="/login" className="text-muted-foreground hover:text-foreground">Entrar</Link>
             <Link to="/signup" className="text-muted-foreground hover:text-foreground">Criar conta</Link>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-secondary flex items-center gap-1.5">
+            <a href="https://www.instagram.com/meuplantel_pro?igsh=MXF1b3RqMnpiZ3Jzag%3D%3D&utm_source=qr" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-secondary flex items-center gap-1.5">
               <Instagram className="w-4 h-4" /> Instagram
             </a>
           </div>
