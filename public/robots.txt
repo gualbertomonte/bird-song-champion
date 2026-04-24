@@ -12,3 +12,14 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /perfil
+Disallow: /plantel
+Disallow: /bercario
+Disallow: /saude
+Disallow: /emprestimos
+Disallow: /amigos
+Disallow: /grupos
+Disallow: /torneios
+
+Sitemap: https://meuplantelpro.com.br/sitemap.xml
