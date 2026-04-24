@@ -26,6 +26,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
+  <!-- Preload most critical font file (Inter latin) to shorten the critical request chain -->
+  <link
+    rel="preload"
+    as="font"
+    type="font/woff2"
+    href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2"
+    crossorigin
+  >
+
   <!-- Load Google Fonts asynchronously to avoid blocking initial render -->
   <link
     rel="preload"
