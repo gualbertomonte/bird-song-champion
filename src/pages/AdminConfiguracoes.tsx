@@ -26,6 +26,34 @@ export default function AdminConfiguracoes() {
   const [ativo, setAtivo] = useState(false);
   const [mensagem, setMensagem] = useState('');
   const [tipo, setTipo] = useState<BannerTipo>('info');
+  const [adsChecking, setAdsChecking] = useState(false);
+  const [adsResults, setAdsResults] = useState<AdsCheckResult[] | null>(null);
+
+  const verificarAdsTxt = async () => {
+    setAdsChecking(true);
+    setAdsResults(null);
+    const results: AdsCheckResult[] = await Promise.all(
+      ADS_TXT_DOMINIOS.map(async (url) => {
+        try {
+          const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
+          if (!res.ok) {
+            return { url, status: 'unreachable' as const, erro: `HTTP ${res.status}` };
+          }
+          const txt = (await res.text()).trim();
+          const linhas = txt.split('\n').map((l) => l.trim());
+          const ok = linhas.some((l) => l === ADS_TXT_ESPERADO);
+          return { url, status: ok ? 'ok' as const : 'mismatch' as const, conteudo: txt };
+        } catch (e: any) {
+          return { url, status: 'unreachable' as const, erro: e?.message ?? 'Erro de rede' };
+        }
+      })
+    );
+    setAdsResults(results);
+    setAdsChecking(false);
+    const algumOk = results.some((r) => r.status === 'ok');
+    if (algumOk) toast.success('ads.txt válido em pelo menos 1 domínio');
+    else toast.error('Nenhum domínio retornou ads.txt válido');
+  };
 
   useEffect(() => {
     (async () => {
