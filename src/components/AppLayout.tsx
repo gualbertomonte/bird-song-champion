@@ -84,7 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 to={item.to}
                 onClick={() => setMobileOpen(false)}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                  nav-link-premium flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                   ${active
                     ? 'sidebar-active'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
