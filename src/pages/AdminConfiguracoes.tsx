@@ -153,6 +153,69 @@ export default function AdminConfiguracoes() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileCheck2 className="w-5 h-5 text-secondary" /> Verificação do ads.txt (AdSense)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Confere se o arquivo está publicado no domínio com a linha exata esperada pelo Google AdSense.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-border bg-muted/30 p-3 font-mono text-xs break-all">
+            {ADS_TXT_ESPERADO}
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={verificarAdsTxt} disabled={adsChecking}>
+              {adsChecking && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Verificar agora
+            </Button>
+          </div>
+
+          {adsResults && (
+            <div className="space-y-2">
+              {adsResults.map((r) => (
+                <div
+                  key={r.url}
+                  className="rounded-lg border border-border p-3 space-y-2"
+                >
+                  <div className="flex items-start gap-2">
+                    {r.status === 'ok' && <CheckCircle2 className="w-4 h-4 text-success mt-0.5 shrink-0" />}
+                    {r.status === 'mismatch' && <AlertTriangle className="w-4 h-4 text-warning mt-0.5 shrink-0" />}
+                    {r.status === 'unreachable' && <XCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm font-medium text-foreground hover:underline break-all"
+                      >
+                        {r.url}
+                      </a>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {r.status === 'ok' && 'Conteúdo correto encontrado'}
+                        {r.status === 'mismatch' && 'Arquivo acessível, mas conteúdo diferente do esperado'}
+                        {r.status === 'unreachable' && `Inacessível: ${r.erro}`}
+                      </p>
+                    </div>
+                  </div>
+                  {r.conteudo && r.status === 'mismatch' && (
+                    <pre className="text-[11px] bg-muted/40 p-2 rounded font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                      {r.conteudo}
+                    </pre>
+                  )}
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">
+                Obs: o Google AdSense pode levar 24–48h para validar mesmo após o arquivo estar correto.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
