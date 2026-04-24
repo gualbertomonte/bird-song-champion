@@ -1,73 +1,64 @@
 
 
-# Landing Page de alta conversão — focada em trazer mais usuários
+# Aparecer no Google — melhorias de SEO para o MeuPlantelPro
 
-Reformular o plano da landing pública em `/` para ser **orientada a conversão** (não só institucional). O objetivo deixa de ser "explicar o app" e passa a ser **transformar visitante em cadastro**.
+Hoje o app não aparece no Google porque faltam sinais básicos que o buscador precisa para **indexar** e **entender** o site. Vamos resolver isso em duas frentes: ajustes técnicos no código (rápidos) e ações fora do código que **só você pode fazer** (essenciais).
 
-## Princípios de conversão aplicados
+## Por que não aparece hoje
 
-- **Promessa clara em 3 segundos**: hero responde "o que é + pra quem + qual benefício".
-- **Prova social** logo abaixo do hero (gera confiança antes do scroll).
-- **CTA repetido 4x** ao longo da página (hero, após features, após depoimentos, bloco final).
-- **Gratuidade explícita**: "Grátis para começar • Sem cartão de crédito".
-- **Urgência suave**: "Junte-se a centenas de criadores".
-- **Redução de fricção**: cadastro em 1 clique destacado, login secundário.
+1. O `index.html` tem título genérico ("Meu Plantel Pro") e descrição curta — pouco competitivo no Google.
+2. Não existe **sitemap.xml** (mapa do site que o Google lê pra descobrir páginas).
+3. O `robots.txt` não aponta pro sitemap.
+4. Faltam **dados estruturados** (Schema.org) — o Google usa pra entender que é um SaaS/WebApplication.
+5. O site é SPA (React) — o Google indexa, mas precisa de meta tags e conteúdo claros já no HTML inicial.
+6. **Provavelmente o domínio nunca foi enviado ao Google Search Console** (sem isso, indexação demora semanas ou nunca acontece).
 
-## Estrutura da landing (`src/pages/Landing.tsx`)
+## O que vou fazer no código
 
-1. **Navbar glass** — Logo + "Entrar" (link discreto) + **"Criar conta grátis"** (botão liquid gold destacado).
+### 1. `index.html` — SEO on-page reforçado
+- **Title** otimizado com palavra-chave: `MeuPlantelPro — Gestão de Plantel, Torneios de Canto e Saúde Avícola`
+- **Meta description** rica (150–160 chars) com palavras que criadores buscam: "gestão de plantel", "controle de aves", "torneios de canto", "berçário", "trinca-ferro", "curió".
+- **Meta keywords** (peso baixo, mas inofensivo).
+- **Canonical URL** apontando pra `https://meuplantelpro.com.br/`.
+- **Open Graph** completo (`og:url`, `og:site_name`, `og:locale=pt_BR`).
+- **JSON-LD Schema.org** (`SoftwareApplication` + `Organization`) — ajuda o Google a mostrar rich results.
+- `<h1>` semântico já está na Landing — manter.
 
-2. **Hero conversion-first**
-   - Badge dourado: "Aviário Premium • Grátis para começar"
-   - H1 serif grande: **"O controle profissional que seu plantel merece"**
-   - Subtítulo: "Cadastre aves, acompanhe eclosões, organize torneios e cuide da saúde — tudo em um só lugar, do celular ou computador."
-   - **CTA primário**: "Criar conta grátis →" (liquid gold, grande)
-   - **CTA secundário**: "Já tenho conta" (ghost)
-   - Microcopy: "✓ Grátis para começar  ✓ Sem cartão  ✓ Pronto em 30 segundos"
-   - Mockup glass à direita (mini-dashboard fake com aves/eclosões).
+### 2. `public/robots.txt` — apontar pro sitemap
+Adicionar linha `Sitemap: https://meuplantelpro.com.br/sitemap.xml` no final.
 
-3. **Faixa de prova social** — "Usado por criadores em todo o Brasil" + 4 mini-stats glass (Aves cadastradas, Eclosões registradas, Torneios organizados, Criadores ativos) com números ilustrativos.
+### 3. `public/sitemap.xml` — novo arquivo
+Listar as URLs públicas indexáveis: `/`, `/login`, `/signup` (as rotas autenticadas não devem ser indexadas).
 
-4. **Bloco de dor → solução** — "Cansado de planilhas e cadernos perdidos?" com 3 dores comuns (esquecer doses, perder linhagem, bagunça em torneios) e como o app resolve cada uma.
+### 4. Pequena melhoria na Landing
+- Adicionar um `<h2>` extra com termos de busca naturais (sem mudar o design).
+- Garantir `alt` em ícones decorativos (`aria-hidden`) — já está bom, só revisar.
 
-5. **Recursos (grid 3x2 glass)** — Plantel, Berçário, Torneios, Saúde, Empréstimos & Amigos, Árvore Genealógica. Cada card termina com micro-benefício ("Nunca mais esqueça uma dose", etc.).
+## O que VOCÊ precisa fazer (fora do código, sem isso não adianta)
 
-6. **Como funciona em 3 passos** — Crie conta → Cadastre seu plantel → Acompanhe tudo. Com CTA "Começar agora" no fim.
+> Estas etapas são as **mais importantes**. As mudanças no código preparam o terreno; estas fazem o Google realmente encontrar e listar o site.
 
-7. **Depoimentos** — 3 cards glass com depoimentos curtos de criadores (placeholder realistas, marcados claramente como exemplos até termos reais).
+1. **Google Search Console** (https://search.google.com/search-console)
+   - Adicionar a propriedade `meuplantelpro.com.br`.
+   - Verificar via DNS (TXT) ou via tag HTML (posso adicionar a tag pra você se enviar o código).
+   - Enviar o `sitemap.xml`.
+   - Pedir indexação manual da home.
 
-8. **FAQ rápido (4 perguntas)** — "É grátis mesmo?", "Funciona no celular?", "Meus dados ficam seguros?", "Posso compartilhar com amigos?". Reduz objeções finais.
+2. **Google Analytics 4** (opcional, mas recomendado) — ajuda a medir o tráfego que vier.
 
-9. **CTA final grande** — Bloco glass full-width: "Pronto para elevar seu aviário?" + botão "Criar conta grátis" gigante + microcopy de garantia.
+3. **Backlinks iniciais** — cite o site nas redes sociais (Instagram que você já tem), grupos de WhatsApp/Facebook de criadores. O Google valoriza muito quando outros sites linkam o seu.
 
-10. **Footer** — Copyright, Instagram, links Login/Signup, link discreto para política/contato.
-
-## SEO & compartilhamento
-
-- `<title>` e `<meta description>` orientados a busca ("App para criadores de aves — controle de plantel, berçário e torneios").
-- Open Graph tags (título, descrição, imagem) no `index.html` para link bonito ao compartilhar no WhatsApp/Instagram.
-- H1 único e semântico.
-
-## Roteamento (`src/App.tsx`)
-
-- Visitante em `/` → renderiza `<Landing />`.
-- Logado em `/` → Dashboard normal (comportamento atual).
-- Implementação: ajustar o `ProtectedRoute` para que, quando a rota for exatamente `/` e não houver usuário, renderize a Landing em vez de redirecionar para `/login`. Demais rotas protegidas continuam indo para `/login`.
-
-## Visual
-
-100% dentro do tema atual (Dark Forest & Liquid Gold + glassmorphism). Reutiliza `glass`, `glass-strong`, `card-premium`, `btn-primary`, `heading-serif`. Animações fade-in suaves já existentes, respeitando `prefers-reduced-motion`. Zero CSS novo, zero dependências novas, zero imagens externas.
+4. **Tempo** — mesmo com tudo certo, o Google leva de **3 a 30 dias** pra indexar um domínio novo.
 
 ## Arquivos alterados
 
-1. **`src/pages/Landing.tsx`** (novo) — toda a landing.
-2. **`src/App.tsx`** — lazy-load + ajuste do guard para mostrar Landing em `/` sem login.
-3. **`index.html`** — atualizar `<title>`, `<meta description>` e Open Graph para SEO/compartilhamento.
+1. `index.html` — title, description, canonical, OG completo, JSON-LD.
+2. `public/robots.txt` — adicionar linha do sitemap.
+3. `public/sitemap.xml` (novo) — mapa do site.
 
-## Fora do escopo
+## Fora do escopo (podemos fazer depois)
 
-- Sem analytics novo (podemos adicionar GA4/Plausible em iteração futura).
-- Sem A/B testing.
-- Sem formulário de captura de email separado (CTA vai direto pro signup, menos fricção).
-- Sem mudanças no Login/Signup, backend ou demais páginas.
+- Blog/conteúdo SEO (artigos sobre criação de aves trariam tráfego orgânico real — é o caminho mais poderoso a médio prazo).
+- Pré-renderização (SSR/SSG) — só vale se o tráfego crescer muito.
+- Tradução para outros idiomas.
 
