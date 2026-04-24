@@ -47,14 +47,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const allNavItems = navItems;
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      {/* Decorative gold blobs */}
+      <div className="pointer-events-none fixed top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-secondary/10 blur-[120px] animate-gold-pulse" aria-hidden />
+      <div className="pointer-events-none fixed bottom-[-15%] left-[20%] w-[600px] h-[600px] rounded-full bg-accent/8 blur-[140px]" aria-hidden />
+
       {mobileOpen && (
-        <div className="fixed inset-0 bg-background/70 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-md z-40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:sticky top-0 h-screen z-50 flex flex-col bg-sidebar border-r border-sidebar-border
+        glass-strong fixed md:sticky top-0 h-screen z-50 flex flex-col border-r border-sidebar-border
         transition-all duration-300
         ${collapsed ? 'w-16' : 'w-60'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
