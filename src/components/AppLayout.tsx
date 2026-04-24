@@ -47,14 +47,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const allNavItems = navItems;
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      {/* Decorative gold blobs */}
+      <div className="pointer-events-none fixed top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-secondary/10 blur-[120px] animate-gold-pulse" aria-hidden />
+      <div className="pointer-events-none fixed bottom-[-15%] left-[20%] w-[600px] h-[600px] rounded-full bg-accent/8 blur-[140px]" aria-hidden />
+
       {mobileOpen && (
-        <div className="fixed inset-0 bg-background/70 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-md z-40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:sticky top-0 h-screen z-50 flex flex-col bg-sidebar border-r border-sidebar-border
+        glass-strong fixed md:sticky top-0 h-screen z-50 flex flex-col border-r border-sidebar-border
         transition-all duration-300
         ${collapsed ? 'w-16' : 'w-60'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -135,9 +139,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <SystemBanner />
-        <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60 px-4 md:px-6 h-16 flex items-center gap-4">
+        <header className="glass-strong sticky top-0 z-30 px-4 md:px-6 h-16 flex items-center gap-4 border-b border-secondary/15">
           <button onClick={() => setMobileOpen(true)} className="md:hidden text-foreground">
             <Menu className="w-5 h-5" />
           </button>
@@ -165,7 +169,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-sidebar/90 backdrop-blur-xl border-t border-sidebar-border safe-area-bottom">
+      <nav className="glass-strong fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-secondary/15 safe-area-bottom">
         <div className="flex justify-between items-stretch py-1.5 px-1 overflow-x-auto no-scrollbar">
           {mobileNavItems.map(item => {
             const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
