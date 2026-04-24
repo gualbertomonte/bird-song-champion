@@ -139,9 +139,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <SystemBanner />
-        <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60 px-4 md:px-6 h-16 flex items-center gap-4">
+        <header className="glass-strong sticky top-0 z-30 px-4 md:px-6 h-16 flex items-center gap-4 border-b border-secondary/15">
           <button onClick={() => setMobileOpen(true)} className="md:hidden text-foreground">
             <Menu className="w-5 h-5" />
           </button>
