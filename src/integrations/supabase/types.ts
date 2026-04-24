@@ -1323,6 +1323,10 @@ export type Database = {
         Args: { _aprovar: boolean; _inscricao_id: string; _motivo?: string }
         Returns: undefined
       }
+      can_view_profile: {
+        Args: { _target: string; _viewer: string }
+        Returns: boolean
+      }
       cancel_loan: { Args: { _loan_id: string }; Returns: undefined }
       confirm_loan_return: { Args: { _loan_id: string }; Returns: undefined }
       convidar_membro_grupo: {
