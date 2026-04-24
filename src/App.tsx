@@ -54,6 +54,17 @@ const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazyPage(() => import("@/pages/ResetPassword"));
 const NotFound = lazyPage(() => import("./pages/NotFound.tsx"));
 
+// Prefetch landing page chunk eagerly — it's the LCP target for anonymous visitors
+if (typeof window !== "undefined") {
+  // Use rIC to avoid competing with critical work
+  const prefetch = () => { import("@/pages/Landing"); };
+  if ("requestIdleCallback" in window) {
+    (window as any).requestIdleCallback(prefetch, { timeout: 1500 });
+  } else {
+    setTimeout(prefetch, 200);
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
