@@ -48,6 +48,7 @@ const AdminRelatorios = lazyPage(() => import("@/pages/AdminRelatorios"));
 const AdminConfiguracoes = lazyPage(() => import("@/pages/AdminConfiguracoes"));
 const AdminLayout = lazyPage(() => import("@/components/admin/AdminLayout"));
 const Login = lazyPage(() => import("@/pages/Login"));
+const Landing = lazyPage(() => import("@/pages/Landing"));
 const Signup = lazyPage(() => import("@/pages/Signup"));
 const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazyPage(() => import("@/pages/ResetPassword"));
@@ -88,7 +89,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) return <FullScreenLoader />;
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    // Visitors landing on "/" see the public landing page; other paths go to login.
+    if (window.location.pathname === "/") {
+      return (
+        <Suspense fallback={<FullScreenLoader />}>
+          <Landing />
+        </Suspense>
+      );
+    }
+    const redirect = window.location.pathname + window.location.search;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
+  }
   return <>{children}</>;
 }
 
