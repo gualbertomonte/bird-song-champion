@@ -70,7 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {!collapsed && (
             <div className="flex flex-col leading-tight">
               <span className="heading-serif font-semibold text-[15px] text-sidebar-primary">Meu Plantel Pro</span>
-              <span className="text-[9px] uppercase tracking-[0.18em] text-sidebar-foreground/50">Aviário Premium</span>
+              <span className="text-[9px] uppercase tracking-[0.18em] text-sidebar-foreground/50">Plantel Premium</span>
             </div>
           )}
         </div>
