@@ -7,9 +7,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Megaphone } from 'lucide-react';
+import { Loader2, Megaphone, FileCheck2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 type BannerTipo = 'info' | 'warning' | 'success' | 'error';
+
+const ADS_TXT_ESPERADO = 'google.com, pub-2835871674648959, DIRECT, f08c47fec0942fa0';
+const ADS_TXT_DOMINIOS = [
+  'https://meuplantelpro.com.br/ads.txt',
+  'https://www.meuplantelpro.com.br/ads.txt',
+];
+
+type AdsCheckStatus = 'ok' | 'mismatch' | 'unreachable';
+type AdsCheckResult = { url: string; status: AdsCheckStatus; conteudo?: string; erro?: string };
 
 export default function AdminConfiguracoes() {
   const [loading, setLoading] = useState(true);
