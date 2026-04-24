@@ -1,58 +1,35 @@
 
 
-# Diagnóstico e correção AdSense
+## Verificação AdSense via ads.txt
 
-## Estado do código: correto
+Você já tem o arquivo `public/ads.txt` no projeto com exatamente o conteúdo correto:
 
-Verifiquei e o snippet do Google está 100% replicado no projeto:
-- `index.html` linha 30 — script global do AdSense com `ca-pub-2835871674648959`
-- `src/components/ads/AdSenseBanner.tsx` — gera `<ins>` com todos os atributos do snippet (slot `7741257825`, format `fluid`, layoutKey `-fb+5w+4e-db+86`)
-- `src/pages/Dashboard.tsx` linhas 307-313 — banner renderizado no rodapé
+```
+google.com, pub-2835871674648959, DIRECT, f08c47fec0942fa0
+```
 
-**Não há bug de código.** O motivo dos anúncios não aparecerem é operacional.
+**Nenhuma mudança de código é necessária.** O arquivo já está pronto para ser servido em produção.
 
-## Causa raiz (3 fatores combinados)
+### Passos para concluir a verificação
 
-### 1. Você é admin → banner nunca renderiza pra você
-Os logs confirmam: sua conta `plantel.pro@outlook.com.br` retorna `true` em `has_role('admin')`. A regra `useShowAds()` oculta o componente para admins, então o `<ins>` nem chega no DOM da sua sessão. Google não tem onde preencher.
+1. **Publicar o projeto** (botão Publish → Update no topo do Lovable). Sem publicar, o `ads.txt` não vai pro domínio.
+2. Após publicar, confirmar que o arquivo está acessível abrindo no navegador:
+   - `https://meuplantelpro.com.br/ads.txt`
+   - Deve retornar exatamente a linha acima em texto puro.
+3. No painel do **AdSense → Sites → meuplantelpro.com.br**, clicar em **"Verificar"** usando o método "Snippet do ads.txt".
+4. O Google rastreia em até 24-48h. Status muda de "Requer atenção" → "Pronto".
 
-### 2. Você testa no preview do Lovable, não no domínio publicado
-A rota atual é `/admin/dashboard` em `lovableproject.com`. O AdSense só serve em domínios aprovados (`meuplantelpro.com.br`). No preview o componente cai no branch `isDev` e mostra o quadro tracejado.
+### Se a verificação falhar
 
-### 3. Falta `public/ads.txt`
-Sem `ads.txt` no domínio, AdSense pode marcar o site como não autorizado e zerar o fill rate. Vou criar.
+Caso o Google não aceite o `ads.txt` (raro, geralmente por delay de propagação), partimos para o plano B: adicionar uma metatag leve em `index.html`:
 
-## O que vou alterar
+```html
+<meta name="google-adsense-account" content="ca-pub-2835871674648959">
+```
 
-Apenas **uma** mudança de código:
+Isso é 1 linha, não baixa script, não afeta o LCP que acabamos de otimizar.
 
-- **Criar `public/ads.txt`** com o conteúdo padrão exigido pelo Google:
-  ```
-  google.com, pub-2835871674648959, DIRECT, f08c47fec0942fa0
-  ```
-  Esse arquivo fica acessível em `https://meuplantelpro.com.br/ads.txt` após publicar.
+### O que NÃO vou fazer
 
-Não mexerei em `index.html`, `AdSenseBanner.tsx`, `useShowAds.ts` nem `Dashboard.tsx` — todos estão corretos.
-
-## O que você precisa fazer (eu não consigo)
-
-1. **Publicar** (botão Publish → Update). Sem publicar, `ads.txt` não vai pro domínio.
-2. Abrir aba anônima em `https://meuplantelpro.com.br/dashboard` e logar com **uma conta não-admin** (ou criar uma nova). Rolar até o final do Dashboard.
-3. Confirmar no painel AdSense → Sites → `meuplantelpro.com.br` que o status é "Pronto" (não "Requer atenção"). Se aparecer aviso de ads.txt, vai sumir em 24-48h após o passo 1.
-4. Verificar no painel AdSense → Anúncios → "Banner Dashboard" se está **ativado** (às vezes o bloco é criado mas fica desativado).
-
-## Checagem opcional pós-publicação
-
-Se quiser, depois que você publicar eu uso o browser tool em `https://meuplantelpro.com.br` (sem login, ou com conta de teste) e confirmo:
-- `<ins class="adsbygoogle">` está no DOM com os atributos certos
-- Request para `pagead2.googlesyndication.com/...` retorna 200
-- Console não tem `TagError` nem `No slot size for availableWidth=0`
-- `https://meuplantelpro.com.br/ads.txt` retorna 200 com o conteúdo certo
-
-## Resultado esperado
-
-Depois de publicar com `ads.txt` + acessar como não-admin no domínio real:
-- Bloco "Espaço publicitário" aparece no rodapé do Dashboard
-- Em até alguns minutos, anúncio real começa a ser servido (ou fica em "unfilled" se não houver inventário no momento)
-- Impressões começam a registrar no painel AdSense em algumas horas
+- **Não vou re-adicionar o `<script async src="adsbygoogle.js">` no `<head>`** — isso reverteria a correção de LCP feita no audit anterior. O script continua sendo carregado de forma lazy via `src/main.tsx` 1.5s após `window.load`, o que é suficiente para servir anúncios mas não para verificação por snippet.
 
