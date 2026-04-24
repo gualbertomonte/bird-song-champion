@@ -1,54 +1,73 @@
 
 
-# Upgrade Premium: Dark Forest & Liquid Gold + Glassmorphism
+# Landing Page de alta conversão — focada em trazer mais usuários
 
-Transformar o app num visual mais rico e premium — vidro translúcido (glassmorphism), profundidade em camadas, dourado líquido com brilho, e uma floresta escura mais cinematográfica — **sem reescrever páginas**. Como toda a UI usa classes utilitárias centralizadas (`.card-premium`, `.stat-card`, `.btn-primary`, `.auth-card`, etc.), basta evoluir os tokens de tema e essas classes que o app inteiro herda automaticamente.
+Reformular o plano da landing pública em `/` para ser **orientada a conversão** (não só institucional). O objetivo deixa de ser "explicar o app" e passa a ser **transformar visitante em cadastro**.
 
-## O que muda visualmente
+## Princípios de conversão aplicados
 
-- **Fundo cinematográfico**: gradientes radiais multi-camadas (verde-floresta profundo → musgo → âmbar sutil) com leve grão/névoa, fixo no scroll.
-- **Glassmorphism**: cards, header, sidebar, modais e popovers com `backdrop-blur`, fundo translúcido (`hsl/8-14% alpha`), borda sutil em dourado e highlight superior em "luz líquida".
-- **Liquid Gold**: dourado com gradiente animado em hover (champanhe → âmbar → cobre), brilho difuso atrás de elementos primários, divisores com shimmer.
-- **Profundidade em camadas**: shadows mais ricas (camada interna + camada externa quente dourada), separação clara entre superfícies.
-- **Microinterações**: hover lift mais elegante (1-2px + brilho dourado se intensifica), focus rings dourados translúcidos.
-- **Tipografia**: nada muda (Fraunces serif + Inter já está perfeito para premium).
+- **Promessa clara em 3 segundos**: hero responde "o que é + pra quem + qual benefício".
+- **Prova social** logo abaixo do hero (gera confiança antes do scroll).
+- **CTA repetido 4x** ao longo da página (hero, após features, após depoimentos, bloco final).
+- **Gratuidade explícita**: "Grátis para começar • Sem cartão de crédito".
+- **Urgência suave**: "Junte-se a centenas de criadores".
+- **Redução de fricção**: cadastro em 1 clique destacado, login secundário.
 
-## Arquivos alterados (apenas 3)
+## Estrutura da landing (`src/pages/Landing.tsx`)
 
-**1. `src/index.css`** — coração da mudança
-- Tokens HSL refinados: floresta um pouco mais profunda nas bordas, dourado com mais saturação no hover, novas variáveis `--glass-bg`, `--glass-border`, `--glass-highlight`, `--gold-glow`.
-- Novas utilitárias: `.glass`, `.glass-strong`, `.glass-subtle` (3 níveis de blur/opacidade).
-- `.card-premium`, `.stat-card`, `.card-hover` ganham `backdrop-blur-xl` + fundo translúcido + highlight superior dourado animado.
-- `.btn-primary` com gradiente liquid-gold animado em hover (`background-position` shift) + glow externo.
-- `.auth-card` mais cinematográfico (vidro espesso + halo dourado).
-- `.sidebar-active` com barra dourada que pulsa suavemente.
-- Body com gradient mais rico e camada de "vinheta" (escurece bordas).
-- Novo keyframe `gold-shimmer` para divisores e botões.
+1. **Navbar glass** — Logo + "Entrar" (link discreto) + **"Criar conta grátis"** (botão liquid gold destacado).
 
-**2. `src/components/AppLayout.tsx`** — só troca de classes
-- Sidebar: `bg-sidebar` → `glass-strong` (mantém cor de fundo via token).
-- Header sticky: já tem `backdrop-blur-xl`; só refinar borda dourada e adicionar leve gradiente.
-- Bottom nav mobile: `glass-strong`.
-- Main: adicionar uma camada de blob dourado decorativo de fundo (absolute, blur-3xl, opacity baixa) para dar vida.
+2. **Hero conversion-first**
+   - Badge dourado: "Aviário Premium • Grátis para começar"
+   - H1 serif grande: **"O controle profissional que seu plantel merece"**
+   - Subtítulo: "Cadastre aves, acompanhe eclosões, organize torneios e cuide da saúde — tudo em um só lugar, do celular ou computador."
+   - **CTA primário**: "Criar conta grátis →" (liquid gold, grande)
+   - **CTA secundário**: "Já tenho conta" (ghost)
+   - Microcopy: "✓ Grátis para começar  ✓ Sem cartão  ✓ Pronto em 30 segundos"
+   - Mockup glass à direita (mini-dashboard fake com aves/eclosões).
 
-**3. `src/components/ui/dialog.tsx`** — modais com vidro
-- `DialogOverlay`: `bg-black/80` → `bg-background/60 backdrop-blur-md`.
-- `DialogContent`: aplicar `glass-strong` + borda dourada sutil + halo.
+3. **Faixa de prova social** — "Usado por criadores em todo o Brasil" + 4 mini-stats glass (Aves cadastradas, Eclosões registradas, Torneios organizados, Criadores ativos) com números ilustrativos.
 
-## Fora do escopo (intencional)
+4. **Bloco de dor → solução** — "Cansado de planilhas e cadernos perdidos?" com 3 dores comuns (esquecer doses, perder linhagem, bagunça em torneios) e como o app resolve cada uma.
 
-- Não vou tocar em páginas individuais (Dashboard, Plantel, Torneios…) — todas herdam via classes utilitárias.
-- Não vou trocar fontes nem layout/espaçamento.
-- Não vou alterar componentes shadcn/ui além do `dialog` (que é o mais visível).
-- Sem mudanças em lógica, dados, rotas ou backend.
+5. **Recursos (grid 3x2 glass)** — Plantel, Berçário, Torneios, Saúde, Empréstimos & Amigos, Árvore Genealógica. Cada card termina com micro-benefício ("Nunca mais esqueça uma dose", etc.).
 
-## Riscos & mitigação
+6. **Como funciona em 3 passos** — Crie conta → Cadastre seu plantel → Acompanhe tudo. Com CTA "Começar agora" no fim.
 
-- **Contraste/legibilidade**: vidro translúcido pode reduzir contraste de texto. Mitigação: `--card` mantém HSL com alpha alto (≥85%) em superfícies com texto denso; blur forte só em containers visuais, não em conteúdo de leitura longa.
-- **Performance em mobile**: `backdrop-blur-xl` pode pesar. Mitigação: usar `backdrop-blur-md` como padrão e reservar `xl` para sidebar/header/modais; nada de blur em listas longas.
-- **Reversível**: todas as mudanças são em tokens CSS + classes utilitárias — fácil ajustar intensidade depois ("mais vidro", "menos dourado") sem refatorar páginas.
+7. **Depoimentos** — 3 cards glass com depoimentos curtos de criadores (placeholder realistas, marcados claramente como exemplos até termos reais).
 
-## Resultado esperado
+8. **FAQ rápido (4 perguntas)** — "É grátis mesmo?", "Funciona no celular?", "Meus dados ficam seguros?", "Posso compartilhar com amigos?". Reduz objeções finais.
 
-Ao aprovar, em ~1 iteração o app inteiro (Dashboard, Plantel, Berçário, Torneios, Admin, Auth) ganha o novo visual automaticamente, mantendo identidade Aviário Premium mas com sensação de produto caro e moderno (estilo Apple Vision / Linear / Arc).
+9. **CTA final grande** — Bloco glass full-width: "Pronto para elevar seu aviário?" + botão "Criar conta grátis" gigante + microcopy de garantia.
+
+10. **Footer** — Copyright, Instagram, links Login/Signup, link discreto para política/contato.
+
+## SEO & compartilhamento
+
+- `<title>` e `<meta description>` orientados a busca ("App para criadores de aves — controle de plantel, berçário e torneios").
+- Open Graph tags (título, descrição, imagem) no `index.html` para link bonito ao compartilhar no WhatsApp/Instagram.
+- H1 único e semântico.
+
+## Roteamento (`src/App.tsx`)
+
+- Visitante em `/` → renderiza `<Landing />`.
+- Logado em `/` → Dashboard normal (comportamento atual).
+- Implementação: ajustar o `ProtectedRoute` para que, quando a rota for exatamente `/` e não houver usuário, renderize a Landing em vez de redirecionar para `/login`. Demais rotas protegidas continuam indo para `/login`.
+
+## Visual
+
+100% dentro do tema atual (Dark Forest & Liquid Gold + glassmorphism). Reutiliza `glass`, `glass-strong`, `card-premium`, `btn-primary`, `heading-serif`. Animações fade-in suaves já existentes, respeitando `prefers-reduced-motion`. Zero CSS novo, zero dependências novas, zero imagens externas.
+
+## Arquivos alterados
+
+1. **`src/pages/Landing.tsx`** (novo) — toda a landing.
+2. **`src/App.tsx`** — lazy-load + ajuste do guard para mostrar Landing em `/` sem login.
+3. **`index.html`** — atualizar `<title>`, `<meta description>` e Open Graph para SEO/compartilhamento.
+
+## Fora do escopo
+
+- Sem analytics novo (podemos adicionar GA4/Plausible em iteração futura).
+- Sem A/B testing.
+- Sem formulário de captura de email separado (CTA vai direto pro signup, menos fricção).
+- Sem mudanças no Login/Signup, backend ou demais páginas.
 
