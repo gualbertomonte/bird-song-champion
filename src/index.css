@@ -338,6 +338,43 @@
   .feather-spin {
     animation: feather-spin 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
+
+  /* Sidebar nav link micro-interaction (lift + gold sweep) */
+  .nav-link-premium {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+  .nav-link-premium::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 30%, hsl(var(--secondary) / 0.18) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.7s ease;
+    pointer-events: none;
+  }
+  .nav-link-premium:hover {
+    @apply -translate-y-px;
+    box-shadow: 0 6px 18px -10px hsl(var(--gold-glow));
+  }
+  .nav-link-premium:hover::after {
+    transform: translateX(100%);
+  }
+
+  /* Card shimmer sweep on hover */
+  .card-premium::after,
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 35%, hsl(var(--secondary) / 0.10) 50%, transparent 65%);
+    transform: translateX(-100%);
+    transition: transform 0.9s ease;
+    pointer-events: none;
+  }
+  .card-hover:hover::after,
+  .stat-card:hover::after {
+    transform: translateX(100%);
+  }
 }
 
 @layer utilities {
@@ -363,4 +400,32 @@
   .animate-gold-pulse {
     animation: gold-pulse 4s ease-in-out infinite;
   }
+
+  /* Respect user motion preferences — disable lifts, shimmers, pulses */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+    .card-premium::before,
+    .card-premium::after,
+    .stat-card::after,
+    .nav-link-premium::after,
+    .animate-gold-pulse {
+      animation: none !important;
+      transform: none !important;
+      opacity: 0 !important;
+    }
+    .card-hover:hover,
+    .stat-card:hover,
+    .nav-link-premium:hover,
+    .btn-primary:hover:not(:disabled) {
+      transform: none !important;
+    }
+  }
 }
+
