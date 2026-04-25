@@ -244,14 +244,14 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
-  footer(doc);
+  footer(doc, profile);
   doc.save(`recibo_emprestimo_${loan.id.slice(0, 8)}.pdf`);
 }
 
 /* ─────────── Relatório de Plantel (formato SISPASS-like) ─────────── */
-export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile) {
+export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile) {
   const doc = new jsPDF({ orientation: 'landscape' });
-  header(
+  await header(
     doc,
     profile,
     'Relatório de Plantel',
