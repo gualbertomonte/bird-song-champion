@@ -5,14 +5,27 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Users, UserPlus, TrendingUp, TrendingDown, Activity, UserX,
   Bird as BirdIcon, Trophy, Handshake, Mail, Heart, ShieldAlert,
-  Smartphone, Monitor, Tablet, Repeat, LogOut,
+  Smartphone, Monitor, Tablet, Repeat, LogOut, Eye, Globe,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Legend,
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Tooltip styling shared — readable on dark admin theme
+const tooltipContentStyle = {
+  background: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
+  borderRadius: 12,
+  fontSize: 12,
+  color: 'hsl(var(--foreground))',
+  padding: '8px 12px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+};
+const tooltipLabelStyle = { color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: 4 };
+const tooltipItemStyle = { color: 'hsl(var(--foreground))' };
 
 interface Metricas {
   total_usuarios: number; novos_7d: number; novos_30d: number;
