@@ -244,7 +244,7 @@ async function applyLogoBackground(
   const bpW = w - inset * 2;
   const bpH = h - bpY - LAYOUT.FOOTER_TOP_OFFSET - 1;
   // Opacidade do backplate: quanto mais opaca a logo, mais opaco o backplate precisa ser
-  const bpOpacity = mode === 'destaque' ? 0.92 : mode === 'sutil' ? 0.82 : 0.7;
+  const bpOpacity = mode === 'destaque' ? 0.85 : mode === 'sutil' ? 0.78 : 0.72;
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
