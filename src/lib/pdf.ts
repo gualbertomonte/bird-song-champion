@@ -168,10 +168,10 @@ function sectionTitle(doc: jsPDF, text: string, y: number) {
 }
 
 /* ─────────── Recibo de Empréstimo ─────────── */
-export function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorProfile) {
+export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorProfile) {
   const doc = new jsPDF();
   const snap = (loan.bird_snapshot || {}) as any;
-  header(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
+  await header(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
 
   let y = 56;
   sectionTitle(doc, 'Partes envolvidas', y); y += 6;
