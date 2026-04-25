@@ -583,7 +583,7 @@ export async function gerarRelatorioTorneio(
     columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 5: { halign: 'right', fontStyle: 'bold' } },
   });
 
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyLogoBackground(doc, profile, 'leitura');
   await applyHeaderAllPages(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
   footer(doc, profile);
   validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'torneio' });
