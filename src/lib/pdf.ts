@@ -396,7 +396,7 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   const snap = (loan.bird_snapshot || {}) as any;
   await header(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
 
-  let y = 56;
+  let y = 30;
   sectionTitle(doc, 'Partes envolvidas', y); y += 6;
 
   autoTable(doc, {
@@ -486,7 +486,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
   );
 
   autoTable(doc, {
-    startY: 54,
+    startY: 28,
     theme: 'grid',
     ...tableTheme,
     head: [['Anilha', 'SISPASS', 'Nome', 'Espécie', 'Sexo', 'Nasc.', 'Tipo', 'Diâm.', 'Status', 'Estado']],
@@ -554,7 +554,7 @@ export async function gerarRelatorioTorneio(
   const doc = new jsPDF();
   await header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
 
-  let y = 56;
+  let y = 30;
   if (torneio.regulamento) {
     sectionTitle(doc, 'Regulamento', y); y += 5;
     doc.setFont('helvetica', 'normal');
