@@ -1,69 +1,44 @@
+# 🖼️ Corrigir papel timbrado nos PDFs
 
-# 🎨 Logo do Criadouro como Papel Timbrado
+Analisei a imagem que você enviou (a árvore com o pássaro de fundo em transparência ficou linda 👌) e vou aplicar esse mesmo conceito visual nos PDFs, junto com a correção do bug do logo que não aparece.
 
-Vou usar o logo que o usuário já envia em **Perfil → Logo do Criadouro** (`criador_profile.logo_url`) como identidade visual em três lugares: PDFs, crachás digitais e árvore genealógica. Também vou melhorar a UX do upload pra deixar claro pra que serve.
+## 🐛 Por que o logo não está aparecendo hoje
 
----
+O `fetch()` que baixa o logo do Storage está falhando por **CORS** — o navegador cacheou a imagem antes sem os headers corretos, então quando tento converter em base64 dá erro silencioso e o PDF sai sem logo.
 
-## 1. 📄 PDFs com cabeçalho timbrado (`src/lib/pdf.ts`)
+## ✅ O que vou fazer
 
-- Tornar a função `header()` **assíncrona** pra buscar o `logo_url` e converter em base64 (necessário pro `jsPDF.addImage`).
-- Renderizar o logo como **selo circular (~18mm)** dentro da faixa verde do cabeçalho, à esquerda, com o texto "MeuPlantelPro" e o nome do criadouro deslocados pra direita.
-- Adicionar o nome do criadouro no rodapé de cada página (texto pequeno, discreto).
-- **Cache em memória** do logo convertido pra não baixar/converter a cada página do PDF.
-- **Fallback**: se não houver logo, mantém o layout atual (ícone dourado de pássaro).
-- Propagar o `await` para os geradores de relatório que chamam `header()`:
-  - `src/pages/Plantel.tsx`
-  - `src/pages/Emprestimos.tsx`
-  - Qualquer outro consumidor encontrado (vou rodar `rg "header\("` antes de aplicar).
+### 1. Corrigir o carregamento do logo (`src/lib/pdf.ts`)
 
-## 2. 🪪 Crachá digital da ave (`src/pages/BirdDetail.tsx`)
+- Trocar `fetch()` por **`HTMLImageElement` + `<canvas>`** com `crossOrigin = 'anonymous'` (método mais robusto, funciona mesmo com cache antigo).
+- Adicionar `?v=timestamp` no URL do logo pra **forçar bypass do cache** corrompido.
+- Adicionar `console.warn` claro caso falhe (pra debug futuro).
+- Fallback: se mesmo assim falhar, usa um **ícone dourado de pássaro desenhado no próprio PDF** (sem depender de imagem externa).
 
-- Substituir o ícone genérico de pássaro no canto superior esquerdo do crachá pelo **logo do criadouro** (com fallback pro ícone dourado se não tiver logo).
-- Usar `crossOrigin="anonymous"` no `<img>` pra garantir que o `html-to-image` consiga capturar a imagem na hora de exportar PNG.
-- Adicionar pequeno texto "Criado por: {nome_criadouro}" próximo ao logo.
+### 2. Estilo "papel timbrado" autêntico (inspirado na sua árvore)
 
-## 3. 🌳 Árvore genealógica (`src/pages/ArvoreGenealogica.tsx`)
+- **Selo circular dourado** maior (22mm) com sombra suave e borda dupla — fica com cara de carimbo oficial.
+- **Marca d'água do logo** no centro de cada página, opacidade 4%, atrás do conteúdo (igual à árvore que você mandou).
+- **Faixa verde-floresta** no topo + **filete dourado** duplo separando do corpo.
+- **Rodapé** com nome do criadouro + código + paginação, separado por filete dourado.
+- **Cantos decorativos** dourados discretos (estilo certificado).
 
-- **Marca d'água sutil** do logo no fundo (`opacity-[0.05]`, centralizado, atrás dos nós da árvore).
-- **Rodapé discreto** com logo pequeno + nome do criadouro embaixo da árvore.
-- Botão **"Exportar PNG"** usando `html-to-image` pra gerar uma imagem da árvore inteira já com a marca d'água e o rodapé (útil pro usuário compartilhar).
+### 3. Aplicar nos 3 PDFs existentes
 
-## 4. 🪝 Hook compartilhado (`src/hooks/useCriadorLogo.ts`)
+- Recibo de empréstimo
+- Relatório de plantel
+- Relatório de torneio
 
-- Novo hook que lê `criador_profile.logo_url` e `nome_criadouro` uma vez e compartilha via React Query (cache automático).
-- Usado pelos 3 features acima e pelos PDFs (via função utilitária no `pdf.ts`).
-
-## 5. 💬 **Comunicar a função ao usuário no upload** (`src/pages/Perfil.tsx`)
-
-Esta é a parte que você pediu. Vou ajustar o card "Logo do Criadouro" assim:
-
-- **Texto explicativo** abaixo do título, antes do botão de upload:
-  > "📄 Esta logo será usada como **papel timbrado** em todos os PDFs gerados (relatórios, fichas de aves, comprovantes de empréstimo), nos **crachás digitais** das suas aves e como **marca d'água** na árvore genealógica. Use uma imagem de boa qualidade, preferencialmente quadrada e com fundo transparente (PNG)."
-- **Após upload concluído** com sucesso, mostrar um **toast** confirmando:
-  > "✅ Logo salva! Será usada nos seus PDFs, crachás e árvore genealógica."
-- **Recomendações visuais** discretas abaixo do botão:
-  - Formato: PNG ou JPG
-  - Tamanho ideal: 512×512px
-  - Fundo transparente recomendado (PNG)
-- **Preview maior** (já existe um preview pequeno de 80×80; vou manter, mas adicionar uma legenda "Pré-visualização").
-
----
+(O `await header()` já está correto desde a última implementação, só precisa funcionar de fato.)
 
 ## 📁 Arquivos afetados
 
-| Arquivo | Tipo de mudança |
+| Arquivo | Mudança |
 |---|---|
-| `src/lib/pdf.ts` | `header()` async + carrega logo + rodapé |
-| `src/hooks/useCriadorLogo.ts` | **novo** — hook compartilhado |
-| `src/pages/Perfil.tsx` | textos explicativos + toast informativo |
-| `src/pages/BirdDetail.tsx` | logo no crachá |
-| `src/pages/ArvoreGenealogica.tsx` | marca d'água + rodapé + exportar PNG |
-| `src/pages/Plantel.tsx` | `await` nas chamadas de PDF |
-| `src/pages/Emprestimos.tsx` | `await` nas chamadas de PDF |
+| `src/lib/pdf.ts` | Reescrever `loadLogoBase64` + cabeçalho timbrado + marca d'água + cantos |
 
-**Sem mudanças no banco** — `criador_profile.logo_url` e o bucket `bird-photos` já existem e funcionam.
+**Apenas 1 arquivo.** Sem mudanças no banco, sem novas dependências.
 
 ---
 
-Pode aprovar que eu implemento tudo de uma vez? 👍
+Pode aprovar? Depois de aplicar, você gera qualquer PDF e me manda print pra confirmarmos o resultado. 👍

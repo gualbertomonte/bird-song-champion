@@ -9,26 +9,86 @@ const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : '
 
 // Cache em memória do logo convertido em base64 (evita refetch a cada página)
 const _logoCache: Record<string, string | null> = {};
+
+/**
+ * Carrega a logo do criadouro como PNG base64 usando <img> + <canvas>.
+ * Esse método é mais robusto que fetch() porque:
+ *  - <img crossOrigin="anonymous"> faz request limpa com CORS
+ *  - cache-bust evita pegar resposta cacheada sem headers CORS
+ *  - canvas.toDataURL sempre devolve PNG válido (sem precisar detectar formato)
+ */
 async function loadLogoBase64(url?: string | null): Promise<string | null> {
   if (!url) return null;
   if (url in _logoCache) return _logoCache[url];
-  try {
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error('Falha ao buscar logo');
-    const blob = await res.blob();
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const r = new FileReader();
-      r.onloadend = () => resolve(r.result as string);
-      r.onerror = reject;
-      r.readAsDataURL(blob);
-    });
-    _logoCache[url] = dataUrl;
-    return dataUrl;
-  } catch (e) {
-    console.warn('[pdf] logo do criadouro não pôde ser carregada:', e);
-    _logoCache[url] = null;
-    return null;
-  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 512;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        // Fundo creme (combina com o selo circular do cabeçalho)
+        ctx.fillStyle = '#F5F1E8';
+        ctx.fillRect(0, 0, size, size);
+        // Desenha a logo com "contain" centralizado
+        const r = Math.min(size / img.width, size / img.height) * 0.92;
+        const w = img.width * r;
+        const h = img.height * r;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        const dataUrl = canvas.toDataURL('image/png');
+        _logoCache[url] = dataUrl;
+        resolve(dataUrl);
+      } catch (e) {
+        console.warn('[pdf] canvas tainted ao gerar logo base64:', e);
+        _logoCache[url] = null;
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      console.warn('[pdf] não foi possível carregar a logo do criadouro:', url);
+      _logoCache[url] = null;
+      resolve(null);
+    };
+    // Cache-bust força request com CORS headers (evita cache do <img> sem CORS)
+    img.src = url + (url.includes('?') ? '&' : '?') + 'pdf=1';
+  });
+}
+
+/** Versão "marca d'água" da logo: PNG base64 com opacidade aplicada */
+const _watermarkCache: Record<string, string | null> = {};
+async function loadLogoWatermark(url?: string | null, opacity = 0.05): Promise<string | null> {
+  if (!url) return null;
+  const key = `${url}::${opacity}`;
+  if (key in _watermarkCache) return _watermarkCache[key];
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 600;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        ctx.globalAlpha = opacity;
+        const r = Math.min(size / img.width, size / img.height);
+        const w = img.width * r;
+        const h = img.height * r;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        const dataUrl = canvas.toDataURL('image/png');
+        _watermarkCache[key] = dataUrl;
+        resolve(dataUrl);
+      } catch (e) {
+        _watermarkCache[key] = null;
+        resolve(null);
+      }
+    };
+    img.onerror = () => { _watermarkCache[key] = null; resolve(null); };
+    img.src = url + (url.includes('?') ? '&' : '?') + 'pdfwm=1';
+  });
 }
 
 // Paleta Aviário Premium (RGB)
@@ -46,38 +106,52 @@ async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtit
 
   // Faixa principal verde-floresta
   doc.setFillColor(...C_FOREST);
-  doc.rect(0, 0, w, 26, 'F');
+  doc.rect(0, 0, w, 30, 'F');
 
-  // Linha dourada inferior na faixa
+  // Filete dourado duplo abaixo da faixa (estilo certificado)
   doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.6);
-  doc.line(0, 26, w, 26);
+  doc.setLineWidth(0.7);
+  doc.line(0, 30, w, 30);
+  doc.setLineWidth(0.2);
+  doc.line(0, 31.4, w, 31.4);
 
-  // Tenta carregar a logo do criadouro
   const logo = await loadLogoBase64(profile.logo_url);
-  const textOffsetX = logo ? 36 : 14;
+  const textOffsetX = 42;
+
+  // ─── Selo circular dourado (carimbo oficial) ───
+  // Anel dourado externo
+  doc.setFillColor(...C_GOLD);
+  doc.circle(22, 15, 12, 'F');
+  // Anel verde escuro intermediário
+  doc.setFillColor(...C_FOREST_DEEP);
+  doc.circle(22, 15, 11.2, 'F');
+  // Selo creme central onde fica a logo
+  doc.setFillColor(245, 241, 232);
+  doc.circle(22, 15, 10.4, 'F');
+  // Borda dourada interna fina
+  doc.setDrawColor(...C_GOLD);
+  doc.setLineWidth(0.3);
+  doc.circle(22, 15, 10.4, 'S');
 
   if (logo) {
-    // Selo branco circular para a logo
-    doc.setFillColor(245, 241, 232);
-    doc.circle(22, 13, 9.5, 'F');
-    doc.setDrawColor(...C_GOLD);
-    doc.setLineWidth(0.5);
-    doc.circle(22, 13, 9.5, 'S');
     try {
-      // Detecta formato pela data URL
-      const fmt = logo.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-      doc.addImage(logo, fmt, 14, 5, 16, 16, undefined, 'FAST');
+      doc.addImage(logo, 'PNG', 13, 6, 18, 18, undefined, 'FAST');
     } catch (e) {
       console.warn('[pdf] addImage logo falhou:', e);
     }
+  } else {
+    // Fallback: monograma "MP" dourado
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...C_GOLD_SOFT);
+    doc.text('MP', 22, 17.5, { align: 'center' });
   }
 
-  // Logo / nome do criadouro
+  // Nome do criadouro
   doc.setTextColor(...C_GOLD);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 12);
+  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 13);
 
   // Metadados
   doc.setTextColor(...C_CREAM);
@@ -87,34 +161,72 @@ async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtit
   if (profile.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
   if (profile.registro_ctf) meta.push(`CTF/IBAMA ${profile.registro_ctf}`);
   if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
-  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 19);
+  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 20);
 
   // Selo "MeuPlantelPro" no canto direito
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...C_GOLD);
-  doc.text('MEUPLANTELPRO', w - 14, 12, { align: 'right' });
+  doc.text('MEUPLANTELPRO', w - 14, 13, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...C_CREAM);
-  doc.text('Plantel Premium', w - 14, 17, { align: 'right' });
+  doc.text('Plantel Premium', w - 14, 18, { align: 'right' });
 
   // Título do documento
   doc.setTextColor(...C_TEXT);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(title, 14, 38);
+  doc.text(title, 14, 42);
   if (subtitle) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
-    doc.text(subtitle, 14, 44);
+    doc.text(subtitle, 14, 48);
   }
-  // Linha dourada decorativa
   doc.setDrawColor(...C_GOLD);
   doc.setLineWidth(0.3);
-  doc.line(14, 47, w - 14, 47);
+  doc.line(14, 51, w - 14, 51);
   doc.setTextColor(...C_TEXT);
+}
+
+/**
+ * Aplica marca d'água da logo + cantos decorativos dourados em todas as páginas.
+ * Chamar DEPOIS do conteúdo (a marca fica por cima, mas com 5% de opacidade
+ * para não atrapalhar a leitura).
+ */
+async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile) {
+  const pageCount = doc.getNumberOfPages();
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, 0.05) : null;
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+
+    if (wm) {
+      try {
+        const size = Math.min(w, h) * 0.55;
+        doc.addImage(wm, 'PNG', (w - size) / 2, (h - size) / 2, size, size, undefined, 'FAST');
+      } catch (e) {
+        // silencioso
+      }
+    }
+
+    // Cantos decorativos dourados (estilo certificado)
+    doc.setDrawColor(...C_GOLD);
+    doc.setLineWidth(0.4);
+    const cs = 6;
+    const m = 8;
+    doc.line(m, 36, m + cs, 36);
+    doc.line(m, 36, m, 36 + cs);
+    doc.line(w - m, 36, w - m - cs, 36);
+    doc.line(w - m, 36, w - m, 36 + cs);
+    doc.line(m, h - 14, m + cs, h - 14);
+    doc.line(m, h - 14, m, h - 14 - cs);
+    doc.line(w - m, h - 14, w - m - cs, h - 14);
+    doc.line(w - m, h - 14, w - m, h - 14 - cs);
+  }
 }
 
 function footer(doc: jsPDF, profile?: CriadorProfile) {
@@ -122,19 +234,23 @@ function footer(doc: jsPDF, profile?: CriadorProfile) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   const criador = profile?.nome_criadouro?.trim();
+  const codigo = profile?.codigo_criadouro?.trim();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    // Linha dourada
+    // Filete dourado duplo
     doc.setDrawColor(...C_GOLD);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.5);
     doc.line(14, h - 12, w - 14, h - 12);
-    // Texto
+    doc.setLineWidth(0.15);
+    doc.line(14, h - 11, w - 14, h - 11);
     doc.setFontSize(8);
     doc.setTextColor(...C_MUTED);
-    const left = criador
-      ? `${criador} · MeuPlantelPro · ${new Date().toLocaleDateString('pt-BR')}`
-      : `MeuPlantelPro · Gerado em ${new Date().toLocaleDateString('pt-BR')}`;
-    doc.text(left, 14, h - 7);
+    const parts: string[] = [];
+    if (criador) parts.push(criador);
+    if (codigo) parts.push(`Cód. ${codigo}`);
+    parts.push('MeuPlantelPro');
+    parts.push(new Date().toLocaleDateString('pt-BR'));
+    doc.text(parts.join('  ·  '), 14, h - 7);
     doc.text(`Página ${i} de ${pageCount}`, w - 14, h - 7, { align: 'right' });
   }
 }
@@ -244,6 +360,7 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
+  await applyWatermarkAndCorners(doc, profile);
   footer(doc, profile);
   doc.save(`recibo_emprestimo_${loan.id.slice(0, 8)}.pdf`);
 }
@@ -305,6 +422,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     ],
   });
 
+  await applyWatermarkAndCorners(doc, profile);
   footer(doc, profile);
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
@@ -348,6 +466,7 @@ export async function gerarRelatorioTorneio(
     columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 5: { halign: 'right', fontStyle: 'bold' } },
   });
 
+  await applyWatermarkAndCorners(doc, profile);
   footer(doc, profile);
   doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }
