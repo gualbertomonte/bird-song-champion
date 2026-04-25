@@ -11,11 +11,28 @@ const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : '
 const _logoCache: Record<string, string | null> = {};
 
 /**
- * Carrega a logo do criadouro como PNG base64 usando <img> + <canvas>.
- * Esse método é mais robusto que fetch() porque:
- *  - <img crossOrigin="anonymous"> faz request limpa com CORS
- *  - cache-bust evita pegar resposta cacheada sem headers CORS
- *  - canvas.toDataURL sempre devolve PNG válido (sem precisar detectar formato)
+ * Remove fundo branco/claro de uma ImageData (chroma-key simples).
+ * Pixels muito brancos viram transparentes; pixels intermediários ganham
+ * alpha proporcional para suavizar bordas (anti-aliasing).
+ */
+function removeWhiteBackground(imgData: ImageData, threshold = 240) {
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const minC = Math.min(r, g, b);
+    if (minC >= 250) {
+      d[i + 3] = 0; // branco puro → transparente
+    } else if (minC >= threshold) {
+      // borda suave: alpha proporcional
+      const fade = (minC - threshold) / (250 - threshold);
+      d[i + 3] = Math.round(d[i + 3] * (1 - fade));
+    }
+  }
+}
+
+/**
+ * Carrega a logo do criadouro como PNG base64 com fundo transparente.
+ * Usa <img crossOrigin> + <canvas> (mais robusto que fetch com CORS).
  */
 async function loadLogoBase64(url?: string | null): Promise<string | null> {
   if (!url) return null;
@@ -26,18 +43,22 @@ async function loadLogoBase64(url?: string | null): Promise<string | null> {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const size = 512;
+        const size = 768; // resolução maior = mais nitidez no PDF
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d')!;
-        // Fundo creme (combina com o selo circular do cabeçalho)
-        ctx.fillStyle = '#F5F1E8';
-        ctx.fillRect(0, 0, size, size);
+        // Canvas transparente — sem fundo creme. O selo circular do PDF aparece atrás.
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         // Desenha a logo com "contain" centralizado
         const r = Math.min(size / img.width, size / img.height) * 0.92;
         const w = img.width * r;
         const h = img.height * r;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        // Remove fundo branco
+        const imgData = ctx.getImageData(0, 0, size, size);
+        removeWhiteBackground(imgData, 240);
+        ctx.putImageData(imgData, 0, 0);
         const dataUrl = canvas.toDataURL('image/png');
         _logoCache[url] = dataUrl;
         resolve(dataUrl);
@@ -52,14 +73,18 @@ async function loadLogoBase64(url?: string | null): Promise<string | null> {
       _logoCache[url] = null;
       resolve(null);
     };
-    // Cache-bust força request com CORS headers (evita cache do <img> sem CORS)
     img.src = url + (url.includes('?') ? '&' : '?') + 'pdf=1';
   });
 }
 
-/** Versão "marca d'água" da logo: PNG base64 com opacidade aplicada */
+/**
+ * Versão "marca d'água" da logo: PNG base64 com:
+ *  - fundo branco removido
+ *  - dessaturação para tons de dourado claro (cara de selo oficial)
+ *  - opacidade aplicada (default 8%)
+ */
 const _watermarkCache: Record<string, string | null> = {};
-async function loadLogoWatermark(url?: string | null, opacity = 0.05): Promise<string | null> {
+async function loadLogoWatermark(url?: string | null, opacity = 0.08): Promise<string | null> {
   if (!url) return null;
   const key = `${url}::${opacity}`;
   if (key in _watermarkCache) return _watermarkCache[key];
@@ -69,15 +94,41 @@ async function loadLogoWatermark(url?: string | null, opacity = 0.05): Promise<s
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const size = 600;
+        const size = 800;
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d')!;
-        ctx.globalAlpha = opacity;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         const r = Math.min(size / img.width, size / img.height);
         const w = img.width * r;
         const h = img.height * r;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        // Pós-processa: tinge de dourado + remove branco + aplica opacidade
+        const imgData = ctx.getImageData(0, 0, size, size);
+        const d = imgData.data;
+        // Cor alvo (dourado) — combina com a paleta do papel timbrado
+        const TR = 201, TG = 169, TB = 97;
+        for (let i = 0; i < d.length; i += 4) {
+          const r0 = d[i], g0 = d[i + 1], b0 = d[i + 2];
+          const minC = Math.min(r0, g0, b0);
+          // Remove fundo branco
+          if (minC >= 250) { d[i + 3] = 0; continue; }
+          // Converte para luminância e mapeia para tons de dourado
+          const lum = (0.299 * r0 + 0.587 * g0 + 0.114 * b0) / 255;
+          // Inverte: pixels escuros viram dourado mais saturado
+          const k = 1 - lum * 0.5;
+          d[i] = Math.round(TR * k);
+          d[i + 1] = Math.round(TG * k);
+          d[i + 2] = Math.round(TB * k);
+          // Aplica opacidade preservando suavização das bordas
+          const baseAlpha = minC >= 240
+            ? Math.round(d[i + 3] * (1 - (minC - 240) / 10))
+            : d[i + 3];
+          d[i + 3] = Math.round(baseAlpha * opacity);
+        }
+        ctx.clearRect(0, 0, size, size);
+        ctx.putImageData(imgData, 0, 0);
         const dataUrl = canvas.toDataURL('image/png');
         _watermarkCache[key] = dataUrl;
         resolve(dataUrl);
@@ -199,7 +250,7 @@ async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile) {
   const pageCount = doc.getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
-  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, 0.05) : null;
+  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, 0.08) : null;
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
