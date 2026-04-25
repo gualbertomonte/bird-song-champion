@@ -149,12 +149,30 @@ export default function Perfil() {
       )}
 
       {/* Logo */}
-      <div className="card-premium p-5 animate-fade-in" style={{ animationDelay: '100ms' }}>
-        <h3 className="heading-serif font-semibold text-base mb-3">Logo do Criadouro</h3>
+      <div className="card-premium p-5 animate-fade-in space-y-4" style={{ animationDelay: '100ms' }}>
+        <div>
+          <h3 className="heading-serif font-semibold text-base">Logo do Criadouro</h3>
+          <p className="text-xs text-muted-foreground mt-1">Identidade visual do seu plantel</p>
+        </div>
+
+        {/* Aviso explicativo: para que serve a logo */}
+        <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-3 text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-secondary mb-1">📄 Onde sua logo será usada</p>
+          <p>
+            A imagem enviada aqui funciona como <strong className="text-foreground">papel timbrado</strong> do seu criadouro e aparecerá automaticamente em:
+          </p>
+          <ul className="mt-1.5 ml-4 list-disc space-y-0.5">
+            <li>Todos os <strong className="text-foreground">PDFs</strong> gerados (relatórios de plantel, recibos de empréstimo, torneios)</li>
+            <li><strong className="text-foreground">Crachás digitais</strong> das suas aves</li>
+            <li><strong className="text-foreground">Marca d'água</strong> na árvore genealógica</li>
+          </ul>
+          <p className="mt-2 italic">Recomendado: imagem quadrada (512×512px), PNG com fundo transparente.</p>
+        </div>
+
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-xl bg-muted/30 border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
             {form.logo_url ? (
-              <img src={form.logo_url} alt="Logo" className="w-full h-full object-cover" />
+              <img src={form.logo_url} alt="Pré-visualização da logo" className="w-full h-full object-contain" />
             ) : (
               <User className="w-8 h-8 text-muted-foreground" />
             )}
@@ -162,10 +180,10 @@ export default function Perfil() {
           <div>
             <label className="btn-secondary cursor-pointer text-xs">
               {uploadingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              {uploadingLogo ? 'Enviando...' : 'Enviar Logo'}
-              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+              {uploadingLogo ? 'Enviando...' : form.logo_url ? 'Trocar Logo' : 'Enviar Logo'}
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
             </label>
-            <p className="text-xs text-muted-foreground mt-1">PNG ou JPG</p>
+            <p className="text-xs text-muted-foreground mt-1">PNG, JPG ou WEBP · até 5 MB</p>
           </div>
         </div>
       </div>
