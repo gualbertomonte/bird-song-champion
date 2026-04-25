@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { generateArvoreGenealogicaPDF } from '@/lib/pdf';
 import LoanBadge from '@/components/LoanBadge';
 
 const Mars = (props: React.SVGProps<SVGSVGElement>) => (
@@ -166,6 +168,20 @@ export default function ArvoreGenealogica() {
     return { known: known.size, total };
   }, [selectedBird, birds, generations]);
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const handleDownloadPDF = async () => {
+    if (!selectedBird) return;
+    setPdfLoading(true);
+    try {
+      await generateArvoreGenealogicaPDF(selectedBird, birds, profile, generations as 2 | 3 | 4);
+      toast.success('PDF da árvore genealógica gerado!');
+    } catch (e: any) {
+      toast.error('Erro ao gerar PDF: ' + (e?.message || 'desconhecido'));
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-5 pb-20 md:pb-0">
       <div>
@@ -236,6 +252,15 @@ export default function ArvoreGenealogica() {
               </button>
               <button onClick={() => setZoom(1)} className="btn-ghost p-1.5" aria-label="Resetar zoom">
                 <RotateCcw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                disabled={pdfLoading}
+                className="btn-ghost text-xs ml-1 disabled:opacity-50"
+                title="Baixar árvore em PDF (papel timbrado)"
+              >
+                {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                PDF
               </button>
             </div>
             {stats && (
