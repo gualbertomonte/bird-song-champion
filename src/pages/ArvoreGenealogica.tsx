@@ -168,6 +168,20 @@ export default function ArvoreGenealogica() {
     return { known: known.size, total };
   }, [selectedBird, birds, generations]);
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const handleDownloadPDF = async () => {
+    if (!selectedBird) return;
+    setPdfLoading(true);
+    try {
+      await generateArvoreGenealogicaPDF(selectedBird, birds, profile, generations as 2 | 3 | 4);
+      toast.success('PDF da árvore genealógica gerado!');
+    } catch (e: any) {
+      toast.error('Erro ao gerar PDF: ' + (e?.message || 'desconhecido'));
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-5 pb-20 md:pb-0">
       <div>
