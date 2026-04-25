@@ -1,60 +1,82 @@
 
-# 🐛 Diagnóstico
+# 🎯 Objetivo
 
-## 1. Torneio — botão PDF "some"
-Em `src/pages/TorneioDetalhe.tsx` linha 100-102, o botão **só aparece** quando `torneio.status === 'Encerrado'`:
+Trocar o **papel timbrado decorativo** (faixa verde + selo dourado + cantos + watermark sutil) por um **fundo usando a própria logo do criadouro** em todos os PDFs — mas com um **modo de leitura nítida** que protege o texto.
 
-```tsx
-{torneio.status === 'Encerrado' && (
-  <button onClick={baixarPDF} className="btn-ghost text-xs"><Download/> PDF</button>
-)}
+# 🧩 Como vai funcionar
+
+## 1. Nova função `applyLogoBackground(doc, profile, mode)` em `src/lib/pdf.ts`
+
+Substitui `applyWatermarkAndCorners` + parte visual de `applyHeaderAllPages`. Renderiza a logo do criadouro como **fundo da página inteira** em uma de **3 intensidades**:
+
+| Modo | Opacidade da logo | Quando usar |
+|---|---|---|
+| `'destaque'` | 18% | Capa / página única (recibo) — logo bem visível |
+| `'sutil'` (padrão) | 8% | Relatórios e árvore — logo perceptível mas não atrapalha |
+| `'leitura'` | 3% | Tabelas longas (plantel, classificação) — máxima legibilidade |
+
+A logo:
+- Centralizada, **70% da menor dimensão da página**
+- Usa `removeWhiteBackground` (já existente) para tirar fundo branco
+- Aplicada em **todas as páginas** via loop `doc.setPage(i)`
+
+## 2. **Faixa de proteção do texto** (a chave da nitidez)
+
+Por trás de cada bloco de conteúdo importante (tabelas, parágrafos, cards da árvore), desenhar um **retângulo branco semi-transparente** (`opacity 0.85`) que "apaga" a logo localmente, garantindo contraste do texto. Nova helper `drawTextBackplate(doc, x, y, w, h, opacity = 0.85)`.
+
+Resultado visual: a logo aparece nas margens / espaços vazios; onde tem texto, ele fica nítido.
+
+## 3. Header simplificado (sem faixa verde nem selo)
+
+Substituir a faixa verde + círculo dourado por um **cabeçalho minimalista**:
+- Nome do criadouro (serif elegante) à esquerda
+- Título do documento + data à direita
+- Linha fina dourada (#C9A74A) separando do conteúdo
+- Sem selo circular, sem cantos decorativos
+
+A "marca visual" do criadouro passa a vir do **fundo com a logo**, não do header.
+
+## 4. Toggle por chamada — cada gerador escolhe o modo
+
+```ts
+// Recibo de empréstimo (1 página, formal): destaque
+await applyLogoBackground(doc, profile, 'destaque');
+
+// Plantel (tabelas longas): leitura
+await applyLogoBackground(doc, profile, 'leitura');
+
+// Torneio (classificação): leitura
+await applyLogoBackground(doc, profile, 'leitura');
+
+// Árvore genealógica (cards visuais): sutil
+await applyLogoBackground(doc, profile, 'sutil');
 ```
 
-Você está num torneio com status diferente (Rascunho/Inscrições/Sorteado) → por isso não aparece.
+## 5. Validador de layout atualizado
 
-## 2. Árvore Genealógica — não existe PDF
-O arquivo `src/pages/ArvoreGenealogica.tsx` **não importa nem chama** nenhuma função de `@/lib/pdf`. A funcionalidade nunca foi conectada.
+`validateLayout` deixa de checar colisão watermark↔header (não há mais faixa verde fixa). Passa a checar:
+- Se a logo carregou (avisa se `profile.logo_url` está vazio → fundo fica em branco)
+- Se algum `drawTextBackplate` ficaria fora da área útil da página
 
-# 🔧 Correções planejadas
+## 6. Fallback elegante quando não há logo
 
-## A. Liberar botão PDF do torneio em qualquer status
-`src/pages/TorneioDetalhe.tsx` — remover a restrição de status. Mostrar o botão PDF sempre que houver classificação disponível (mesmo durante o torneio, como prévia). Para torneios em `Rascunho` sem classificação, manter desabilitado com tooltip explicativo.
-
-## B. Criar `generateArvoreGenealogicaPDF` em `src/lib/pdf.ts`
-Nova função exportada que recebe `(bird, allBirds, profile, generations)` e gera um PDF em **landscape A4** com:
-- Papel timbrado completo (mesmo header verde + selo + watermark + cantos dourados + footer já existentes)
-- Título "Árvore Genealógica — {nome da ave}"
-- Renderização vetorial da árvore (cards de cada ancestral desenhados com `doc.rect`/`doc.text` — sem depender de html2canvas) até a profundidade escolhida (2, 3 ou 4 gerações)
-- Cards com: nome, anilha, nome científico, sexo (♂/♀), foto miniatura quando disponível
-- Linhas conectoras entre filho ↔ pais
-- Marcador "Desconhecido" nos ramos vazios
-- Estatística "Ancestrais conhecidos: X / Y" no rodapé do conteúdo
-- Validação de layout existente (`validateLayout`)
-
-## C. Adicionar botão "PDF" na página da Árvore
-`src/pages/ArvoreGenealogica.tsx` — adicionar botão `Download PDF` ao lado dos controles de zoom, ativo somente quando uma ave está selecionada. Mostra spinner durante geração e usa `toast` para sucesso/erro.
-
-# 📐 Tamanhos ideais de imagem (resposta direta)
-
-Para ficar **excelente no PDF e no perfil**, sigo a regra "2× a maior dimensão de exibição em PDF, formato quadrado, fundo transparente":
-
-| Imagem | Resolução recomendada | Formato | Peso máx. | Por quê |
-|---|---|---|---|---|
-| **Logo do criadouro** (header + watermark + selo) | **800 × 800 px** quadrada | **PNG transparente** | ~200 KB | O selo no PDF tem 22 mm ≈ 260 px @300 DPI; com 800px sobra resolução para watermark central (que ocupa ~70% da página). PNG preserva alpha — o sistema já remove fundo branco automaticamente, mas transparente nativo fica perfeito. |
-| **Foto de perfil do usuário** (avatar) | **400 × 400 px** quadrada | JPG ou PNG | ~150 KB | Avatar é exibido em 32-96px na UI; 400px cobre telas Retina (2-3×) sem desperdício. |
-| **Foto da ave** (cards + PDF da árvore) | **600 × 600 px** quadrada (1:1) | JPG (qualidade 85) | ~250 KB | Aparece em miniaturas (40-80px) e em cards maiores (200px). 600px @ JPG 85% dá nitidez no PDF impresso e carrega rápido na lista. |
-| **Foto de capa / banner** (se houver) | 1600 × 600 px (proporção 8:3) | JPG (qualidade 85) | ~400 KB | Cobre full-width em desktop sem pixelar. |
-
-**Regras de ouro:**
-- ✅ Sempre **quadradas** para logos e avatares (evita corte estranho no selo circular)
-- ✅ **PNG com fundo transparente** para a logo (melhor resultado no papel timbrado)
-- ✅ **Máximo 1 MB** por upload — o sistema redimensiona, mas arquivos enormes atrasam
-- ❌ Evitar logo retangular muito comprida (vira retângulo achatado dentro do círculo dourado)
-- ❌ Evitar imagens com texto pequeno (some na watermark a 5%)
+Se o criadouro não tem `logo_url`, o fundo fica limpo (branco) e o nome do criadouro aparece no header em fonte maior + linha dourada — continua parecendo profissional.
 
 # 📋 Arquivos modificados
-- `src/lib/pdf.ts` — adicionar `generateArvoreGenealogicaPDF`
-- `src/pages/TorneioDetalhe.tsx` — liberar botão PDF
-- `src/pages/ArvoreGenealogica.tsx` — adicionar botão PDF + handler
 
-**Sem migrações, sem dependências novas, sem mudanças em outras páginas.**
+- **`src/lib/pdf.ts`** — única alteração:
+  - Adicionar `applyLogoBackground(doc, profile, mode)`
+  - Adicionar `drawTextBackplate(doc, x, y, w, h, opacity)`
+  - Adicionar `drawMinimalHeader(doc, profile, title, subtitle)` (substitui `applyHeaderAllPages`)
+  - Remover/deprecar `applyWatermarkAndCorners` e a parte decorativa pesada
+  - Atualizar os 4 geradores (`generateLoanReceiptPDF`, `generatePlantelReportPDF`, `gerarRelatorioTorneio`, `generateArvoreGenealogicaPDF`) para usar o novo fluxo + `drawTextBackplate` em volta de tabelas e cards
+  - Atualizar `validateLayout`
+
+**Sem mudanças em páginas, sem migrações, sem novas dependências.**
+
+# 🎨 Resultado esperado
+
+- Cada PDF parece **personalizado pelo criadouro** (logo grande no fundo)
+- Texto continua **100% legível** graças aos backplates brancos
+- Documento mais limpo e moderno (sem o "estilo certificado" pesado)
+- Tabelas longas (plantel) ficam confortáveis de ler com fundo quase imperceptível

@@ -8,12 +8,23 @@ import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
 
-// Zonas de layout (mm) — fonte única de verdade usada por header, watermark, footer e validador
+// Zonas de layout (mm) — fonte única de verdade
 const LAYOUT = {
-  HEADER_BOTTOM: 52,   // header verde + filete dourado vão de y=0 até ~52
-  FOOTER_TOP_OFFSET: 14, // footer começa em (h - 14) e vai até h
-  WATERMARK_RATIO: 0.7,  // tamanho relativo à menor dimensão da área de conteúdo
+  HEADER_BOTTOM: 26,     // header minimalista (nome + título + linha dourada)
+  FOOTER_TOP_OFFSET: 14, // footer começa em (h - 14)
+  WATERMARK_RATIO: 0.7,
+  BACKPLATE_INSET: 4,    // margem entre logo de fundo e área protegida do texto
 } as const;
+
+// Modo de visualização do fundo (intensidade da logo do criadouro)
+export type PdfBackgroundMode = 'destaque' | 'sutil' | 'leitura';
+const BG_OPACITY: Record<PdfBackgroundMode, number> = {
+  destaque: 0.18,
+  sutil: 0.08,
+  leitura: 0.03,
+};
+// Cache do modo escolhido por cada doc (para o backplate saber se precisa ser opaco)
+const _docBgMode = new WeakMap<jsPDF, PdfBackgroundMode>();
 
 
 // Cache em memória do logo convertido em base64 (evita refetch a cada página)
@@ -103,7 +114,7 @@ async function loadLogoWatermark(url?: string | null, opacity = 0.08): Promise<s
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const size = 800;
+        const size = 1024; // alta resolução para o fundo grande
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d')!;
@@ -113,24 +124,14 @@ async function loadLogoWatermark(url?: string | null, opacity = 0.08): Promise<s
         const w = img.width * r;
         const h = img.height * r;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-        // Pós-processa: tinge de dourado + remove branco + aplica opacidade
+        // Pós-processa: remove fundo branco + aplica opacidade preservando cores naturais da logo
         const imgData = ctx.getImageData(0, 0, size, size);
         const d = imgData.data;
-        // Cor alvo (dourado) — combina com a paleta do papel timbrado
-        const TR = 201, TG = 169, TB = 97;
         for (let i = 0; i < d.length; i += 4) {
           const r0 = d[i], g0 = d[i + 1], b0 = d[i + 2];
           const minC = Math.min(r0, g0, b0);
-          // Remove fundo branco
+          // Remove fundo branco com fade nas bordas
           if (minC >= 250) { d[i + 3] = 0; continue; }
-          // Converte para luminância e mapeia para tons de dourado
-          const lum = (0.299 * r0 + 0.587 * g0 + 0.114 * b0) / 255;
-          // Inverte: pixels escuros viram dourado mais saturado
-          const k = 1 - lum * 0.5;
-          d[i] = Math.round(TR * k);
-          d[i + 1] = Math.round(TG * k);
-          d[i + 2] = Math.round(TB * k);
-          // Aplica opacidade preservando suavização das bordas
           const baseAlpha = minC >= 240
             ? Math.round(d[i + 3] * (1 - (minC - 240) / 10))
             : d[i + 3];
@@ -153,158 +154,140 @@ async function loadLogoWatermark(url?: string | null, opacity = 0.08): Promise<s
 
 // Paleta Aviário Premium (RGB)
 const C_FOREST = [10, 46, 34] as [number, number, number];        // #0A2E22
-const C_FOREST_DEEP = [8, 36, 27] as [number, number, number];    // mais escuro
+const C_FOREST_DEEP = [8, 36, 27] as [number, number, number];
 const C_GOLD = [201, 169, 97] as [number, number, number];        // #C9A961
-const C_GOLD_SOFT = [184, 147, 90] as [number, number, number];   // #B8935A
-const C_CREAM = [245, 241, 232] as [number, number, number];      // #F5F1E8
-const C_CREAM_ALT = [250, 247, 239] as [number, number, number];  // zebra
+const C_GOLD_SOFT = [184, 147, 90] as [number, number, number];
+const C_CREAM = [245, 241, 232] as [number, number, number];
+const C_CREAM_ALT = [250, 247, 239] as [number, number, number];
 const C_TEXT = [30, 38, 34] as [number, number, number];
 const C_MUTED = [120, 130, 124] as [number, number, number];
 
+/**
+ * Header minimalista — substitui a faixa verde + selo dourado.
+ * Nome do criadouro (esq) + título/subtítulo (centro/dir) + linha dourada fina.
+ * A "marca visual" agora vem da logo de fundo (applyLogoBackground).
+ */
 async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
   const w = doc.internal.pageSize.getWidth();
+  const criador = profile?.nome_criadouro?.trim() || 'MeuPlantelPro';
 
-  // Faixa principal verde-floresta
-  doc.setFillColor(...C_FOREST);
-  doc.rect(0, 0, w, 30, 'F');
+  // Nome do criadouro (esquerda) — serif elegante simulada com helvetica bold
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C_FOREST);
+  doc.text(criador, 14, 11);
 
-  // Filete dourado duplo abaixo da faixa (estilo certificado)
-  doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.7);
-  doc.line(0, 30, w, 30);
-  doc.setLineWidth(0.2);
-  doc.line(0, 31.4, w, 31.4);
-
-  const logo = await loadLogoBase64(profile.logo_url);
-  const textOffsetX = 42;
-
-  // ─── Selo circular dourado (carimbo oficial) ───
-  // Anel dourado externo
-  doc.setFillColor(...C_GOLD);
-  doc.circle(22, 15, 12, 'F');
-  // Anel verde escuro intermediário
-  doc.setFillColor(...C_FOREST_DEEP);
-  doc.circle(22, 15, 11.2, 'F');
-  // Selo creme central onde fica a logo
-  doc.setFillColor(245, 241, 232);
-  doc.circle(22, 15, 10.4, 'F');
-  // Borda dourada interna fina
-  doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.3);
-  doc.circle(22, 15, 10.4, 'S');
-
-  if (logo) {
-    try {
-      doc.addImage(logo, 'PNG', 13, 6, 18, 18, undefined, 'FAST');
-    } catch (e) {
-      console.warn('[pdf] addImage logo falhou:', e);
-    }
-  } else {
-    // Fallback: monograma "MP" dourado
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...C_GOLD_SOFT);
-    doc.text('MP', 22, 17.5, { align: 'center' });
+  // Metadados pequenos abaixo (cód. + CTF)
+  const meta: string[] = [];
+  if (profile?.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
+  if (profile?.registro_ctf) meta.push(`CTF ${profile.registro_ctf}`);
+  if (meta.length) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_MUTED);
+    doc.text(meta.join('  ·  '), 14, 15.5);
   }
 
-  // Nome do criadouro
-  doc.setTextColor(...C_GOLD);
+  // Título do documento (direita)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 13);
-
-  // Metadados
-  doc.setTextColor(...C_CREAM);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  const meta: string[] = [];
-  if (profile.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
-  if (profile.registro_ctf) meta.push(`CTF/IBAMA ${profile.registro_ctf}`);
-  if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
-  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 20);
-
-  // Selo "MeuPlantelPro" no canto direito
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...C_GOLD);
-  doc.text('MEUPLANTELPRO', w - 14, 13, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(...C_CREAM);
-  doc.text('Plantel Premium', w - 14, 18, { align: 'right' });
-
-  // Título do documento
+  doc.setFontSize(12);
   doc.setTextColor(...C_TEXT);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text(title, 14, 42);
+  doc.text(title, w - 14, 11, { align: 'right' });
   if (subtitle) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(...C_MUTED);
-    doc.text(subtitle, 14, 48);
+    doc.text(subtitle, w - 14, 16, { align: 'right' });
   }
+
+  // Linha dourada fina separadora
   doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.3);
-  doc.line(14, 51, w - 14, 51);
+  doc.setLineWidth(0.4);
+  doc.line(14, 21, w - 14, 21);
+  doc.setLineWidth(0.15);
+  doc.line(14, 22, w - 14, 22);
   doc.setTextColor(...C_TEXT);
 }
 
 /**
- * Aplica marca d'água da logo (apenas na área de conteúdo, sem tocar header/footer)
- * + cantos decorativos dourados em todas as páginas.
- * Chamar ANTES do header/footer para que esses fiquem por cima.
+ * Aplica a logo do criadouro como fundo de TODAS as páginas + um "backplate" branco
+ * semi-transparente sobre a área de conteúdo para garantir nitidez do texto.
+ *
+ * Modo controla a intensidade da logo de fundo:
+ *  - 'destaque' (18%): capas / página única
+ *  - 'sutil'    (8%):  relatórios / árvore
+ *  - 'leitura'  (3%):  tabelas longas
+ *
+ * O backplate cobre a área entre header e footer com inset (deixa logo aparecer nas bordas).
  */
-async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, opacity = 0.05) {
+async function applyLogoBackground(
+  doc: jsPDF,
+  profile: CriadorProfile | undefined,
+  mode: PdfBackgroundMode = 'sutil',
+) {
+  _docBgMode.set(doc, mode);
+  const opacity = BG_OPACITY[mode];
   const pageCount = doc.getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
-  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
+  const bg = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
 
-  const { x: wmX, y: wmY, size: wmSize } = computeWatermarkBox(w, h);
+  // Logo ocupa 70% da menor dimensão, centralizada
+  const size = Math.min(w, h) * 0.7;
+  const bgX = (w - size) / 2;
+  const bgY = (h - size) / 2;
+
+  // Backplate: área entre header e footer, com pequeno inset lateral
+  const inset = LAYOUT.BACKPLATE_INSET;
+  const bpX = inset;
+  const bpY = LAYOUT.HEADER_BOTTOM - 1;
+  const bpW = w - inset * 2;
+  const bpH = h - bpY - LAYOUT.FOOTER_TOP_OFFSET - 1;
+  // Opacidade do backplate: quanto mais opaca a logo, mais opaco o backplate precisa ser
+  const bpOpacity = mode === 'destaque' ? 0.92 : mode === 'sutil' ? 0.82 : 0.7;
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-
-    if (wm) {
+    if (bg) {
       try {
-        doc.addImage(wm, 'PNG', wmX, wmY, wmSize, wmSize, undefined, 'SLOW');
-      } catch (e) {
-        // silencioso
-      }
+        doc.addImage(bg, 'PNG', bgX, bgY, size, size, undefined, 'SLOW');
+      } catch { /* ignore */ }
     }
-
-    // Cantos decorativos dourados (estilo certificado)
-    doc.setDrawColor(...C_GOLD);
-    doc.setLineWidth(0.4);
-    const cs = 6;
-    const m = 8;
-    doc.line(m, 36, m + cs, 36);
-    doc.line(m, 36, m, 36 + cs);
-    doc.line(w - m, 36, w - m - cs, 36);
-    doc.line(w - m, 36, w - m, 36 + cs);
-    doc.line(m, h - 14, m + cs, h - 14);
-    doc.line(m, h - 14, m, h - 14 - cs);
-    doc.line(w - m, h - 14, w - m - cs, h - 14);
-    doc.line(w - m, h - 14, w - m, h - 14 - cs);
+    // Backplate branco semi-transparente — protege a leitura
+    drawTextBackplate(doc, bpX, bpY, bpW, bpH, bpOpacity);
   }
 }
 
 /**
- * Calcula a caixa onde a marca-d'água será desenhada.
- * Mesma fórmula usada em applyWatermarkAndCorners — exposta para o validador.
+ * Desenha um retângulo branco semi-transparente para "apagar" a logo de fundo
+ * localmente e garantir contraste do texto. Usa GState do jsPDF.
  */
-function computeWatermarkBox(w: number, h: number) {
-  const contentTop = LAYOUT.HEADER_BOTTOM + 3;
-  const contentBottom = h - LAYOUT.FOOTER_TOP_OFFSET - 6;
-  const contentH = contentBottom - contentTop;
-  const contentW = w - 28;
-  const size = Math.min(contentW, contentH) * LAYOUT.WATERMARK_RATIO;
-  const x = (w - size) / 2;
-  const y = contentTop + (contentH - size) / 2;
-  return { x, y, size };
+function drawTextBackplate(doc: jsPDF, x: number, y: number, w: number, h: number, opacity = 0.85) {
+  const docAny = doc as any;
+  let gState: any = null;
+  try {
+    if (typeof docAny.GState === 'function' && typeof docAny.setGState === 'function') {
+      gState = new docAny.GState({ opacity });
+      docAny.setGState(gState);
+    }
+  } catch { /* sem suporte a GState — desenha opaco */ }
+  doc.setFillColor(255, 255, 255);
+  doc.rect(x, y, w, h, 'F');
+  // Restaura opacidade total
+  try {
+    if (typeof docAny.GState === 'function' && typeof docAny.setGState === 'function') {
+      docAny.setGState(new docAny.GState({ opacity: 1 }));
+    }
+  } catch { /* ignore */ }
 }
 
+/**
+ * @deprecated mantido como atalho — use applyLogoBackground.
+ * Encaminha para applyLogoBackground no modo 'sutil' por padrão.
+ */
+async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, _opacity = 0.05) {
+  await applyLogoBackground(doc, profile, 'sutil');
+}
 /**
  * Valida geometricamente se a marca-d'água invade as zonas reservadas
  * (header verde no topo ou footer no rodapé). Em caso de problema, mostra
@@ -316,35 +299,22 @@ function validateLayout(doc: jsPDF, opts: { hasWatermark: boolean; context: stri
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
-  if (opts.hasWatermark) {
-    const wm = computeWatermarkBox(w, h);
-    const wmTop = wm.y;
-    const wmBottom = wm.y + wm.size;
+  // Avisa se o criadouro não tem logo — fundo fica em branco
+  if (!opts.hasWatermark) {
+    console.info(`[pdf:${opts.context}] Sem logo do criadouro — fundo em branco.`);
+  }
 
-    if (wmTop < LAYOUT.HEADER_BOTTOM) {
-      const overlap = LAYOUT.HEADER_BOTTOM - wmTop;
-      problems.push(
-        `Marca-d'água invade o cabeçalho em ${overlap.toFixed(1)}mm ` +
-        `(topo da watermark y=${wmTop.toFixed(1)}, fim do header y=${LAYOUT.HEADER_BOTTOM})`
-      );
-    }
-
-    const footerTop = h - LAYOUT.FOOTER_TOP_OFFSET;
-    if (wmBottom > footerTop) {
-      const overlap = wmBottom - footerTop;
-      problems.push(
-        `Marca-d'água invade o rodapé em ${overlap.toFixed(1)}mm ` +
-        `(base da watermark y=${wmBottom.toFixed(1)}, início do footer y=${footerTop.toFixed(1)})`
-      );
-    }
-
-    if (wm.size <= 0) {
-      problems.push(`Marca-d'água com tamanho inválido (${wm.size.toFixed(1)}mm).`);
-    }
+  // Sanidade da área útil
+  const usableH = h - LAYOUT.HEADER_BOTTOM - LAYOUT.FOOTER_TOP_OFFSET;
+  if (usableH < 40) {
+    problems.push(`Área útil muito pequena (${usableH.toFixed(1)}mm) — header/footer ocupam demais.`);
+  }
+  if (w < 100) {
+    problems.push(`Largura da página suspeita (${w.toFixed(1)}mm).`);
   }
 
   if (problems.length > 0) {
-    console.warn(`[pdf:${opts.context}] ⚠️ Validação de layout falhou:`, problems);
+    console.warn(`[pdf:${opts.context}] ⚠️ Validação de layout:`, problems);
     toast.warning('Aviso no layout do PDF', {
       description: problems[0] + (problems.length > 1 ? ` (+${problems.length - 1} outros avisos)` : ''),
       duration: 6000,
@@ -426,7 +396,7 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   const snap = (loan.bird_snapshot || {}) as any;
   await header(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
 
-  let y = 56;
+  let y = 30;
   sectionTitle(doc, 'Partes envolvidas', y); y += 6;
 
   autoTable(doc, {
@@ -497,8 +467,8 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
-  // Ordem importa: watermark primeiro (vai pro fundo), header em todas as páginas, footer por último.
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  // Ordem: fundo (logo + backplate) primeiro, header em todas as páginas, footer por último.
+  await applyLogoBackground(doc, profile, 'destaque');
   await applyHeaderAllPages(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
   footer(doc, profile);
   validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'recibo-emprestimo' });
@@ -516,7 +486,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
   );
 
   autoTable(doc, {
-    startY: 54,
+    startY: 28,
     theme: 'grid',
     ...tableTheme,
     head: [['Anilha', 'SISPASS', 'Nome', 'Espécie', 'Sexo', 'Nasc.', 'Tipo', 'Diâm.', 'Status', 'Estado']],
@@ -562,7 +532,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     ],
   });
 
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyLogoBackground(doc, profile, 'leitura');
   await applyHeaderAllPages(
     doc,
     profile,
@@ -584,7 +554,7 @@ export async function gerarRelatorioTorneio(
   const doc = new jsPDF();
   await header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
 
-  let y = 56;
+  let y = 30;
   if (torneio.regulamento) {
     sectionTitle(doc, 'Regulamento', y); y += 5;
     doc.setFont('helvetica', 'normal');
@@ -613,7 +583,7 @@ export async function gerarRelatorioTorneio(
     columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 5: { halign: 'right', fontStyle: 'bold' } },
   });
 
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyLogoBackground(doc, profile, 'leitura');
   await applyHeaderAllPages(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
   footer(doc, profile);
   validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'torneio' });
@@ -908,7 +878,7 @@ export async function generateArvoreGenealogicaPDF(
   );
 
   // Aplica papel timbrado completo
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyLogoBackground(doc, profile, 'sutil');
   await applyHeaderAllPages(doc, profile, 'Árvore Genealógica', `Linhagem · ${bird.nome} · ${bird.codigo_anilha || '—'}`);
   footer(doc, profile);
   validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'arvore-genealogica' });
