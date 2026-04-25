@@ -291,6 +291,70 @@ async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, op
 }
 
 /**
+ * Calcula a caixa onde a marca-d'água será desenhada.
+ * Mesma fórmula usada em applyWatermarkAndCorners — exposta para o validador.
+ */
+function computeWatermarkBox(w: number, h: number) {
+  const contentTop = LAYOUT.HEADER_BOTTOM + 3;
+  const contentBottom = h - LAYOUT.FOOTER_TOP_OFFSET - 6;
+  const contentH = contentBottom - contentTop;
+  const contentW = w - 28;
+  const size = Math.min(contentW, contentH) * LAYOUT.WATERMARK_RATIO;
+  const x = (w - size) / 2;
+  const y = contentTop + (contentH - size) / 2;
+  return { x, y, size };
+}
+
+/**
+ * Valida geometricamente se a marca-d'água invade as zonas reservadas
+ * (header verde no topo ou footer no rodapé). Em caso de problema, mostra
+ * um toast e loga detalhes — NÃO bloqueia o salvamento (apenas alerta).
+ * Retorna lista de problemas (vazia = layout OK).
+ */
+function validateLayout(doc: jsPDF, opts: { hasWatermark: boolean; context: string }): string[] {
+  const problems: string[] = [];
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+
+  if (opts.hasWatermark) {
+    const wm = computeWatermarkBox(w, h);
+    const wmTop = wm.y;
+    const wmBottom = wm.y + wm.size;
+
+    if (wmTop < LAYOUT.HEADER_BOTTOM) {
+      const overlap = LAYOUT.HEADER_BOTTOM - wmTop;
+      problems.push(
+        `Marca-d'água invade o cabeçalho em ${overlap.toFixed(1)}mm ` +
+        `(topo da watermark y=${wmTop.toFixed(1)}, fim do header y=${LAYOUT.HEADER_BOTTOM})`
+      );
+    }
+
+    const footerTop = h - LAYOUT.FOOTER_TOP_OFFSET;
+    if (wmBottom > footerTop) {
+      const overlap = wmBottom - footerTop;
+      problems.push(
+        `Marca-d'água invade o rodapé em ${overlap.toFixed(1)}mm ` +
+        `(base da watermark y=${wmBottom.toFixed(1)}, início do footer y=${footerTop.toFixed(1)})`
+      );
+    }
+
+    if (wm.size <= 0) {
+      problems.push(`Marca-d'água com tamanho inválido (${wm.size.toFixed(1)}mm).`);
+    }
+  }
+
+  if (problems.length > 0) {
+    console.warn(`[pdf:${opts.context}] ⚠️ Validação de layout falhou:`, problems);
+    toast.warning('Aviso no layout do PDF', {
+      description: problems[0] + (problems.length > 1 ? ` (+${problems.length - 1} outros avisos)` : ''),
+      duration: 6000,
+    });
+  }
+
+  return problems;
+}
+
+/**
  * Re-aplica o cabeçalho em TODAS as páginas (jsPDF só desenha na página atual).
  * Chamar por último para garantir que o header fique por cima da marca-d'água.
  */
