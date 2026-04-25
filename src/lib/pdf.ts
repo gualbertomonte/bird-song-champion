@@ -501,6 +501,7 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   await applyWatermarkAndCorners(doc, profile, 0.05);
   await applyHeaderAllPages(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
   footer(doc, profile);
+  validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'recibo-emprestimo' });
   doc.save(`recibo_emprestimo_${loan.id.slice(0, 8)}.pdf`);
 }
 
