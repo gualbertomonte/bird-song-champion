@@ -130,7 +130,7 @@ function TreeNode({ bird, birds, depth, maxDepth, role = 'self' }: NodeProps) {
 }
 
 export default function ArvoreGenealogica() {
-  const { birds } = useAppState();
+  const { birds, profile } = useAppState();
   const [selectedId, setSelectedId] = useState('');
   const [search, setSearch] = useState('');
   const [generations, setGenerations] = useState(3);
