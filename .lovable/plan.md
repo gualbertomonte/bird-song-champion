@@ -1,168 +1,69 @@
 
-# Plano completo — 4 frentes
+# 🎨 Logo do Criadouro como Papel Timbrado
+
+Vou usar o logo que o usuário já envia em **Perfil → Logo do Criadouro** (`criador_profile.logo_url`) como identidade visual em três lugares: PDFs, crachás digitais e árvore genealógica. Também vou melhorar a UX do upload pra deixar claro pra que serve.
 
 ---
 
-## ✅ FRENTE 1 — Cache busting do ícone (já aprovado antes)
+## 1. 📄 PDFs com cabeçalho timbrado (`src/lib/pdf.ts`)
 
-**Arquivos:**
-- `index.html` — adicionar `?v=2` em `/favicon.png` e `/icon-512.png`
-- `public/manifest.webmanifest` — adicionar `?v=2` nas duas entradas de `icon-512.png`
+- Tornar a função `header()` **assíncrona** pra buscar o `logo_url` e converter em base64 (necessário pro `jsPDF.addImage`).
+- Renderizar o logo como **selo circular (~18mm)** dentro da faixa verde do cabeçalho, à esquerda, com o texto "MeuPlantelPro" e o nome do criadouro deslocados pra direita.
+- Adicionar o nome do criadouro no rodapé de cada página (texto pequeno, discreto).
+- **Cache em memória** do logo convertido pra não baixar/converter a cada página do PDF.
+- **Fallback**: se não houver logo, mantém o layout atual (ícone dourado de pássaro).
+- Propagar o `await` para os geradores de relatório que chamam `header()`:
+  - `src/pages/Plantel.tsx`
+  - `src/pages/Emprestimos.tsx`
+  - Qualquer outro consumidor encontrado (vou rodar `rg "header\("` antes de aplicar).
 
-**Você faz depois:** Publish → Update + reindexação no Search Console
+## 2. 🪪 Crachá digital da ave (`src/pages/BirdDetail.tsx`)
 
----
+- Substituir o ícone genérico de pássaro no canto superior esquerdo do crachá pelo **logo do criadouro** (com fallback pro ícone dourado se não tiver logo).
+- Usar `crossOrigin="anonymous"` no `<img>` pra garantir que o `html-to-image` consiga capturar a imagem na hora de exportar PNG.
+- Adicionar pequeno texto "Criado por: {nome_criadouro}" próximo ao logo.
 
-## 🎨 FRENTE 2 — Corrigir tooltips ilegíveis no admin
+## 3. 🌳 Árvore genealógica (`src/pages/ArvoreGenealogica.tsx`)
 
-**Problema:** No tema escuro do `/admin/dashboard`, o texto "Usuários únicos : 2" fica cinza-escuro sobre fundo verde-escuro (visto no print).
+- **Marca d'água sutil** do logo no fundo (`opacity-[0.05]`, centralizado, atrás dos nós da árvore).
+- **Rodapé discreto** com logo pequeno + nome do criadouro embaixo da árvore.
+- Botão **"Exportar PNG"** usando `html-to-image` pra gerar uma imagem da árvore inteira já com a marca d'água e o rodapé (útil pro usuário compartilhar).
 
-**Causa:** Recharts usa cores padrão dos `<Tooltip>` que não respeitam o tema escuro do admin.
+## 4. 🪝 Hook compartilhado (`src/hooks/useCriadorLogo.ts`)
 
-**Correção em `src/pages/AdminDashboard.tsx`:**
-- Adicionar `itemStyle={{ color: 'hsl(var(--foreground))' }}` e `labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}` nos 2 `<Tooltip>` (gráfico de novos usuários e gráfico de acessos)
-- Aumentar contraste do `contentStyle` (background mais opaco, padding maior)
+- Novo hook que lê `criador_profile.logo_url` e `nome_criadouro` uma vez e compartilha via React Query (cache automático).
+- Usado pelos 3 features acima e pelos PDFs (via função utilitária no `pdf.ts`).
 
-**Correção em `src/components/dashboard/AtividadeChart.tsx`:**
-- Mesma coisa no tooltip (já que é o mesmo padrão visual)
+## 5. 💬 **Comunicar a função ao usuário no upload** (`src/pages/Perfil.tsx`)
 
----
+Esta é a parte que você pediu. Vou ajustar o card "Logo do Criadouro" assim:
 
-## 🔔 FRENTE 3 — Notificações em tempo real de novos cadastros
-
-### Parte A — Validar e-mail existente
-- Verifiquei: a edge function `notify-admin-new-signup` existe e está ativa (logs mostram boots recentes)
-- Vou conferir os **últimos logs com search "error"** pra garantir que está realmente entregando o e-mail. Se não estiver, corrijo.
-
-### Parte B — Sino piscante no admin (Realtime)
-
-**1. Habilitar Realtime na tabela `profiles`** (migração SQL):
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
-ALTER TABLE public.profiles REPLICA IDENTITY FULL;
-```
-
-**2. Criar componente `src/components/admin/AdminNotificationBell.tsx`:**
-- Subscreve no canal Realtime de `INSERT` em `profiles`
-- Mantém contador de "novos não vistos" (persiste no localStorage por admin)
-- Sino com badge vermelho pulsante quando count > 0
-- Som curto (opcional) ao chegar novo cadastro
-- Dropdown lista os últimos 10 cadastros (nome, e-mail, "há X minutos")
-- Clique em "marcar como visto" zera o contador
-- Clique em um item → abre `/admin/usuarios/{id}`
-
-**3. Integrar no `src/components/admin/AdminLayout.tsx`:**
-- Adicionar o sino no header, ao lado do nome do admin
+- **Texto explicativo** abaixo do título, antes do botão de upload:
+  > "📄 Esta logo será usada como **papel timbrado** em todos os PDFs gerados (relatórios, fichas de aves, comprovantes de empréstimo), nos **crachás digitais** das suas aves e como **marca d'água** na árvore genealógica. Use uma imagem de boa qualidade, preferencialmente quadrada e com fundo transparente (PNG)."
+- **Após upload concluído** com sucesso, mostrar um **toast** confirmando:
+  > "✅ Logo salva! Será usada nos seus PDFs, crachás e árvore genealógica."
+- **Recomendações visuais** discretas abaixo do botão:
+  - Formato: PNG ou JPG
+  - Tamanho ideal: 512×512px
+  - Fundo transparente recomendado (PNG)
+- **Preview maior** (já existe um preview pequeno de 80×80; vou manter, mas adicionar uma legenda "Pré-visualização").
 
 ---
 
-## 📊 FRENTE 4 — Tracking completo (os 3 que você pediu)
+## 📁 Arquivos afetados
 
-### Parte A — Plausible Analytics (visitas anônimas ao site)
+| Arquivo | Tipo de mudança |
+|---|---|
+| `src/lib/pdf.ts` | `header()` async + carrega logo + rodapé |
+| `src/hooks/useCriadorLogo.ts` | **novo** — hook compartilhado |
+| `src/pages/Perfil.tsx` | textos explicativos + toast informativo |
+| `src/pages/BirdDetail.tsx` | logo no crachá |
+| `src/pages/ArvoreGenealogica.tsx` | marca d'água + rodapé + exportar PNG |
+| `src/pages/Plantel.tsx` | `await` nas chamadas de PDF |
+| `src/pages/Emprestimos.tsx` | `await` nas chamadas de PDF |
 
-**Por que Plausible e não Google Analytics:**
-- ✅ Sem cookies, sem banner de LGPD/cookies obrigatório
-- ✅ Painel simples e leve (não polui o site, +1KB)
-- ✅ Mostra: visitantes únicos, páginas mais vistas, fontes de tráfego (Google, Instagram, WhatsApp), países
-- ⚠️ É pago (~US$ 9/mês depois do trial de 30 dias) — alternativa gratuita: **Umami** (auto-hospedado, mais técnico) ou **Google Analytics 4** (gratuito mas com cookies)
-
-**Implementação:**
-- Adicionar 1 tag `<script>` no `<head>` do `index.html`
-- Você cria conta em https://plausible.io e adiciona o domínio `meuplantelpro.com.br`
-- Pronto — começa a contar visitas em tempo real
-
-> **Alternativa se preferir gratuito:** uso o **GA4** (Google Analytics 4) — gratuito pra sempre, mas exige banner de cookies. Me diga qual prefere.
-
-### Parte B — Links rastreáveis (cliques em campanhas WhatsApp/Instagram)
-
-**Sistema próprio dentro do app, sem ferramenta externa:**
-
-**1. Migração SQL:**
-```sql
-CREATE TABLE public.tracked_links (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug text UNIQUE NOT NULL,           -- "whatsapp", "instagram-bio", "panfleto"
-  destino text NOT NULL,               -- URL final (default: /)
-  descricao text,                      -- "Link do WhatsApp da feira de canários"
-  total_clicks integer NOT NULL DEFAULT 0,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  created_by uuid NOT NULL
-);
-
-CREATE TABLE public.tracked_link_clicks (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  link_id uuid NOT NULL REFERENCES tracked_links(id) ON DELETE CASCADE,
-  ip text,
-  user_agent text,
-  referrer text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-```
-+ RLS: só admin pode ler/criar links; insert de clicks é público (via edge function)
-
-**2. Edge function `track-link-click`** — recebe slug, registra click, redireciona pro destino
-
-**3. Página `src/pages/AdminLinks.tsx`:**
-- Lista todos os links rastreáveis
-- Cria novo: digita slug + destino + descrição
-- Mostra total de cliques de cada um e gráfico (cliques por dia)
-- Botão "copiar link" → `https://meuplantelpro.com.br/r/{slug}`
-
-**4. Rota `/r/:slug`** no React Router → chama edge function → redireciona
-
-**Fluxo:** você compartilha `meuplantelpro.com.br/r/whatsapp` no WhatsApp, cada clique conta, redireciona pro `/`
-
-### Parte C — Dashboard interno de visitas (página `page_views`)
-
-**1. Migração SQL:**
-```sql
-CREATE TABLE public.page_views (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  path text NOT NULL,                   -- "/", "/login", etc
-  referrer text,                        -- de onde veio
-  utm_source text,                      -- ?utm_source=instagram
-  utm_medium text,
-  utm_campaign text,
-  user_agent text,
-  device_type text,                     -- mobile/desktop/tablet
-  session_id text,                      -- cookie de sessão (visitante único)
-  user_id uuid,                         -- se logado
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-```
-+ RLS: insert público (anônimo pode contar visita); select só admin
-
-**2. Hook `src/hooks/usePageTracking.ts`:**
-- Roda em cada mudança de rota (`useLocation`)
-- Insere row em `page_views` com path, referrer, UTM, device, session_id
-- Session ID gerado uma vez por visita (sessionStorage)
-
-**3. Integrar no `App.tsx`** — chama hook globalmente
-
-**4. Nova seção no `AdminDashboard.tsx`:**
-- KPI: visitas hoje / 7d / 30d
-- KPI: visitantes únicos (por session_id)
-- Gráfico de barras: visitas por dia (30 dias)
-- Top 5 páginas mais vistas
-- Top 5 fontes de tráfego (referrer / utm_source)
-- Split mobile/desktop
+**Sem mudanças no banco** — `criador_profile.logo_url` e o bucket `bird-photos` já existem e funcionam.
 
 ---
 
-## 📋 Ordem de execução (após aprovação)
-
-1. **Cache busting** (1 min) — pequeno, despacha junto
-2. **Tooltips legíveis** (2 min) — fix visual rápido
-3. **Validar e-mail de signup** (1 min) — só leitura de logs
-4. **Realtime + sino piscante** (10 min) — migração + componente + integração
-5. **page_views + dashboard interno** (15 min) — migração + hook + nova seção
-6. **Links rastreáveis** (15 min) — migração + edge function + página admin + rota
-7. **Plausible** (3 min) — só adicionar 1 script no `index.html` (você cria conta depois)
-
-**Tempo total estimado:** ~50 minutos de execução em uma rodada.
-
----
-
-## ⚠️ Decisão pendente: Plausible (pago) vs GA4 (gratuito)
-
-Por padrão vou de **Plausible** (recomendação técnica: sem cookies, mais simples). Se você preferir **GA4 gratuito**, me avisa antes de eu aplicar e troco.
+Pode aprovar que eu implemento tudo de uma vez? 👍
