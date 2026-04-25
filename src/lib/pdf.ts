@@ -9,26 +9,86 @@ const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : '
 
 // Cache em memória do logo convertido em base64 (evita refetch a cada página)
 const _logoCache: Record<string, string | null> = {};
+
+/**
+ * Carrega a logo do criadouro como PNG base64 usando <img> + <canvas>.
+ * Esse método é mais robusto que fetch() porque:
+ *  - <img crossOrigin="anonymous"> faz request limpa com CORS
+ *  - cache-bust evita pegar resposta cacheada sem headers CORS
+ *  - canvas.toDataURL sempre devolve PNG válido (sem precisar detectar formato)
+ */
 async function loadLogoBase64(url?: string | null): Promise<string | null> {
   if (!url) return null;
   if (url in _logoCache) return _logoCache[url];
-  try {
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error('Falha ao buscar logo');
-    const blob = await res.blob();
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const r = new FileReader();
-      r.onloadend = () => resolve(r.result as string);
-      r.onerror = reject;
-      r.readAsDataURL(blob);
-    });
-    _logoCache[url] = dataUrl;
-    return dataUrl;
-  } catch (e) {
-    console.warn('[pdf] logo do criadouro não pôde ser carregada:', e);
-    _logoCache[url] = null;
-    return null;
-  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 512;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        // Fundo creme (combina com o selo circular do cabeçalho)
+        ctx.fillStyle = '#F5F1E8';
+        ctx.fillRect(0, 0, size, size);
+        // Desenha a logo com "contain" centralizado
+        const r = Math.min(size / img.width, size / img.height) * 0.92;
+        const w = img.width * r;
+        const h = img.height * r;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        const dataUrl = canvas.toDataURL('image/png');
+        _logoCache[url] = dataUrl;
+        resolve(dataUrl);
+      } catch (e) {
+        console.warn('[pdf] canvas tainted ao gerar logo base64:', e);
+        _logoCache[url] = null;
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      console.warn('[pdf] não foi possível carregar a logo do criadouro:', url);
+      _logoCache[url] = null;
+      resolve(null);
+    };
+    // Cache-bust força request com CORS headers (evita cache do <img> sem CORS)
+    img.src = url + (url.includes('?') ? '&' : '?') + 'pdf=1';
+  });
+}
+
+/** Versão "marca d'água" da logo: PNG base64 com opacidade aplicada */
+const _watermarkCache: Record<string, string | null> = {};
+async function loadLogoWatermark(url?: string | null, opacity = 0.05): Promise<string | null> {
+  if (!url) return null;
+  const key = `${url}::${opacity}`;
+  if (key in _watermarkCache) return _watermarkCache[key];
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 600;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        ctx.globalAlpha = opacity;
+        const r = Math.min(size / img.width, size / img.height);
+        const w = img.width * r;
+        const h = img.height * r;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        const dataUrl = canvas.toDataURL('image/png');
+        _watermarkCache[key] = dataUrl;
+        resolve(dataUrl);
+      } catch (e) {
+        _watermarkCache[key] = null;
+        resolve(null);
+      }
+    };
+    img.onerror = () => { _watermarkCache[key] = null; resolve(null); };
+    img.src = url + (url.includes('?') ? '&' : '?') + 'pdfwm=1';
+  });
 }
 
 // Paleta Aviário Premium (RGB)
