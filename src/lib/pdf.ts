@@ -348,6 +348,6 @@ export async function gerarRelatorioTorneio(
     columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 5: { halign: 'right', fontStyle: 'bold' } },
   });
 
-  footer(doc);
+  footer(doc, profile);
   doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }
