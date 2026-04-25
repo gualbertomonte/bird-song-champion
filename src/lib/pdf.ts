@@ -261,22 +261,14 @@ async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, op
   const h = doc.internal.pageSize.getHeight();
   const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
 
-  // Área de conteúdo: abaixo do header (y≥55) e acima do footer (y≤h-20)
-  const contentTop = 55;
-  const contentBottom = h - 20;
-  const contentH = contentBottom - contentTop;
-  const contentW = w - 28; // margens 14mm
+  const { x: wmX, y: wmY, size: wmSize } = computeWatermarkBox(w, h);
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
 
     if (wm) {
       try {
-        // Tamanho: até 70% da menor dimensão da área de conteúdo
-        const size = Math.min(contentW, contentH) * 0.7;
-        const x = (w - size) / 2;
-        const y = contentTop + (contentH - size) / 2;
-        doc.addImage(wm, 'PNG', x, y, size, size, undefined, 'SLOW');
+        doc.addImage(wm, 'PNG', wmX, wmY, wmSize, wmSize, undefined, 'SLOW');
       } catch (e) {
         // silencioso
       }
