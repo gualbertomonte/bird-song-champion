@@ -526,6 +526,48 @@ export type Database = {
         }
         Relationships: []
       }
+      page_views: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          id: string
+          path: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          path: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          path?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       pending_transfers: {
         Row: {
           bird_data: Json
@@ -1119,6 +1161,71 @@ export type Database = {
         }
         Relationships: []
       }
+      tracked_link_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string | null
+          link_id: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          link_id: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          link_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracked_link_clicks_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "tracked_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracked_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          descricao: string | null
+          destino: string
+          id: string
+          slug: string
+          total_clicks: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          destino?: string
+          id?: string
+          slug: string
+          total_clicks?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          destino?: string
+          id?: string
+          slug?: string
+          total_clicks?: number
+        }
+        Relationships: []
+      }
       treatment_doses: {
         Row: {
           aplicada_em: string | null
@@ -1440,6 +1547,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_link_click: {
+        Args: {
+          _ip: string
+          _referrer: string
+          _slug: string
+          _user_agent: string
+        }
+        Returns: Json
       }
       inscrever_ave_bateria: {
         Args: { _bateria_id: string; _bird_id: string }
