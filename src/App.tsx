@@ -1,11 +1,12 @@
 import { lazy, Suspense, forwardRef, ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import { AppProvider } from "@/context/AppContext";
 import AppLayout from "@/components/AppLayout";
 import { Bird } from "lucide-react";
@@ -193,6 +194,11 @@ function RoleRouter() {
   );
 }
 
+function PageTrackingWrapper({ children }: { children: React.ReactNode }) {
+  usePageTracking();
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -200,26 +206,28 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={<FullScreenLoader />}>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-              <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-              <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
-              <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
-              <Route path="/p/bateria/:id" element={<BateriaPublica />} />
-              <Route path="/r/:slug" element={<RedirectLink />} />
+          <PageTrackingWrapper>
+            <Suspense fallback={<FullScreenLoader />}>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+                <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
+                <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
+                <Route path="/p/bateria/:id" element={<BateriaPublica />} />
+                <Route path="/r/:slug" element={<RedirectLink />} />
 
-              {/* Protected routes */}
-              <Route path="/*" element={
-                <ProtectedRoute>
-                  <RoleRouter />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </Suspense>
+                {/* Protected routes */}
+                <Route path="/*" element={
+                  <ProtectedRoute>
+                    <RoleRouter />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </Suspense>
+          </PageTrackingWrapper>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
