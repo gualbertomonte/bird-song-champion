@@ -46,12 +46,14 @@ const AdminUsuarioDetalhe = lazyPage(() => import("@/pages/AdminUsuarioDetalhe")
 const AdminLogs = lazyPage(() => import("@/pages/AdminLogs"));
 const AdminRelatorios = lazyPage(() => import("@/pages/AdminRelatorios"));
 const AdminConfiguracoes = lazyPage(() => import("@/pages/AdminConfiguracoes"));
+const AdminLinks = lazyPage(() => import("@/pages/AdminLinks"));
 const AdminLayout = lazyPage(() => import("@/components/admin/AdminLayout"));
 const Login = lazyPage(() => import("@/pages/Login"));
 const Landing = lazyPage(() => import("@/pages/Landing"));
 const Signup = lazyPage(() => import("@/pages/Signup"));
 const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazyPage(() => import("@/pages/ResetPassword"));
+const RedirectLink = lazyPage(() => import("@/pages/RedirectLink"));
 const NotFound = lazyPage(() => import("./pages/NotFound.tsx"));
 
 // Prefetch landing page chunk eagerly — it's the LCP target for anonymous visitors
@@ -149,8 +151,10 @@ function RoleRouter() {
             <Route path="/admin/logs" element={<AdminLogs />} />
             <Route path="/admin/relatorios" element={<AdminRelatorios />} />
             <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+            <Route path="/admin/links" element={<AdminLinks />} />
           </Route>
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        </Routes>
         </Routes>
       </Suspense>
     );
@@ -207,6 +211,7 @@ const App = () => (
               <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
               <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
               <Route path="/p/bateria/:id" element={<BateriaPublica />} />
+              <Route path="/r/:slug" element={<RedirectLink />} />
 
               {/* Protected routes */}
               <Route path="/*" element={
