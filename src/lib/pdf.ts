@@ -114,7 +114,7 @@ async function loadLogoWatermark(url?: string | null, opacity = 0.08): Promise<s
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const size = 800;
+        const size = 1024; // alta resolução para o fundo grande
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d')!;
@@ -124,24 +124,14 @@ async function loadLogoWatermark(url?: string | null, opacity = 0.08): Promise<s
         const w = img.width * r;
         const h = img.height * r;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-        // Pós-processa: tinge de dourado + remove branco + aplica opacidade
+        // Pós-processa: remove fundo branco + aplica opacidade preservando cores naturais da logo
         const imgData = ctx.getImageData(0, 0, size, size);
         const d = imgData.data;
-        // Cor alvo (dourado) — combina com a paleta do papel timbrado
-        const TR = 201, TG = 169, TB = 97;
         for (let i = 0; i < d.length; i += 4) {
           const r0 = d[i], g0 = d[i + 1], b0 = d[i + 2];
           const minC = Math.min(r0, g0, b0);
-          // Remove fundo branco
+          // Remove fundo branco com fade nas bordas
           if (minC >= 250) { d[i + 3] = 0; continue; }
-          // Converte para luminância e mapeia para tons de dourado
-          const lum = (0.299 * r0 + 0.587 * g0 + 0.114 * b0) / 255;
-          // Inverte: pixels escuros viram dourado mais saturado
-          const k = 1 - lum * 0.5;
-          d[i] = Math.round(TR * k);
-          d[i + 1] = Math.round(TG * k);
-          d[i + 2] = Math.round(TB * k);
-          // Aplica opacidade preservando suavização das bordas
           const baseAlpha = minC >= 240
             ? Math.round(d[i + 3] * (1 - (minC - 240) / 10))
             : d[i + 3];
@@ -164,11 +154,11 @@ async function loadLogoWatermark(url?: string | null, opacity = 0.08): Promise<s
 
 // Paleta Aviário Premium (RGB)
 const C_FOREST = [10, 46, 34] as [number, number, number];        // #0A2E22
-const C_FOREST_DEEP = [8, 36, 27] as [number, number, number];    // mais escuro
+const C_FOREST_DEEP = [8, 36, 27] as [number, number, number];
 const C_GOLD = [201, 169, 97] as [number, number, number];        // #C9A961
-const C_GOLD_SOFT = [184, 147, 90] as [number, number, number];   // #B8935A
-const C_CREAM = [245, 241, 232] as [number, number, number];      // #F5F1E8
-const C_CREAM_ALT = [250, 247, 239] as [number, number, number];  // zebra
+const C_GOLD_SOFT = [184, 147, 90] as [number, number, number];
+const C_CREAM = [245, 241, 232] as [number, number, number];
+const C_CREAM_ALT = [250, 247, 239] as [number, number, number];
 const C_TEXT = [30, 38, 34] as [number, number, number];
 const C_MUTED = [120, 130, 124] as [number, number, number];
 
