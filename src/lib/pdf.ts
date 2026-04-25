@@ -532,7 +532,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     ],
   });
 
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyLogoBackground(doc, profile, 'leitura');
   await applyHeaderAllPages(
     doc,
     profile,
