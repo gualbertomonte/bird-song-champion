@@ -253,6 +253,15 @@ export default function ArvoreGenealogica() {
               <button onClick={() => setZoom(1)} className="btn-ghost p-1.5" aria-label="Resetar zoom">
                 <RotateCcw className="w-4 h-4" />
               </button>
+              <button
+                onClick={handleDownloadPDF}
+                disabled={pdfLoading}
+                className="btn-ghost text-xs ml-1 disabled:opacity-50"
+                title="Baixar árvore em PDF (papel timbrado)"
+              >
+                {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                PDF
+              </button>
             </div>
             {stats && (
               <span className="text-xs text-muted-foreground w-full sm:w-auto">
