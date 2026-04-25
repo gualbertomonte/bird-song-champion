@@ -1,11 +1,13 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Shield, LayoutDashboard, Users, ScrollText, FileText, Settings, LogOut, Bird } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, ScrollText, FileText, Settings, LogOut, Bird, Link2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import SystemBanner from '@/components/SystemBanner';
+import AdminNotificationBell from '@/components/admin/AdminNotificationBell';
 
 const items = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/usuarios', icon: Users, label: 'Usuários' },
+  { to: '/admin/links', icon: Link2, label: 'Links' },
   { to: '/admin/logs', icon: ScrollText, label: 'Logs' },
   { to: '/admin/relatorios', icon: FileText, label: 'Relatórios' },
   { to: '/admin/configuracoes', icon: Settings, label: 'Configurações' },
@@ -31,6 +33,8 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
           </div>
 
           <div className="flex-1" />
+
+          <AdminNotificationBell />
 
           {user?.email && (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/40 border border-border/60">

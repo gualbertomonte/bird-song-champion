@@ -1,11 +1,12 @@
 import { lazy, Suspense, forwardRef, ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import { AppProvider } from "@/context/AppContext";
 import AppLayout from "@/components/AppLayout";
 import { Bird } from "lucide-react";
@@ -46,12 +47,14 @@ const AdminUsuarioDetalhe = lazyPage(() => import("@/pages/AdminUsuarioDetalhe")
 const AdminLogs = lazyPage(() => import("@/pages/AdminLogs"));
 const AdminRelatorios = lazyPage(() => import("@/pages/AdminRelatorios"));
 const AdminConfiguracoes = lazyPage(() => import("@/pages/AdminConfiguracoes"));
+const AdminLinks = lazyPage(() => import("@/pages/AdminLinks"));
 const AdminLayout = lazyPage(() => import("@/components/admin/AdminLayout"));
 const Login = lazyPage(() => import("@/pages/Login"));
 const Landing = lazyPage(() => import("@/pages/Landing"));
 const Signup = lazyPage(() => import("@/pages/Signup"));
 const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazyPage(() => import("@/pages/ResetPassword"));
+const RedirectLink = lazyPage(() => import("@/pages/RedirectLink"));
 const NotFound = lazyPage(() => import("./pages/NotFound.tsx"));
 
 // Prefetch landing page chunk eagerly — it's the LCP target for anonymous visitors
@@ -149,6 +152,7 @@ function RoleRouter() {
             <Route path="/admin/logs" element={<AdminLogs />} />
             <Route path="/admin/relatorios" element={<AdminRelatorios />} />
             <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+            <Route path="/admin/links" element={<AdminLinks />} />
           </Route>
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
@@ -190,6 +194,11 @@ function RoleRouter() {
   );
 }
 
+function PageTrackingWrapper({ children }: { children: React.ReactNode }) {
+  usePageTracking();
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -197,25 +206,28 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={<FullScreenLoader />}>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-              <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-              <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
-              <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
-              <Route path="/p/bateria/:id" element={<BateriaPublica />} />
+          <PageTrackingWrapper>
+            <Suspense fallback={<FullScreenLoader />}>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+                <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/torneio/convite/:token" element={<ConviteTorneio />} />
+                <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
+                <Route path="/p/bateria/:id" element={<BateriaPublica />} />
+                <Route path="/r/:slug" element={<RedirectLink />} />
 
-              {/* Protected routes */}
-              <Route path="/*" element={
-                <ProtectedRoute>
-                  <RoleRouter />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </Suspense>
+                {/* Protected routes */}
+                <Route path="/*" element={
+                  <ProtectedRoute>
+                    <RoleRouter />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </Suspense>
+          </PageTrackingWrapper>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
