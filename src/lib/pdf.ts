@@ -1,11 +1,20 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { toast } from 'sonner';
 import type { Bird, CriadorProfile } from '@/types/bird';
 import type { BirdLoan } from '@/types/loan';
 import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
+
+// Zonas de layout (mm) — fonte única de verdade usada por header, watermark, footer e validador
+const LAYOUT = {
+  HEADER_BOTTOM: 52,   // header verde + filete dourado vão de y=0 até ~52
+  FOOTER_TOP_OFFSET: 14, // footer começa em (h - 14) e vai até h
+  WATERMARK_RATIO: 0.7,  // tamanho relativo à menor dimensão da área de conteúdo
+} as const;
+
 
 // Cache em memória do logo convertido em base64 (evita refetch a cada página)
 const _logoCache: Record<string, string | null> = {};
@@ -252,22 +261,14 @@ async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, op
   const h = doc.internal.pageSize.getHeight();
   const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
 
-  // Área de conteúdo: abaixo do header (y≥55) e acima do footer (y≤h-20)
-  const contentTop = 55;
-  const contentBottom = h - 20;
-  const contentH = contentBottom - contentTop;
-  const contentW = w - 28; // margens 14mm
+  const { x: wmX, y: wmY, size: wmSize } = computeWatermarkBox(w, h);
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
 
     if (wm) {
       try {
-        // Tamanho: até 70% da menor dimensão da área de conteúdo
-        const size = Math.min(contentW, contentH) * 0.7;
-        const x = (w - size) / 2;
-        const y = contentTop + (contentH - size) / 2;
-        doc.addImage(wm, 'PNG', x, y, size, size, undefined, 'SLOW');
+        doc.addImage(wm, 'PNG', wmX, wmY, wmSize, wmSize, undefined, 'SLOW');
       } catch (e) {
         // silencioso
       }
@@ -287,6 +288,70 @@ async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, op
     doc.line(w - m, h - 14, w - m - cs, h - 14);
     doc.line(w - m, h - 14, w - m, h - 14 - cs);
   }
+}
+
+/**
+ * Calcula a caixa onde a marca-d'água será desenhada.
+ * Mesma fórmula usada em applyWatermarkAndCorners — exposta para o validador.
+ */
+function computeWatermarkBox(w: number, h: number) {
+  const contentTop = LAYOUT.HEADER_BOTTOM + 3;
+  const contentBottom = h - LAYOUT.FOOTER_TOP_OFFSET - 6;
+  const contentH = contentBottom - contentTop;
+  const contentW = w - 28;
+  const size = Math.min(contentW, contentH) * LAYOUT.WATERMARK_RATIO;
+  const x = (w - size) / 2;
+  const y = contentTop + (contentH - size) / 2;
+  return { x, y, size };
+}
+
+/**
+ * Valida geometricamente se a marca-d'água invade as zonas reservadas
+ * (header verde no topo ou footer no rodapé). Em caso de problema, mostra
+ * um toast e loga detalhes — NÃO bloqueia o salvamento (apenas alerta).
+ * Retorna lista de problemas (vazia = layout OK).
+ */
+function validateLayout(doc: jsPDF, opts: { hasWatermark: boolean; context: string }): string[] {
+  const problems: string[] = [];
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+
+  if (opts.hasWatermark) {
+    const wm = computeWatermarkBox(w, h);
+    const wmTop = wm.y;
+    const wmBottom = wm.y + wm.size;
+
+    if (wmTop < LAYOUT.HEADER_BOTTOM) {
+      const overlap = LAYOUT.HEADER_BOTTOM - wmTop;
+      problems.push(
+        `Marca-d'água invade o cabeçalho em ${overlap.toFixed(1)}mm ` +
+        `(topo da watermark y=${wmTop.toFixed(1)}, fim do header y=${LAYOUT.HEADER_BOTTOM})`
+      );
+    }
+
+    const footerTop = h - LAYOUT.FOOTER_TOP_OFFSET;
+    if (wmBottom > footerTop) {
+      const overlap = wmBottom - footerTop;
+      problems.push(
+        `Marca-d'água invade o rodapé em ${overlap.toFixed(1)}mm ` +
+        `(base da watermark y=${wmBottom.toFixed(1)}, início do footer y=${footerTop.toFixed(1)})`
+      );
+    }
+
+    if (wm.size <= 0) {
+      problems.push(`Marca-d'água com tamanho inválido (${wm.size.toFixed(1)}mm).`);
+    }
+  }
+
+  if (problems.length > 0) {
+    console.warn(`[pdf:${opts.context}] ⚠️ Validação de layout falhou:`, problems);
+    toast.warning('Aviso no layout do PDF', {
+      description: problems[0] + (problems.length > 1 ? ` (+${problems.length - 1} outros avisos)` : ''),
+      duration: 6000,
+    });
+  }
+
+  return problems;
 }
 
 /**
@@ -436,6 +501,7 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   await applyWatermarkAndCorners(doc, profile, 0.05);
   await applyHeaderAllPages(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
   footer(doc, profile);
+  validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'recibo-emprestimo' });
   doc.save(`recibo_emprestimo_${loan.id.slice(0, 8)}.pdf`);
 }
 
@@ -504,6 +570,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     `Total de aves: ${birds.length}  ·  Emitido em ${new Date().toLocaleDateString('pt-BR')}`
   );
   footer(doc, profile);
+  validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'plantel' });
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
@@ -549,5 +616,6 @@ export async function gerarRelatorioTorneio(
   await applyWatermarkAndCorners(doc, profile, 0.05);
   await applyHeaderAllPages(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
   footer(doc, profile);
+  validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'torneio' });
   doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }
