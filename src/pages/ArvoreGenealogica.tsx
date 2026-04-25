@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw, Download, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { generateArvoreGenealogicaPDF } from '@/lib/pdf';
+import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import LoanBadge from '@/components/LoanBadge';
 
 const Mars = (props: React.SVGProps<SVGSVGElement>) => (
@@ -132,7 +130,7 @@ function TreeNode({ bird, birds, depth, maxDepth, role = 'self' }: NodeProps) {
 }
 
 export default function ArvoreGenealogica() {
-  const { birds, profile } = useAppState();
+  const { birds } = useAppState();
   const [selectedId, setSelectedId] = useState('');
   const [search, setSearch] = useState('');
   const [generations, setGenerations] = useState(3);
@@ -167,20 +165,6 @@ export default function ArvoreGenealogica() {
     const total = Math.pow(2, generations) - 1;
     return { known: known.size, total };
   }, [selectedBird, birds, generations]);
-
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const handleDownloadPDF = async () => {
-    if (!selectedBird) return;
-    setPdfLoading(true);
-    try {
-      await generateArvoreGenealogicaPDF(selectedBird, birds, profile, generations as 2 | 3 | 4);
-      toast.success('PDF da árvore genealógica gerado!');
-    } catch (e: any) {
-      toast.error('Erro ao gerar PDF: ' + (e?.message || 'desconhecido'));
-    } finally {
-      setPdfLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-5 pb-20 md:pb-0">
@@ -253,15 +237,6 @@ export default function ArvoreGenealogica() {
               <button onClick={() => setZoom(1)} className="btn-ghost p-1.5" aria-label="Resetar zoom">
                 <RotateCcw className="w-4 h-4" />
               </button>
-              <button
-                onClick={handleDownloadPDF}
-                disabled={pdfLoading}
-                className="btn-ghost text-xs ml-1 disabled:opacity-50"
-                title="Baixar árvore em PDF (papel timbrado)"
-              >
-                {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                PDF
-              </button>
             </div>
             {stats && (
               <span className="text-xs text-muted-foreground w-full sm:w-auto">
@@ -291,35 +266,13 @@ export default function ArvoreGenealogica() {
       )}
 
       {selectedBird ? (
-        <div className="card-premium p-4 sm:p-6 overflow-auto animate-fade-in relative">
-          {/* Marca d'água: logo do criadouro */}
-          {profile.logo_url && (
-            <img
-              src={profile.logo_url}
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 m-auto w-1/2 max-w-[320px] object-contain select-none"
-              style={{ opacity: 0.05 }}
-            />
-          )}
+        <div className="card-premium p-4 sm:p-6 overflow-auto animate-fade-in">
           <div
-            className="min-w-fit flex justify-center py-4 transition-transform relative"
+            className="min-w-fit flex justify-center py-4 transition-transform"
             style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
           >
             <TreeNode bird={selectedBird} birds={birds} depth={0} maxDepth={generations} role="self" />
           </div>
-          {/* Rodapé com identidade do criadouro */}
-          {(profile.nome_criadouro || profile.logo_url) && (
-            <div className="relative mt-4 pt-3 border-t border-border/40 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              {profile.logo_url && (
-                <img src={profile.logo_url} alt="" className="w-5 h-5 object-contain rounded" />
-              )}
-              <span className="heading-serif italic">
-                {profile.nome_criadouro || 'MeuPlantelPro'}
-                {profile.codigo_criadouro && <span className="ml-2 font-mono text-[10px] opacity-60">· COD {profile.codigo_criadouro}</span>}
-              </span>
-            </div>
-          )}
         </div>
       ) : (
         <div className="text-center py-20 bg-card/40 rounded-2xl border border-dashed border-border/60">

@@ -97,14 +97,9 @@ export default function TorneioDetalhe() {
           </div>
           {isOrganizer && (
             <div className="flex flex-wrap gap-2">
-              <button
-                onClick={baixarPDF}
-                disabled={!classificacao || classificacao.length === 0}
-                title={!classificacao || classificacao.length === 0 ? 'Sem classificação ainda — sorteie e pontue para gerar o PDF' : 'Baixar relatório do torneio em PDF'}
-                className="btn-ghost text-xs disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Download className="w-3.5 h-3.5" /> PDF
-              </button>
+              {torneio.status === 'Encerrado' && (
+                <button onClick={baixarPDF} className="btn-ghost text-xs"><Download className="w-3.5 h-3.5" /> PDF</button>
+              )}
               {(torneio.status === 'Inscricoes' || torneio.status === 'Sorteado') && (
                 <button onClick={sortear} className="btn-primary text-xs"><Shuffle className="w-3.5 h-3.5" /> Sortear</button>
               )}
