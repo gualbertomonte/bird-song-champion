@@ -19,9 +19,9 @@ const LAYOUT = {
 // Modo de visualização do fundo (intensidade da logo do criadouro)
 export type PdfBackgroundMode = 'destaque' | 'sutil' | 'leitura';
 const BG_OPACITY: Record<PdfBackgroundMode, number> = {
-  destaque: 0.18,
-  sutil: 0.08,
-  leitura: 0.03,
+  destaque: 0.32,
+  sutil: 0.18,
+  leitura: 0.10,
 };
 // Cache do modo escolhido por cada doc (para o backplate saber se precisa ser opaco)
 const _docBgMode = new WeakMap<jsPDF, PdfBackgroundMode>();
