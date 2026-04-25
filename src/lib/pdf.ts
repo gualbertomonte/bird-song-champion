@@ -7,6 +7,30 @@ import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
 
+// Cache em memória do logo convertido em base64 (evita refetch a cada página)
+const _logoCache: Record<string, string | null> = {};
+async function loadLogoBase64(url?: string | null): Promise<string | null> {
+  if (!url) return null;
+  if (url in _logoCache) return _logoCache[url];
+  try {
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error('Falha ao buscar logo');
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    _logoCache[url] = dataUrl;
+    return dataUrl;
+  } catch (e) {
+    console.warn('[pdf] logo do criadouro não pôde ser carregada:', e);
+    _logoCache[url] = null;
+    return null;
+  }
+}
+
 // Paleta Aviário Premium (RGB)
 const C_FOREST = [10, 46, 34] as [number, number, number];        // #0A2E22
 const C_FOREST_DEEP = [8, 36, 27] as [number, number, number];    // mais escuro
