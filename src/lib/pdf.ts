@@ -360,6 +360,7 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
+  await applyWatermarkAndCorners(doc, profile);
   footer(doc, profile);
   doc.save(`recibo_emprestimo_${loan.id.slice(0, 8)}.pdf`);
 }
