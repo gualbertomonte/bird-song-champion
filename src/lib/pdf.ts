@@ -619,3 +619,300 @@ export async function gerarRelatorioTorneio(
   validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'torneio' });
   doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }
+
+/* ─────────── Árvore Genealógica ─────────── */
+
+/**
+ * Carrega uma foto de ave como base64 (para incrustar no PDF).
+ * Sem remoção de fundo — fotos são quadradas em miniatura.
+ */
+const _photoCache: Record<string, string | null> = {};
+async function loadPhotoBase64(url?: string | null): Promise<string | null> {
+  if (!url) return null;
+  if (url in _photoCache) return _photoCache[url];
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const size = 256;
+        const c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        const ctx = c.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        // crop quadrado central
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        const data = c.toDataURL('image/jpeg', 0.85);
+        _photoCache[url] = data;
+        resolve(data);
+      } catch {
+        _photoCache[url] = null;
+        resolve(null);
+      }
+    };
+    img.onerror = () => { _photoCache[url] = null; resolve(null); };
+    img.src = url + (url.includes('?') ? '&' : '?') + 'pdfphoto=1';
+  });
+}
+
+interface TreeCard {
+  bird?: Bird;
+  role: 'self' | 'father' | 'mother';
+  photoData?: string | null;
+}
+
+/**
+ * Desenha um card de ave (ou "Desconhecido") em coordenadas (x, y) com largura w e altura h.
+ */
+function drawBirdCard(doc: jsPDF, card: TreeCard, x: number, y: number, w: number, h: number) {
+  const { bird, role, photoData } = card;
+
+  // Borda colorida por papel/sexo
+  const isSelf = role === 'self';
+  const isMale = bird?.sexo === 'M';
+  const isFemale = bird?.sexo === 'F';
+
+  let borderColor: [number, number, number] = C_MUTED;
+  let bgColor: [number, number, number] = [255, 255, 255];
+
+  if (!bird) {
+    borderColor = [200, 200, 200];
+    bgColor = [248, 248, 246];
+  } else if (isSelf) {
+    borderColor = C_GOLD;
+    bgColor = [253, 250, 240];
+  } else if (isMale) {
+    borderColor = [70, 130, 180]; // azul info
+    bgColor = [240, 247, 252];
+  } else if (isFemale) {
+    borderColor = [200, 100, 140]; // rosa
+    bgColor = [252, 242, 247];
+  }
+
+  // Fundo
+  doc.setFillColor(...bgColor);
+  doc.setDrawColor(...borderColor);
+  doc.setLineWidth(isSelf ? 0.8 : 0.4);
+  doc.roundedRect(x, y, w, h, 1.5, 1.5, 'FD');
+
+  if (!bird) {
+    // Card "Desconhecido"
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(...C_MUTED);
+    doc.text('Desconhecido', x + w / 2, y + h / 2 - 1, { align: 'center' });
+    if (role !== 'self') {
+      doc.setFontSize(6);
+      doc.text(role === 'father' ? 'PAI' : 'MÃE', x + w / 2, y + h / 2 + 3, { align: 'center' });
+    }
+    return;
+  }
+
+  // Foto miniatura à esquerda (se houver)
+  const photoSize = h - 4;
+  const photoX = x + 2;
+  const photoY = y + 2;
+  if (photoData) {
+    try {
+      doc.addImage(photoData, 'JPEG', photoX, photoY, photoSize, photoSize, undefined, 'FAST');
+    } catch { /* ignore */ }
+  } else {
+    doc.setFillColor(235, 235, 230);
+    doc.setDrawColor(220, 220, 215);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(photoX, photoY, photoSize, photoSize, 0.8, 0.8, 'FD');
+    doc.setFontSize(6);
+    doc.setTextColor(...C_MUTED);
+    doc.text('sem foto', photoX + photoSize / 2, photoY + photoSize / 2 + 0.5, { align: 'center' });
+  }
+
+  // Texto à direita
+  const tx = photoX + photoSize + 2;
+  const tw = w - (tx - x) - 2;
+
+  // Nome (negrito)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...C_TEXT);
+  const nome = doc.splitTextToSize(bird.nome || '—', tw)[0];
+  doc.text(nome, tx, y + 4);
+
+  // Símbolo sexo ao lado
+  const sexLabel = isMale ? 'M' : isFemale ? 'F' : '?';
+  const sexColor: [number, number, number] = isMale ? [70, 130, 180] : isFemale ? [200, 100, 140] : C_MUTED;
+  doc.setTextColor(...sexColor);
+  doc.setFontSize(7);
+  doc.text(sexLabel, x + w - 3, y + 4, { align: 'right' });
+
+  // Nome científico (itálico)
+  if (bird.nome_cientifico) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6);
+    doc.setTextColor(...C_MUTED);
+    const sci = doc.splitTextToSize(bird.nome_cientifico, tw)[0];
+    doc.text(sci, tx, y + 7.5);
+  }
+
+  // Anilha (mono-like)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_TEXT);
+  const anilha = bird.codigo_anilha || '—';
+  doc.text(anilha, tx, y + h - 2);
+
+  // Tag de papel
+  if (role !== 'self') {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.5);
+    doc.setTextColor(...C_GOLD_SOFT);
+    doc.text(role === 'father' ? 'PAI' : 'MÃE', x + w - 2, y + h - 2, { align: 'right' });
+  }
+}
+
+/**
+ * Calcula o layout vertical da árvore: cada geração ocupa uma "coluna" da esquerda
+ * para a direita (raiz à esquerda, ancestrais mais antigos à direita), com cards
+ * empilhados verticalmente.
+ *
+ * Para `generations` gerações, a coluna g (0..gen-1) tem 2^g posições.
+ */
+function computeTreeLayout(generations: number, areaX: number, areaY: number, areaW: number, areaH: number) {
+  const cols = generations;
+  const cardW = Math.min(58, (areaW - (cols - 1) * 14) / cols);
+  const colGap = (areaW - cols * cardW) / Math.max(1, cols - 1);
+  const cardH = 14;
+
+  // Posições dos slots (col, row) → (x, y)
+  const positions: { x: number; y: number; w: number; h: number }[][] = [];
+  for (let g = 0; g < generations; g++) {
+    const slots = Math.pow(2, g);
+    const x = areaX + g * (cardW + colGap);
+    const slotH = areaH / slots;
+    const colSlots: { x: number; y: number; w: number; h: number }[] = [];
+    for (let s = 0; s < slots; s++) {
+      const cy = areaY + s * slotH + slotH / 2 - cardH / 2;
+      colSlots.push({ x, y: cy, w: cardW, h: cardH });
+    }
+    positions.push(colSlots);
+  }
+  return { positions, cardW, cardH };
+}
+
+/**
+ * Constrói recursivamente a lista de cards por geração (BFS por nível).
+ * Geração 0 = ave selecionada; geração 1 = pai (slot 0) + mãe (slot 1); etc.
+ */
+function buildAncestors(rootId: string, birds: Bird[], generations: number): TreeCard[][] {
+  const byId = new Map(birds.map(b => [b.id, b]));
+  const layers: TreeCard[][] = [];
+
+  // Camada 0: a própria ave
+  const root = byId.get(rootId);
+  layers.push([{ bird: root, role: 'self' }]);
+
+  for (let g = 1; g < generations; g++) {
+    const prev = layers[g - 1];
+    const current: TreeCard[] = [];
+    for (const card of prev) {
+      const father = card.bird?.pai_id ? byId.get(card.bird.pai_id) : undefined;
+      const mother = card.bird?.mae_id ? byId.get(card.bird.mae_id) : undefined;
+      current.push({ bird: father, role: 'father' });
+      current.push({ bird: mother, role: 'mother' });
+    }
+    layers.push(current);
+  }
+  return layers;
+}
+
+export async function generateArvoreGenealogicaPDF(
+  bird: Bird,
+  birds: Bird[],
+  profile: CriadorProfile,
+  generations: 2 | 3 | 4 = 3,
+) {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // Header inicial (página 1)
+  await header(doc, profile, 'Árvore Genealógica', `Linhagem · ${bird.nome} · ${bird.codigo_anilha || '—'}`);
+
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+
+  // Área de conteúdo (abaixo do header, acima do footer, margem lateral 14mm)
+  const areaX = 14;
+  const areaY = LAYOUT.HEADER_BOTTOM + 6;
+  const areaW = w - 28;
+  const areaH = h - areaY - LAYOUT.FOOTER_TOP_OFFSET - 10;
+
+  // Layout
+  const { positions } = computeTreeLayout(generations, areaX, areaY, areaW, areaH);
+  const layers = buildAncestors(bird.id, birds, generations);
+
+  // Pré-carrega fotos em paralelo
+  await Promise.all(
+    layers.flat().map(async (card) => {
+      if (card.bird?.foto_url) {
+        card.photoData = await loadPhotoBase64(card.bird.foto_url);
+      }
+    })
+  );
+
+  // Desenha conexões (filho → pais) — antes dos cards para ficar atrás
+  doc.setDrawColor(...C_GOLD_SOFT);
+  doc.setLineWidth(0.3);
+  for (let g = 0; g < generations - 1; g++) {
+    const childSlots = positions[g];
+    const parentSlots = positions[g + 1];
+    childSlots.forEach((child, idx) => {
+      const father = parentSlots[idx * 2];
+      const mother = parentSlots[idx * 2 + 1];
+      const childRight = { x: child.x + child.w, y: child.y + child.h / 2 };
+      const fatherLeft = { x: father.x, y: father.y + father.h / 2 };
+      const motherLeft = { x: mother.x, y: mother.y + mother.h / 2 };
+      const midX = (childRight.x + fatherLeft.x) / 2;
+
+      // Linha horizontal saindo do filho
+      doc.line(childRight.x, childRight.y, midX, childRight.y);
+      // Linha vertical conectando os dois pais
+      doc.line(midX, fatherLeft.y, midX, motherLeft.y);
+      // Linhas horizontais para cada pai
+      doc.line(midX, fatherLeft.y, fatherLeft.x, fatherLeft.y);
+      doc.line(midX, motherLeft.y, motherLeft.x, motherLeft.y);
+    });
+  }
+
+  // Desenha cards
+  for (let g = 0; g < generations; g++) {
+    const slots = positions[g];
+    const cards = layers[g];
+    slots.forEach((slot, idx) => {
+      const card = cards[idx];
+      if (card) drawBirdCard(doc, card, slot.x, slot.y, slot.w, slot.h);
+    });
+  }
+
+  // Estatística no rodapé do conteúdo
+  const known = layers.flat().filter(c => c.bird).length;
+  const total = layers.flat().length;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(...C_MUTED);
+  doc.text(
+    `Ancestrais conhecidos: ${known} de ${total}  ·  ${generations} gerações  ·  Emitido em ${new Date().toLocaleDateString('pt-BR')}`,
+    w / 2,
+    h - LAYOUT.FOOTER_TOP_OFFSET - 4,
+    { align: 'center' }
+  );
+
+  // Aplica papel timbrado completo
+  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyHeaderAllPages(doc, profile, 'Árvore Genealógica', `Linhagem · ${bird.nome} · ${bird.codigo_anilha || '—'}`);
+  footer(doc, profile);
+  validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'arvore-genealogica' });
+
+  const safeName = (bird.nome || 'ave').replace(/\s+/g, '_').toLowerCase();
+  doc.save(`arvore_${safeName}_${bird.id.slice(0, 8)}.pdf`);
+}
