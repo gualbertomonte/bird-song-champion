@@ -422,6 +422,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     ],
   });
 
+  await applyWatermarkAndCorners(doc, profile);
   footer(doc, profile);
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
