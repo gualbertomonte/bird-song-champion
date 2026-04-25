@@ -462,8 +462,12 @@ export default function BirdDetail() {
                 {/* Cabeçalho */}
                 <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid rgba(201,169,97,0.18)' }}>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(201,169,97,0.18)', border: '1px solid rgba(201,169,97,0.4)' }}>
-                      <BirdIcon className="w-5 h-5" style={{ color: '#C9A961' }} />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden" style={{ background: profile.logo_url ? '#F5F1E8' : 'rgba(201,169,97,0.18)', border: '1px solid rgba(201,169,97,0.4)' }}>
+                      {profile.logo_url ? (
+                        <img src={profile.logo_url} alt="Logo do criadouro" crossOrigin="anonymous" className="w-full h-full object-contain" />
+                      ) : (
+                        <BirdIcon className="w-5 h-5" style={{ color: '#C9A961' }} />
+                      )}
                     </div>
                     <div className="leading-tight">
                       <div className="font-bold text-[13px]" style={{ color: '#C9A961', fontFamily: 'Fraunces, Georgia, serif', letterSpacing: '-0.01em' }}>{profile.nome_criadouro || 'MeuPlantelPro'}</div>
