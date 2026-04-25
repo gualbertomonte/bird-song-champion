@@ -616,5 +616,6 @@ export async function gerarRelatorioTorneio(
   await applyWatermarkAndCorners(doc, profile, 0.05);
   await applyHeaderAllPages(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
   footer(doc, profile);
+  validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'torneio' });
   doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }
