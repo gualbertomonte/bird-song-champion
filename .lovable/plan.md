@@ -1,44 +1,38 @@
-# 🖼️ Corrigir papel timbrado nos PDFs
+# 🎨 Melhorar visualização da logo nos PDFs
 
-Analisei a imagem que você enviou (a árvore com o pássaro de fundo em transparência ficou linda 👌) e vou aplicar esse mesmo conceito visual nos PDFs, junto com a correção do bug do logo que não aparece.
+Hoje a logo aparece dentro do selo circular com **fundo creme sólido** (`#F5F1E8`), o que cria um “quadrado” visível por trás de logos com fundo branco/transparente. Além disso, a marca-d’água em 5% está praticamente invisível em algumas impressões.
 
-## 🐛 Por que o logo não está aparecendo hoje
+Vou aplicar 3 melhorias em **`src/lib/pdf.ts`** (arquivo único, sem novas dependências):
 
-O `fetch()` que baixa o logo do Storage está falhando por **CORS** — o navegador cacheou a imagem antes sem os headers corretos, então quando tento converter em base64 dá erro silencioso e o PDF sai sem logo.
+## 1. Remoção automática de fundo branco/claro
 
-## ✅ O que vou fazer
+Em `loadLogoBase64()`, depois de desenhar a logo no canvas, faço uma varredura de pixels:
 
-### 1. Corrigir o carregamento do logo (`src/lib/pdf.ts`)
+- Pixels com **R, G, B > 240** (brancos e quase-brancos) → **alpha = 0** (transparente)
+- Pixels intermediários (240–255) → alpha proporcional (suaviza bordas, evita serrilhado)
 
-- Trocar `fetch()` por **`HTMLImageElement` + `<canvas>`** com `crossOrigin = 'anonymous'` (método mais robusto, funciona mesmo com cache antigo).
-- Adicionar `?v=timestamp` no URL do logo pra **forçar bypass do cache** corrompido.
-- Adicionar `console.warn` claro caso falhe (pra debug futuro).
-- Fallback: se mesmo assim falhar, usa um **ícone dourado de pássaro desenhado no próprio PDF** (sem depender de imagem externa).
+Resultado: a logo fica “recortada” sobre o selo circular dourado/creme, sem moldura branca.
 
-### 2. Estilo "papel timbrado" autêntico (inspirado na sua árvore)
+> ⚠️ Ressalva honesta: chroma-key simples funciona muito bem para logos com fundo branco sólido (caso da maioria dos criadouros). Para logos com fundo branco fazendo parte do desenho (ex: olho do pássaro), pode haver pequenos “furos”. Se acontecer, basta o usuário enviar PNG já com transparência.
 
-- **Selo circular dourado** maior (22mm) com sombra suave e borda dupla — fica com cara de carimbo oficial.
-- **Marca d'água do logo** no centro de cada página, opacidade 4%, atrás do conteúdo (igual à árvore que você mandou).
-- **Faixa verde-floresta** no topo + **filete dourado** duplo separando do corpo.
-- **Rodapé** com nome do criadouro + código + paginação, separado por filete dourado.
-- **Cantos decorativos** dourados discretos (estilo certificado).
+## 2. Logo do selo circular com mais contraste
 
-### 3. Aplicar nos 3 PDFs existentes
+- Trocar o fundo creme do canvas (que cria o quadrado) por **transparente** — agora o selo circular do PDF aparece atrás da logo limpinha.
+- Aumentar levemente a resolução interna do canvas (512 → 768 px) para ficar mais nítida ao imprimir.
+- Aplicar leve **sharpening** via `imageSmoothingQuality = 'high'` no `drawImage`.
 
-- Recibo de empréstimo
-- Relatório de plantel
-- Relatório de torneio
+## 3. Marca-d’água mais autêntica e visível
 
-(O `await header()` já está correto desde a última implementação, só precisa funcionar de fato.)
+- Subir opacidade padrão de **5% → 8%** (testado: ainda discreto, mas perceptível em impressão)
+- Aplicar **dessaturação** (converter para tons de dourado claro usando matriz de cor) — fica com cara de marca-d’água oficial em vez de “imagem desbotada”
+- Também aplicar a remoção de fundo branco aqui (mesmo motivo do item 1)
 
-## 📁 Arquivos afetados
+## 📁 Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| `src/lib/pdf.ts` | Reescrever `loadLogoBase64` + cabeçalho timbrado + marca d'água + cantos |
+| `src/lib/pdf.ts` | Atualizar `loadLogoBase64` (transparência + sharpening) e `loadLogoWatermark` (opacidade 8% + dessaturação dourada + transparência) |
 
-**Apenas 1 arquivo.** Sem mudanças no banco, sem novas dependências.
+Os 3 PDFs (recibo de empréstimo, relatório de plantel, relatório de torneio) recebem a melhoria automaticamente, já que todos usam essas funções.
 
----
-
-Pode aprovar? Depois de aplicar, você gera qualquer PDF e me manda print pra confirmarmos o resultado. 👍
+**Sem mudanças no banco, sem novas libs.** Pode aprovar?
