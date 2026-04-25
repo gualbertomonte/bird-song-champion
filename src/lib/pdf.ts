@@ -242,23 +242,32 @@ async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtit
 }
 
 /**
- * Aplica marca d'água da logo + cantos decorativos dourados em todas as páginas.
- * Chamar DEPOIS do conteúdo (a marca fica por cima, mas com 5% de opacidade
- * para não atrapalhar a leitura).
+ * Aplica marca d'água da logo (apenas na área de conteúdo, sem tocar header/footer)
+ * + cantos decorativos dourados em todas as páginas.
+ * Chamar ANTES do header/footer para que esses fiquem por cima.
  */
-async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile) {
+async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, opacity = 0.05) {
   const pageCount = doc.getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
-  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, 0.08) : null;
+  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
+
+  // Área de conteúdo: abaixo do header (y≥55) e acima do footer (y≤h-20)
+  const contentTop = 55;
+  const contentBottom = h - 20;
+  const contentH = contentBottom - contentTop;
+  const contentW = w - 28; // margens 14mm
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
 
     if (wm) {
       try {
-        const size = Math.min(w, h) * 0.55;
-        doc.addImage(wm, 'PNG', (w - size) / 2, (h - size) / 2, size, size, undefined, 'FAST');
+        // Tamanho: até 70% da menor dimensão da área de conteúdo
+        const size = Math.min(contentW, contentH) * 0.7;
+        const x = (w - size) / 2;
+        const y = contentTop + (contentH - size) / 2;
+        doc.addImage(wm, 'PNG', x, y, size, size, undefined, 'SLOW');
       } catch (e) {
         // silencioso
       }
@@ -277,6 +286,18 @@ async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile) {
     doc.line(m, h - 14, m, h - 14 - cs);
     doc.line(w - m, h - 14, w - m - cs, h - 14);
     doc.line(w - m, h - 14, w - m, h - 14 - cs);
+  }
+}
+
+/**
+ * Re-aplica o cabeçalho em TODAS as páginas (jsPDF só desenha na página atual).
+ * Chamar por último para garantir que o header fique por cima da marca-d'água.
+ */
+async function applyHeaderAllPages(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    await header(doc, profile, title, subtitle);
   }
 }
 
@@ -411,7 +432,9 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
-  await applyWatermarkAndCorners(doc, profile);
+  // Ordem importa: watermark primeiro (vai pro fundo), header em todas as páginas, footer por último.
+  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyHeaderAllPages(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
   footer(doc, profile);
   doc.save(`recibo_emprestimo_${loan.id.slice(0, 8)}.pdf`);
 }
@@ -473,7 +496,13 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     ],
   });
 
-  await applyWatermarkAndCorners(doc, profile);
+  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyHeaderAllPages(
+    doc,
+    profile,
+    'Relatório de Plantel',
+    `Total de aves: ${birds.length}  ·  Emitido em ${new Date().toLocaleDateString('pt-BR')}`
+  );
   footer(doc, profile);
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
@@ -517,7 +546,8 @@ export async function gerarRelatorioTorneio(
     columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 5: { halign: 'right', fontStyle: 'bold' } },
   });
 
-  await applyWatermarkAndCorners(doc, profile);
+  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyHeaderAllPages(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
   footer(doc, profile);
   doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }
