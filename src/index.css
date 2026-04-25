@@ -4,67 +4,67 @@
 
 @layer base {
   :root {
-    /* Aviário Premium — Dark Forest & Liquid Gold */
-    --background: 158 45% 10%;
-    --foreground: 41 38% 96%;
+    /* Meu Plantel Pro — Light Premium (Off-white + Emerald Accent) */
+    --background: 60 20% 97%;             /* #FAFAF7 off-white */
+    --foreground: 222 47% 11%;            /* slate-900 */
 
-    --card: 158 38% 16%;
-    --card-foreground: 41 38% 96%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 158 40% 14%;
-    --popover-foreground: 41 38% 96%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 158 42% 13%;
-    --primary-foreground: 41 55% 68%;
+    --primary: 158 64% 35%;               /* emerald-700 — usado como cor de marca/CTA */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 41 62% 62%;              /* dourado mais saturado/líquido */
-    --secondary-foreground: 158 50% 10%;
+    --secondary: 158 64% 40%;             /* emerald-600 — accent principal */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 158 28% 20%;
-    --muted-foreground: 41 18% 78%;
+    --muted: 210 20% 96%;                 /* slate-100 */
+    --muted-foreground: 215 16% 47%;      /* slate-500 */
 
-    --accent: 32 50% 60%;                 /* cobre quente */
-    --accent-foreground: 158 50% 10%;
+    --accent: 158 75% 95%;                /* emerald-50 superficial */
+    --accent-foreground: 158 64% 25%;     /* emerald-800 */
 
-    --destructive: 2 60% 62%;
-    --destructive-foreground: 41 38% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 158 35% 24%;
-    --input: 158 32% 20%;
-    --ring: 41 62% 62%;
+    --border: 214 20% 91%;                /* slate-200 */
+    --input: 214 20% 91%;
+    --ring: 158 64% 40%;
 
     --radius: 1rem;
 
-    --sidebar-background: 158 55% 8%;
-    --sidebar-foreground: 158 12% 70%;
-    --sidebar-primary: 41 50% 60%;
-    --sidebar-primary-foreground: 158 55% 9%;
-    --sidebar-accent: 158 50% 14%;
-    --sidebar-accent-foreground: 41 38% 93%;
-    --sidebar-border: 158 47% 16%;
-    --sidebar-ring: 41 50% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 20% 35%;
+    --sidebar-primary: 158 64% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 158 75% 96%;
+    --sidebar-accent-foreground: 158 64% 25%;
+    --sidebar-border: 214 25% 92%;
+    --sidebar-ring: 158 64% 40%;
 
-    --success: 152 45% 52%;
-    --success-foreground: 41 38% 98%;
-    --warning: 41 62% 62%;
-    --warning-foreground: 158 50% 10%;
-    --info: 200 70% 65%;
-    --info-foreground: 41 38% 98%;
-    --gold: 41 50% 60%;
+    --success: 158 64% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 200 90% 45%;
+    --info-foreground: 0 0% 100%;
+    --gold: 158 64% 40%;
 
-    --chart-1: 158 53% 22%;
-    --chart-2: 41 50% 60%;
-    --chart-3: 200 60% 55%;
-    --chart-4: 2 49% 55%;
-    --chart-5: 155 32% 42%;
+    --chart-1: 158 64% 40%;
+    --chart-2: 158 50% 60%;
+    --chart-3: 200 80% 55%;
+    --chart-4: 38 90% 55%;
+    --chart-5: 215 20% 55%;
 
-    /* Glass tokens */
-    --glass-bg: 158 38% 14% / 0.55;
-    --glass-bg-strong: 158 42% 12% / 0.72;
-    --glass-bg-subtle: 158 38% 16% / 0.4;
-    --glass-border: 41 55% 65% / 0.15;
-    --glass-highlight: 41 70% 80% / 0.18;
-    --gold-glow: 41 62% 62% / 0.35;
+    /* Glass tokens — adaptados para light */
+    --glass-bg: 0 0% 100% / 0.75;
+    --glass-bg-strong: 0 0% 100% / 0.92;
+    --glass-bg-subtle: 0 0% 100% / 0.5;
+    --glass-border: 214 25% 88% / 0.8;
+    --glass-highlight: 0 0% 100% / 0.6;
+    --gold-glow: 158 64% 40% / 0.25;
   }
 }
 
