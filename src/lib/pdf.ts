@@ -162,102 +162,132 @@ const C_CREAM_ALT = [250, 247, 239] as [number, number, number];
 const C_TEXT = [30, 38, 34] as [number, number, number];
 const C_MUTED = [120, 130, 124] as [number, number, number];
 
+/**
+ * Header minimalista — substitui a faixa verde + selo dourado.
+ * Nome do criadouro (esq) + título/subtítulo (centro/dir) + linha dourada fina.
+ * A "marca visual" agora vem da logo de fundo (applyLogoBackground).
+ */
 async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
   const w = doc.internal.pageSize.getWidth();
+  const criador = profile?.nome_criadouro?.trim() || 'MeuPlantelPro';
 
-  // Faixa principal verde-floresta
-  doc.setFillColor(...C_FOREST);
-  doc.rect(0, 0, w, 30, 'F');
+  // Nome do criadouro (esquerda) — serif elegante simulada com helvetica bold
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C_FOREST);
+  doc.text(criador, 14, 11);
 
-  // Filete dourado duplo abaixo da faixa (estilo certificado)
-  doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.7);
-  doc.line(0, 30, w, 30);
-  doc.setLineWidth(0.2);
-  doc.line(0, 31.4, w, 31.4);
-
-  const logo = await loadLogoBase64(profile.logo_url);
-  const textOffsetX = 42;
-
-  // ─── Selo circular dourado (carimbo oficial) ───
-  // Anel dourado externo
-  doc.setFillColor(...C_GOLD);
-  doc.circle(22, 15, 12, 'F');
-  // Anel verde escuro intermediário
-  doc.setFillColor(...C_FOREST_DEEP);
-  doc.circle(22, 15, 11.2, 'F');
-  // Selo creme central onde fica a logo
-  doc.setFillColor(245, 241, 232);
-  doc.circle(22, 15, 10.4, 'F');
-  // Borda dourada interna fina
-  doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.3);
-  doc.circle(22, 15, 10.4, 'S');
-
-  if (logo) {
-    try {
-      doc.addImage(logo, 'PNG', 13, 6, 18, 18, undefined, 'FAST');
-    } catch (e) {
-      console.warn('[pdf] addImage logo falhou:', e);
-    }
-  } else {
-    // Fallback: monograma "MP" dourado
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...C_GOLD_SOFT);
-    doc.text('MP', 22, 17.5, { align: 'center' });
+  // Metadados pequenos abaixo (cód. + CTF)
+  const meta: string[] = [];
+  if (profile?.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
+  if (profile?.registro_ctf) meta.push(`CTF ${profile.registro_ctf}`);
+  if (meta.length) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_MUTED);
+    doc.text(meta.join('  ·  '), 14, 15.5);
   }
 
-  // Nome do criadouro
-  doc.setTextColor(...C_GOLD);
+  // Título do documento (direita)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 13);
-
-  // Metadados
-  doc.setTextColor(...C_CREAM);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  const meta: string[] = [];
-  if (profile.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
-  if (profile.registro_ctf) meta.push(`CTF/IBAMA ${profile.registro_ctf}`);
-  if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
-  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 20);
-
-  // Selo "MeuPlantelPro" no canto direito
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...C_GOLD);
-  doc.text('MEUPLANTELPRO', w - 14, 13, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(...C_CREAM);
-  doc.text('Plantel Premium', w - 14, 18, { align: 'right' });
-
-  // Título do documento
+  doc.setFontSize(12);
   doc.setTextColor(...C_TEXT);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text(title, 14, 42);
+  doc.text(title, w - 14, 11, { align: 'right' });
   if (subtitle) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(...C_MUTED);
-    doc.text(subtitle, 14, 48);
+    doc.text(subtitle, w - 14, 16, { align: 'right' });
   }
+
+  // Linha dourada fina separadora
   doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.3);
-  doc.line(14, 51, w - 14, 51);
+  doc.setLineWidth(0.4);
+  doc.line(14, 21, w - 14, 21);
+  doc.setLineWidth(0.15);
+  doc.line(14, 22, w - 14, 22);
   doc.setTextColor(...C_TEXT);
 }
 
 /**
- * Aplica marca d'água da logo (apenas na área de conteúdo, sem tocar header/footer)
- * + cantos decorativos dourados em todas as páginas.
- * Chamar ANTES do header/footer para que esses fiquem por cima.
+ * Aplica a logo do criadouro como fundo de TODAS as páginas + um "backplate" branco
+ * semi-transparente sobre a área de conteúdo para garantir nitidez do texto.
+ *
+ * Modo controla a intensidade da logo de fundo:
+ *  - 'destaque' (18%): capas / página única
+ *  - 'sutil'    (8%):  relatórios / árvore
+ *  - 'leitura'  (3%):  tabelas longas
+ *
+ * O backplate cobre a área entre header e footer com inset (deixa logo aparecer nas bordas).
  */
-async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, opacity = 0.05) {
+async function applyLogoBackground(
+  doc: jsPDF,
+  profile: CriadorProfile | undefined,
+  mode: PdfBackgroundMode = 'sutil',
+) {
+  _docBgMode.set(doc, mode);
+  const opacity = BG_OPACITY[mode];
   const pageCount = doc.getNumberOfPages();
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  const bg = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
+
+  // Logo ocupa 70% da menor dimensão, centralizada
+  const size = Math.min(w, h) * 0.7;
+  const bgX = (w - size) / 2;
+  const bgY = (h - size) / 2;
+
+  // Backplate: área entre header e footer, com pequeno inset lateral
+  const inset = LAYOUT.BACKPLATE_INSET;
+  const bpX = inset;
+  const bpY = LAYOUT.HEADER_BOTTOM - 1;
+  const bpW = w - inset * 2;
+  const bpH = h - bpY - LAYOUT.FOOTER_TOP_OFFSET - 1;
+  // Opacidade do backplate: quanto mais opaca a logo, mais opaco o backplate precisa ser
+  const bpOpacity = mode === 'destaque' ? 0.92 : mode === 'sutil' ? 0.82 : 0.7;
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    if (bg) {
+      try {
+        doc.addImage(bg, 'PNG', bgX, bgY, size, size, undefined, 'SLOW');
+      } catch { /* ignore */ }
+    }
+    // Backplate branco semi-transparente — protege a leitura
+    drawTextBackplate(doc, bpX, bpY, bpW, bpH, bpOpacity);
+  }
+}
+
+/**
+ * Desenha um retângulo branco semi-transparente para "apagar" a logo de fundo
+ * localmente e garantir contraste do texto. Usa GState do jsPDF.
+ */
+function drawTextBackplate(doc: jsPDF, x: number, y: number, w: number, h: number, opacity = 0.85) {
+  const docAny = doc as any;
+  let gState: any = null;
+  try {
+    if (typeof docAny.GState === 'function' && typeof docAny.setGState === 'function') {
+      gState = new docAny.GState({ opacity });
+      docAny.setGState(gState);
+    }
+  } catch { /* sem suporte a GState — desenha opaco */ }
+  doc.setFillColor(255, 255, 255);
+  doc.rect(x, y, w, h, 'F');
+  // Restaura opacidade total
+  try {
+    if (typeof docAny.GState === 'function' && typeof docAny.setGState === 'function') {
+      docAny.setGState(new docAny.GState({ opacity: 1 }));
+    }
+  } catch { /* ignore */ }
+}
+
+/**
+ * @deprecated mantido como atalho — use applyLogoBackground.
+ * Encaminha para applyLogoBackground no modo 'sutil' por padrão.
+ */
+async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, _opacity = 0.05) {
+  await applyLogoBackground(doc, profile, 'sutil');
+}
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
