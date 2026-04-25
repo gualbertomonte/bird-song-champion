@@ -1,11 +1,20 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { toast } from 'sonner';
 import type { Bird, CriadorProfile } from '@/types/bird';
 import type { BirdLoan } from '@/types/loan';
 import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
+
+// Zonas de layout (mm) — fonte única de verdade usada por header, watermark, footer e validador
+const LAYOUT = {
+  HEADER_BOTTOM: 52,   // header verde + filete dourado vão de y=0 até ~52
+  FOOTER_TOP_OFFSET: 14, // footer começa em (h - 14) e vai até h
+  WATERMARK_RATIO: 0.7,  // tamanho relativo à menor dimensão da área de conteúdo
+} as const;
+
 
 // Cache em memória do logo convertido em base64 (evita refetch a cada página)
 const _logoCache: Record<string, string | null> = {};
