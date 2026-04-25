@@ -41,7 +41,7 @@ const C_CREAM_ALT = [250, 247, 239] as [number, number, number];  // zebra
 const C_TEXT = [30, 38, 34] as [number, number, number];
 const C_MUTED = [120, 130, 124] as [number, number, number];
 
-function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
+async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
   const w = doc.internal.pageSize.getWidth();
 
   // Faixa principal verde-floresta
@@ -53,11 +53,31 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   doc.setLineWidth(0.6);
   doc.line(0, 26, w, 26);
 
+  // Tenta carregar a logo do criadouro
+  const logo = await loadLogoBase64(profile.logo_url);
+  const textOffsetX = logo ? 36 : 14;
+
+  if (logo) {
+    // Selo branco circular para a logo
+    doc.setFillColor(245, 241, 232);
+    doc.circle(22, 13, 9.5, 'F');
+    doc.setDrawColor(...C_GOLD);
+    doc.setLineWidth(0.5);
+    doc.circle(22, 13, 9.5, 'S');
+    try {
+      // Detecta formato pela data URL
+      const fmt = logo.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(logo, fmt, 14, 5, 16, 16, undefined, 'FAST');
+    } catch (e) {
+      console.warn('[pdf] addImage logo falhou:', e);
+    }
+  }
+
   // Logo / nome do criadouro
   doc.setTextColor(...C_GOLD);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(profile.nome_criadouro || 'MeuPlantelPro', 14, 12);
+  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 12);
 
   // Metadados
   doc.setTextColor(...C_CREAM);
@@ -67,7 +87,7 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   if (profile.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
   if (profile.registro_ctf) meta.push(`CTF/IBAMA ${profile.registro_ctf}`);
   if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
-  if (meta.length) doc.text(meta.join('  ·  '), 14, 19);
+  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 19);
 
   // Selo "MeuPlantelPro" no canto direito
   doc.setFont('helvetica', 'bold');
@@ -77,7 +97,7 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...C_CREAM);
-  doc.text('Aviário Premium', w - 14, 17, { align: 'right' });
+  doc.text('Plantel Premium', w - 14, 17, { align: 'right' });
 
   // Título do documento
   doc.setTextColor(...C_TEXT);
