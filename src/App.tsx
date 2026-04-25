@@ -155,7 +155,6 @@ function RoleRouter() {
           </Route>
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
-        </Routes>
       </Suspense>
     );
   }
