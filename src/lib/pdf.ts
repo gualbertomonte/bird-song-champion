@@ -496,7 +496,13 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     ],
   });
 
-  await applyWatermarkAndCorners(doc, profile);
+  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyHeaderAllPages(
+    doc,
+    profile,
+    'Relatório de Plantel',
+    `Total de aves: ${birds.length}  ·  Emitido em ${new Date().toLocaleDateString('pt-BR')}`
+  );
   footer(doc, profile);
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
