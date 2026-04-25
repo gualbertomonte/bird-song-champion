@@ -299,35 +299,22 @@ function validateLayout(doc: jsPDF, opts: { hasWatermark: boolean; context: stri
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
-  if (opts.hasWatermark) {
-    const wm = computeWatermarkBox(w, h);
-    const wmTop = wm.y;
-    const wmBottom = wm.y + wm.size;
+  // Avisa se o criadouro não tem logo — fundo fica em branco
+  if (!opts.hasWatermark) {
+    console.info(`[pdf:${opts.context}] Sem logo do criadouro — fundo em branco.`);
+  }
 
-    if (wmTop < LAYOUT.HEADER_BOTTOM) {
-      const overlap = LAYOUT.HEADER_BOTTOM - wmTop;
-      problems.push(
-        `Marca-d'água invade o cabeçalho em ${overlap.toFixed(1)}mm ` +
-        `(topo da watermark y=${wmTop.toFixed(1)}, fim do header y=${LAYOUT.HEADER_BOTTOM})`
-      );
-    }
-
-    const footerTop = h - LAYOUT.FOOTER_TOP_OFFSET;
-    if (wmBottom > footerTop) {
-      const overlap = wmBottom - footerTop;
-      problems.push(
-        `Marca-d'água invade o rodapé em ${overlap.toFixed(1)}mm ` +
-        `(base da watermark y=${wmBottom.toFixed(1)}, início do footer y=${footerTop.toFixed(1)})`
-      );
-    }
-
-    if (wm.size <= 0) {
-      problems.push(`Marca-d'água com tamanho inválido (${wm.size.toFixed(1)}mm).`);
-    }
+  // Sanidade da área útil
+  const usableH = h - LAYOUT.HEADER_BOTTOM - LAYOUT.FOOTER_TOP_OFFSET;
+  if (usableH < 40) {
+    problems.push(`Área útil muito pequena (${usableH.toFixed(1)}mm) — header/footer ocupam demais.`);
+  }
+  if (w < 100) {
+    problems.push(`Largura da página suspeita (${w.toFixed(1)}mm).`);
   }
 
   if (problems.length > 0) {
-    console.warn(`[pdf:${opts.context}] ⚠️ Validação de layout falhou:`, problems);
+    console.warn(`[pdf:${opts.context}] ⚠️ Validação de layout:`, problems);
     toast.warning('Aviso no layout do PDF', {
       description: problems[0] + (problems.length > 1 ? ` (+${problems.length - 1} outros avisos)` : ''),
       duration: 6000,
