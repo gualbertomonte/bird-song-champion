@@ -117,10 +117,11 @@ async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtit
   doc.setTextColor(...C_TEXT);
 }
 
-function footer(doc: jsPDF) {
+function footer(doc: jsPDF, profile?: CriadorProfile) {
   const pageCount = doc.getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
+  const criador = profile?.nome_criadouro?.trim();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     // Linha dourada
@@ -130,7 +131,10 @@ function footer(doc: jsPDF) {
     // Texto
     doc.setFontSize(8);
     doc.setTextColor(...C_MUTED);
-    doc.text(`MeuPlantelPro · Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, h - 7);
+    const left = criador
+      ? `${criador} · MeuPlantelPro · ${new Date().toLocaleDateString('pt-BR')}`
+      : `MeuPlantelPro · Gerado em ${new Date().toLocaleDateString('pt-BR')}`;
+    doc.text(left, 14, h - 7);
     doc.text(`Página ${i} de ${pageCount}`, w - 14, h - 7, { align: 'right' });
   }
 }
