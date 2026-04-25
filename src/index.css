@@ -76,11 +76,9 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
     background-image:
-      radial-gradient(ellipse 80% 60% at 15% 0%, hsl(158 55% 18% / 0.85), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 85% 20%, hsl(41 50% 45% / 0.10), transparent 55%),
-      radial-gradient(ellipse 100% 60% at 50% 110%, hsl(32 45% 35% / 0.12), transparent 60%),
-      radial-gradient(circle at 50% 50%, transparent 30%, hsl(158 60% 5% / 0.55) 100%),
-      linear-gradient(180deg, hsl(158 50% 9%), hsl(158 55% 7%));
+      radial-gradient(ellipse 80% 50% at 15% 0%, hsl(158 75% 92% / 0.55), transparent 60%),
+      radial-gradient(ellipse 70% 40% at 85% 10%, hsl(158 70% 90% / 0.35), transparent 55%),
+      linear-gradient(180deg, hsl(60 20% 98%), hsl(60 20% 96%));
     background-attachment: fixed;
   }
 
