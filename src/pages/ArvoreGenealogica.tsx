@@ -130,7 +130,7 @@ function TreeNode({ bird, birds, depth, maxDepth, role = 'self' }: NodeProps) {
 }
 
 export default function ArvoreGenealogica() {
-  const { birds } = useAppState();
+  const { birds, profile } = useAppState();
   const [selectedId, setSelectedId] = useState('');
   const [search, setSearch] = useState('');
   const [generations, setGenerations] = useState(3);
@@ -266,13 +266,35 @@ export default function ArvoreGenealogica() {
       )}
 
       {selectedBird ? (
-        <div className="card-premium p-4 sm:p-6 overflow-auto animate-fade-in">
+        <div className="card-premium p-4 sm:p-6 overflow-auto animate-fade-in relative">
+          {/* Marca d'água: logo do criadouro */}
+          {profile.logo_url && (
+            <img
+              src={profile.logo_url}
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 m-auto w-1/2 max-w-[320px] object-contain select-none"
+              style={{ opacity: 0.05 }}
+            />
+          )}
           <div
-            className="min-w-fit flex justify-center py-4 transition-transform"
+            className="min-w-fit flex justify-center py-4 transition-transform relative"
             style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
           >
             <TreeNode bird={selectedBird} birds={birds} depth={0} maxDepth={generations} role="self" />
           </div>
+          {/* Rodapé com identidade do criadouro */}
+          {(profile.nome_criadouro || profile.logo_url) && (
+            <div className="relative mt-4 pt-3 border-t border-border/40 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              {profile.logo_url && (
+                <img src={profile.logo_url} alt="" className="w-5 h-5 object-contain rounded" />
+              )}
+              <span className="heading-serif italic">
+                {profile.nome_criadouro || 'MeuPlantelPro'}
+                {profile.codigo_criadouro && <span className="ml-2 font-mono text-[10px] opacity-60">· COD {profile.codigo_criadouro}</span>}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="text-center py-20 bg-card/40 rounded-2xl border border-dashed border-border/60">

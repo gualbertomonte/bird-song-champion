@@ -7,6 +7,30 @@ import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
 
+// Cache em memória do logo convertido em base64 (evita refetch a cada página)
+const _logoCache: Record<string, string | null> = {};
+async function loadLogoBase64(url?: string | null): Promise<string | null> {
+  if (!url) return null;
+  if (url in _logoCache) return _logoCache[url];
+  try {
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error('Falha ao buscar logo');
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    _logoCache[url] = dataUrl;
+    return dataUrl;
+  } catch (e) {
+    console.warn('[pdf] logo do criadouro não pôde ser carregada:', e);
+    _logoCache[url] = null;
+    return null;
+  }
+}
+
 // Paleta Aviário Premium (RGB)
 const C_FOREST = [10, 46, 34] as [number, number, number];        // #0A2E22
 const C_FOREST_DEEP = [8, 36, 27] as [number, number, number];    // mais escuro
@@ -17,7 +41,7 @@ const C_CREAM_ALT = [250, 247, 239] as [number, number, number];  // zebra
 const C_TEXT = [30, 38, 34] as [number, number, number];
 const C_MUTED = [120, 130, 124] as [number, number, number];
 
-function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
+async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: string) {
   const w = doc.internal.pageSize.getWidth();
 
   // Faixa principal verde-floresta
@@ -29,11 +53,31 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   doc.setLineWidth(0.6);
   doc.line(0, 26, w, 26);
 
+  // Tenta carregar a logo do criadouro
+  const logo = await loadLogoBase64(profile.logo_url);
+  const textOffsetX = logo ? 36 : 14;
+
+  if (logo) {
+    // Selo branco circular para a logo
+    doc.setFillColor(245, 241, 232);
+    doc.circle(22, 13, 9.5, 'F');
+    doc.setDrawColor(...C_GOLD);
+    doc.setLineWidth(0.5);
+    doc.circle(22, 13, 9.5, 'S');
+    try {
+      // Detecta formato pela data URL
+      const fmt = logo.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(logo, fmt, 14, 5, 16, 16, undefined, 'FAST');
+    } catch (e) {
+      console.warn('[pdf] addImage logo falhou:', e);
+    }
+  }
+
   // Logo / nome do criadouro
   doc.setTextColor(...C_GOLD);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(profile.nome_criadouro || 'MeuPlantelPro', 14, 12);
+  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 12);
 
   // Metadados
   doc.setTextColor(...C_CREAM);
@@ -43,7 +87,7 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   if (profile.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
   if (profile.registro_ctf) meta.push(`CTF/IBAMA ${profile.registro_ctf}`);
   if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
-  if (meta.length) doc.text(meta.join('  ·  '), 14, 19);
+  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 19);
 
   // Selo "MeuPlantelPro" no canto direito
   doc.setFont('helvetica', 'bold');
@@ -53,7 +97,7 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...C_CREAM);
-  doc.text('Aviário Premium', w - 14, 17, { align: 'right' });
+  doc.text('Plantel Premium', w - 14, 17, { align: 'right' });
 
   // Título do documento
   doc.setTextColor(...C_TEXT);
@@ -73,10 +117,11 @@ function header(doc: jsPDF, profile: CriadorProfile, title: string, subtitle?: s
   doc.setTextColor(...C_TEXT);
 }
 
-function footer(doc: jsPDF) {
+function footer(doc: jsPDF, profile?: CriadorProfile) {
   const pageCount = doc.getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
+  const criador = profile?.nome_criadouro?.trim();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     // Linha dourada
@@ -86,7 +131,10 @@ function footer(doc: jsPDF) {
     // Texto
     doc.setFontSize(8);
     doc.setTextColor(...C_MUTED);
-    doc.text(`MeuPlantelPro · Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, h - 7);
+    const left = criador
+      ? `${criador} · MeuPlantelPro · ${new Date().toLocaleDateString('pt-BR')}`
+      : `MeuPlantelPro · Gerado em ${new Date().toLocaleDateString('pt-BR')}`;
+    doc.text(left, 14, h - 7);
     doc.text(`Página ${i} de ${pageCount}`, w - 14, h - 7, { align: 'right' });
   }
 }
@@ -120,10 +168,10 @@ function sectionTitle(doc: jsPDF, text: string, y: number) {
 }
 
 /* ─────────── Recibo de Empréstimo ─────────── */
-export function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorProfile) {
+export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorProfile) {
   const doc = new jsPDF();
   const snap = (loan.bird_snapshot || {}) as any;
-  header(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
+  await header(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
 
   let y = 56;
   sectionTitle(doc, 'Partes envolvidas', y); y += 6;
@@ -196,14 +244,14 @@ export function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorProfile) 
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
-  footer(doc);
+  footer(doc, profile);
   doc.save(`recibo_emprestimo_${loan.id.slice(0, 8)}.pdf`);
 }
 
 /* ─────────── Relatório de Plantel (formato SISPASS-like) ─────────── */
-export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile) {
+export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile) {
   const doc = new jsPDF({ orientation: 'landscape' });
-  header(
+  await header(
     doc,
     profile,
     'Relatório de Plantel',
@@ -257,19 +305,19 @@ export function generatePlantelReportPDF(birds: Bird[], profile: CriadorProfile)
     ],
   });
 
-  footer(doc);
+  footer(doc, profile);
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 /* ─────────── Relatório de Torneio ─────────── */
-export function gerarRelatorioTorneio(
+export async function gerarRelatorioTorneio(
   torneio: Torneio,
   classificacao: ClassificacaoItem[],
   profile: CriadorProfile,
   criadores?: Record<string, string>,
 ) {
   const doc = new jsPDF();
-  header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
+  await header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
 
   let y = 56;
   if (torneio.regulamento) {
@@ -300,6 +348,6 @@ export function gerarRelatorioTorneio(
     columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 5: { halign: 'right', fontStyle: 'bold' } },
   });
 
-  footer(doc);
+  footer(doc, profile);
   doc.save(`torneio_${torneio.nome.replace(/\s+/g, '_').toLowerCase()}_${torneio.id.slice(0, 8)}.pdf`);
 }
