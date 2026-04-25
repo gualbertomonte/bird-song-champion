@@ -467,8 +467,8 @@ export async function generateLoanReceiptPDF(loan: BirdLoan, profile: CriadorPro
   doc.text('Cedente', 55, y + 5, { align: 'center' });
   doc.text('Recebedor', 155, y + 5, { align: 'center' });
 
-  // Ordem importa: watermark primeiro (vai pro fundo), header em todas as páginas, footer por último.
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  // Ordem: fundo (logo + backplate) primeiro, header em todas as páginas, footer por último.
+  await applyLogoBackground(doc, profile, 'destaque');
   await applyHeaderAllPages(doc, profile, 'Recibo de Empréstimo de Ave', `Documento Nº ${loan.id.slice(0, 8).toUpperCase()}`);
   footer(doc, profile);
   validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'recibo-emprestimo' });
