@@ -106,38 +106,52 @@ async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtit
 
   // Faixa principal verde-floresta
   doc.setFillColor(...C_FOREST);
-  doc.rect(0, 0, w, 26, 'F');
+  doc.rect(0, 0, w, 30, 'F');
 
-  // Linha dourada inferior na faixa
+  // Filete dourado duplo abaixo da faixa (estilo certificado)
   doc.setDrawColor(...C_GOLD);
-  doc.setLineWidth(0.6);
-  doc.line(0, 26, w, 26);
+  doc.setLineWidth(0.7);
+  doc.line(0, 30, w, 30);
+  doc.setLineWidth(0.2);
+  doc.line(0, 31.4, w, 31.4);
 
-  // Tenta carregar a logo do criadouro
   const logo = await loadLogoBase64(profile.logo_url);
-  const textOffsetX = logo ? 36 : 14;
+  const textOffsetX = 42;
+
+  // ─── Selo circular dourado (carimbo oficial) ───
+  // Anel dourado externo
+  doc.setFillColor(...C_GOLD);
+  doc.circle(22, 15, 12, 'F');
+  // Anel verde escuro intermediário
+  doc.setFillColor(...C_FOREST_DEEP);
+  doc.circle(22, 15, 11.2, 'F');
+  // Selo creme central onde fica a logo
+  doc.setFillColor(245, 241, 232);
+  doc.circle(22, 15, 10.4, 'F');
+  // Borda dourada interna fina
+  doc.setDrawColor(...C_GOLD);
+  doc.setLineWidth(0.3);
+  doc.circle(22, 15, 10.4, 'S');
 
   if (logo) {
-    // Selo branco circular para a logo
-    doc.setFillColor(245, 241, 232);
-    doc.circle(22, 13, 9.5, 'F');
-    doc.setDrawColor(...C_GOLD);
-    doc.setLineWidth(0.5);
-    doc.circle(22, 13, 9.5, 'S');
     try {
-      // Detecta formato pela data URL
-      const fmt = logo.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-      doc.addImage(logo, fmt, 14, 5, 16, 16, undefined, 'FAST');
+      doc.addImage(logo, 'PNG', 13, 6, 18, 18, undefined, 'FAST');
     } catch (e) {
       console.warn('[pdf] addImage logo falhou:', e);
     }
+  } else {
+    // Fallback: monograma "MP" dourado
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...C_GOLD_SOFT);
+    doc.text('MP', 22, 17.5, { align: 'center' });
   }
 
-  // Logo / nome do criadouro
+  // Nome do criadouro
   doc.setTextColor(...C_GOLD);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 12);
+  doc.text(profile.nome_criadouro || 'MeuPlantelPro', textOffsetX, 13);
 
   // Metadados
   doc.setTextColor(...C_CREAM);
@@ -147,34 +161,72 @@ async function header(doc: jsPDF, profile: CriadorProfile, title: string, subtit
   if (profile.codigo_criadouro) meta.push(`Cód. ${profile.codigo_criadouro}`);
   if (profile.registro_ctf) meta.push(`CTF/IBAMA ${profile.registro_ctf}`);
   if (profile.cpf) meta.push(`CPF ${profile.cpf}`);
-  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 19);
+  if (meta.length) doc.text(meta.join('  ·  '), textOffsetX, 20);
 
   // Selo "MeuPlantelPro" no canto direito
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...C_GOLD);
-  doc.text('MEUPLANTELPRO', w - 14, 12, { align: 'right' });
+  doc.text('MEUPLANTELPRO', w - 14, 13, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...C_CREAM);
-  doc.text('Plantel Premium', w - 14, 17, { align: 'right' });
+  doc.text('Plantel Premium', w - 14, 18, { align: 'right' });
 
   // Título do documento
   doc.setTextColor(...C_TEXT);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(title, 14, 38);
+  doc.text(title, 14, 42);
   if (subtitle) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
-    doc.text(subtitle, 14, 44);
+    doc.text(subtitle, 14, 48);
   }
-  // Linha dourada decorativa
   doc.setDrawColor(...C_GOLD);
   doc.setLineWidth(0.3);
-  doc.line(14, 47, w - 14, 47);
+  doc.line(14, 51, w - 14, 51);
   doc.setTextColor(...C_TEXT);
+}
+
+/**
+ * Aplica marca d'água da logo + cantos decorativos dourados em todas as páginas.
+ * Chamar DEPOIS do conteúdo (a marca fica por cima, mas com 5% de opacidade
+ * para não atrapalhar a leitura).
+ */
+async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile) {
+  const pageCount = doc.getNumberOfPages();
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, 0.05) : null;
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+
+    if (wm) {
+      try {
+        const size = Math.min(w, h) * 0.55;
+        doc.addImage(wm, 'PNG', (w - size) / 2, (h - size) / 2, size, size, undefined, 'FAST');
+      } catch (e) {
+        // silencioso
+      }
+    }
+
+    // Cantos decorativos dourados (estilo certificado)
+    doc.setDrawColor(...C_GOLD);
+    doc.setLineWidth(0.4);
+    const cs = 6;
+    const m = 8;
+    doc.line(m, 36, m + cs, 36);
+    doc.line(m, 36, m, 36 + cs);
+    doc.line(w - m, 36, w - m - cs, 36);
+    doc.line(w - m, 36, w - m, 36 + cs);
+    doc.line(m, h - 14, m + cs, h - 14);
+    doc.line(m, h - 14, m, h - 14 - cs);
+    doc.line(w - m, h - 14, w - m - cs, h - 14);
+    doc.line(w - m, h - 14, w - m, h - 14 - cs);
+  }
 }
 
 function footer(doc: jsPDF, profile?: CriadorProfile) {
@@ -182,19 +234,23 @@ function footer(doc: jsPDF, profile?: CriadorProfile) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   const criador = profile?.nome_criadouro?.trim();
+  const codigo = profile?.codigo_criadouro?.trim();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    // Linha dourada
+    // Filete dourado duplo
     doc.setDrawColor(...C_GOLD);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.5);
     doc.line(14, h - 12, w - 14, h - 12);
-    // Texto
+    doc.setLineWidth(0.15);
+    doc.line(14, h - 11, w - 14, h - 11);
     doc.setFontSize(8);
     doc.setTextColor(...C_MUTED);
-    const left = criador
-      ? `${criador} · MeuPlantelPro · ${new Date().toLocaleDateString('pt-BR')}`
-      : `MeuPlantelPro · Gerado em ${new Date().toLocaleDateString('pt-BR')}`;
-    doc.text(left, 14, h - 7);
+    const parts: string[] = [];
+    if (criador) parts.push(criador);
+    if (codigo) parts.push(`Cód. ${codigo}`);
+    parts.push('MeuPlantelPro');
+    parts.push(new Date().toLocaleDateString('pt-BR'));
+    doc.text(parts.join('  ·  '), 14, h - 7);
     doc.text(`Página ${i} de ${pageCount}`, w - 14, h - 7, { align: 'right' });
   }
 }
