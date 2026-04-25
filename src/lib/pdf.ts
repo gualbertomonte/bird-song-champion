@@ -288,54 +288,6 @@ function drawTextBackplate(doc: jsPDF, x: number, y: number, w: number, h: numbe
 async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile, _opacity = 0.05) {
   await applyLogoBackground(doc, profile, 'sutil');
 }
-  const w = doc.internal.pageSize.getWidth();
-  const h = doc.internal.pageSize.getHeight();
-  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, opacity) : null;
-
-  const { x: wmX, y: wmY, size: wmSize } = computeWatermarkBox(w, h);
-
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-
-    if (wm) {
-      try {
-        doc.addImage(wm, 'PNG', wmX, wmY, wmSize, wmSize, undefined, 'SLOW');
-      } catch (e) {
-        // silencioso
-      }
-    }
-
-    // Cantos decorativos dourados (estilo certificado)
-    doc.setDrawColor(...C_GOLD);
-    doc.setLineWidth(0.4);
-    const cs = 6;
-    const m = 8;
-    doc.line(m, 36, m + cs, 36);
-    doc.line(m, 36, m, 36 + cs);
-    doc.line(w - m, 36, w - m - cs, 36);
-    doc.line(w - m, 36, w - m, 36 + cs);
-    doc.line(m, h - 14, m + cs, h - 14);
-    doc.line(m, h - 14, m, h - 14 - cs);
-    doc.line(w - m, h - 14, w - m - cs, h - 14);
-    doc.line(w - m, h - 14, w - m, h - 14 - cs);
-  }
-}
-
-/**
- * Calcula a caixa onde a marca-d'água será desenhada.
- * Mesma fórmula usada em applyWatermarkAndCorners — exposta para o validador.
- */
-function computeWatermarkBox(w: number, h: number) {
-  const contentTop = LAYOUT.HEADER_BOTTOM + 3;
-  const contentBottom = h - LAYOUT.FOOTER_TOP_OFFSET - 6;
-  const contentH = contentBottom - contentTop;
-  const contentW = w - 28;
-  const size = Math.min(contentW, contentH) * LAYOUT.WATERMARK_RATIO;
-  const x = (w - size) / 2;
-  const y = contentTop + (contentH - size) / 2;
-  return { x, y, size };
-}
-
 /**
  * Valida geometricamente se a marca-d'água invade as zonas reservadas
  * (header verde no topo ou footer no rodapé). Em caso de problema, mostra
