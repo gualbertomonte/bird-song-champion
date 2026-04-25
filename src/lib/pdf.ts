@@ -8,12 +8,23 @@ import type { Torneio, ClassificacaoItem } from '@/types/torneio';
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 const sexoLabel = (s?: string) => s === 'M' ? 'Macho' : s === 'F' ? 'Fêmea' : 'A definir';
 
-// Zonas de layout (mm) — fonte única de verdade usada por header, watermark, footer e validador
+// Zonas de layout (mm) — fonte única de verdade
 const LAYOUT = {
-  HEADER_BOTTOM: 52,   // header verde + filete dourado vão de y=0 até ~52
-  FOOTER_TOP_OFFSET: 14, // footer começa em (h - 14) e vai até h
-  WATERMARK_RATIO: 0.7,  // tamanho relativo à menor dimensão da área de conteúdo
+  HEADER_BOTTOM: 26,     // header minimalista (nome + título + linha dourada)
+  FOOTER_TOP_OFFSET: 14, // footer começa em (h - 14)
+  WATERMARK_RATIO: 0.7,
+  BACKPLATE_INSET: 4,    // margem entre logo de fundo e área protegida do texto
 } as const;
+
+// Modo de visualização do fundo (intensidade da logo do criadouro)
+export type PdfBackgroundMode = 'destaque' | 'sutil' | 'leitura';
+const BG_OPACITY: Record<PdfBackgroundMode, number> = {
+  destaque: 0.18,
+  sutil: 0.08,
+  leitura: 0.03,
+};
+// Cache do modo escolhido por cada doc (para o backplate saber se precisa ser opaco)
+const _docBgMode = new WeakMap<jsPDF, PdfBackgroundMode>();
 
 
 // Cache em memória do logo convertido em base64 (evita refetch a cada página)
