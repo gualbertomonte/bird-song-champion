@@ -878,7 +878,7 @@ export async function generateArvoreGenealogicaPDF(
   );
 
   // Aplica papel timbrado completo
-  await applyWatermarkAndCorners(doc, profile, 0.05);
+  await applyLogoBackground(doc, profile, 'sutil');
   await applyHeaderAllPages(doc, profile, 'Árvore Genealógica', `Linhagem · ${bird.nome} · ${bird.codigo_anilha || '—'}`);
   footer(doc, profile);
   validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'arvore-genealogica' });
