@@ -231,7 +231,143 @@ export default function AdminDashboard() {
           </Card>
         </>
       )}
+
+      <PageViewsSection />
     </div>
+  );
+}
+
+function PageViewsSection() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['page-views-30d'],
+    queryFn: async () => {
+      const since = subDays(new Date(), 30).toISOString();
+      const { data, error } = await supabase
+        .from('page_views')
+        .select('path, session_id, created_at, device_type, referrer, utm_source')
+        .gte('created_at', since)
+        .limit(5000);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (isLoading) return <Skeleton className="h-64" />;
+  if (!data || data.length === 0) {
+    return (
+      <Card className="p-6">
+        <h3 className="heading-serif text-lg font-semibold text-foreground flex items-center gap-2">
+          <Eye className="w-5 h-5 text-secondary" /> Visitas ao site
+        </h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          Nenhuma visita registrada ainda. O tracking começa a contar a partir das próximas visitas.
+        </p>
+      </Card>
+    );
+  }
+
+  // Agregações
+  const total = data.length;
+  const unicos = new Set(data.map((d: any) => d.session_id).filter(Boolean)).size;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const visitasHoje = data.filter((d: any) => new Date(d.created_at) >= hoje).length;
+
+  // Por dia
+  const byDay = new Map<string, { dia: string; visitas: number; unicos: Set<string> }>();
+  for (let i = 29; i >= 0; i--) {
+    const d = subDays(new Date(), i);
+    const key = d.toISOString().slice(0, 10);
+    byDay.set(key, { dia: key, visitas: 0, unicos: new Set() });
+  }
+  data.forEach((d: any) => {
+    const key = d.created_at.slice(0, 10);
+    const b = byDay.get(key);
+    if (b) { b.visitas++; if (d.session_id) b.unicos.add(d.session_id); }
+  });
+  const serieVisitas = Array.from(byDay.values()).map(b => ({
+    dia: b.dia, visitas: b.visitas, unicos: b.unicos.size,
+  }));
+
+  // Top paths
+  const pathCount: Record<string, number> = {};
+  data.forEach((d: any) => { pathCount[d.path] = (pathCount[d.path] || 0) + 1; });
+  const topPaths = Object.entries(pathCount).sort((a,b) => b[1]-a[1]).slice(0, 5);
+
+  // Top referrers / utm_source
+  const refCount: Record<string, number> = {};
+  data.forEach((d: any) => {
+    const src = d.utm_source || (d.referrer ? new URL(d.referrer).hostname.replace('www.','') : 'direto');
+    refCount[src] = (refCount[src] || 0) + 1;
+  });
+  const topRefs = Object.entries(refCount).sort((a,b) => b[1]-a[1]).slice(0, 5);
+
+  // Devices
+  const devCount = { mobile: 0, desktop: 0, tablet: 0 };
+  data.forEach((d: any) => { if (d.device_type && d.device_type in devCount) (devCount as any)[d.device_type]++; });
+
+  return (
+    <>
+      <section>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <Globe className="w-3.5 h-3.5" /> Visitas ao site (anônimos + logados)
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Kpi icon={Eye} label="Visitas hoje" value={visitasHoje} tone="success" />
+          <Kpi icon={Eye} label="Visitas (30d)" value={total} tone="secondary" />
+          <Kpi icon={Users} label="Visitantes únicos" value={unicos} tone="primary" />
+          <Kpi icon={Smartphone} label="Mobile" value={devCount.mobile}
+            subtitle={`Desk ${devCount.desktop} · Tab ${devCount.tablet}`} tone="muted" />
+        </div>
+      </section>
+
+      <Card className="p-6">
+        <h3 className="heading-serif text-lg font-semibold text-foreground mb-4">Visitas — últimos 30 dias</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={serieVisitas}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="dia" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickFormatter={(d) => format(parseISO(d), 'dd/MM')} />
+              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
+              <Tooltip
+                contentStyle={tooltipContentStyle}
+                labelStyle={tooltipLabelStyle}
+                itemStyle={tooltipItemStyle}
+                labelFormatter={(d) => format(parseISO(d as string), "dd 'de' MMMM", { locale: ptBR })}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="visitas" name="Visitas" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="unicos" name="Únicos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Páginas mais vistas</h3>
+          <ul className="space-y-2">
+            {topPaths.map(([path, count]) => (
+              <li key={path} className="flex justify-between text-sm">
+                <code className="text-foreground truncate mr-2">{path}</code>
+                <span className="text-secondary font-semibold flex-shrink-0">{count}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Fontes de tráfego</h3>
+          <ul className="space-y-2">
+            {topRefs.map(([src, count]) => (
+              <li key={src} className="flex justify-between text-sm">
+                <span className="text-foreground truncate mr-2">{src}</span>
+                <span className="text-secondary font-semibold flex-shrink-0">{count}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+    </>
   );
 }
 
