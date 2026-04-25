@@ -570,6 +570,7 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     `Total de aves: ${birds.length}  ·  Emitido em ${new Date().toLocaleDateString('pt-BR')}`
   );
   footer(doc, profile);
+  validateLayout(doc, { hasWatermark: !!profile?.logo_url, context: 'plantel' });
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
