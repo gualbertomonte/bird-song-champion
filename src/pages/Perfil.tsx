@@ -75,13 +75,23 @@ export default function Perfil() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Use até 5 MB.');
+      return;
+    }
     setUploadingLogo(true);
     try {
       const path = `${user.id}/logo-${Date.now()}.${file.name.split('.').pop() || 'png'}`;
       const { error } = await supabase.storage.from('bird-photos').upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from('bird-photos').getPublicUrl(path);
-      setForm({ ...form, logo_url: data.publicUrl });
+      const next = { ...form, logo_url: data.publicUrl };
+      setForm(next);
+      // Persiste imediatamente para que PDFs/crachás já usem a logo
+      await setProfile(next);
+      toast.success('✅ Logo salva! Será usada nos seus PDFs, crachás digitais e árvore genealógica.', {
+        duration: 5000,
+      });
     } catch (err) {
       console.error(err);
       toast.error('Erro ao enviar logo');
