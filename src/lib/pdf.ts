@@ -250,7 +250,7 @@ async function applyWatermarkAndCorners(doc: jsPDF, profile?: CriadorProfile) {
   const pageCount = doc.getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
-  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, 0.05) : null;
+  const wm = profile?.logo_url ? await loadLogoWatermark(profile.logo_url, 0.08) : null;
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
