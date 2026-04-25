@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Bird as BirdIcon, Search, HelpCircle, ZoomIn, ZoomOut, RotateCcw, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { generateArvoreGenealogicaPDF } from '@/lib/pdf';
 import LoanBadge from '@/components/LoanBadge';
 
 const Mars = (props: React.SVGProps<SVGSVGElement>) => (
