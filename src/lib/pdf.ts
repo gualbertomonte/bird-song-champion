@@ -305,19 +305,19 @@ export async function generatePlantelReportPDF(birds: Bird[], profile: CriadorPr
     ],
   });
 
-  footer(doc);
+  footer(doc, profile);
   doc.save(`plantel_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 /* ─────────── Relatório de Torneio ─────────── */
-export function gerarRelatorioTorneio(
+export async function gerarRelatorioTorneio(
   torneio: Torneio,
   classificacao: ClassificacaoItem[],
   profile: CriadorProfile,
   criadores?: Record<string, string>,
 ) {
   const doc = new jsPDF();
-  header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
+  await header(doc, profile, torneio.nome, `Torneio · ${new Date(torneio.data).toLocaleDateString('pt-BR')}`);
 
   let y = 56;
   if (torneio.regulamento) {
