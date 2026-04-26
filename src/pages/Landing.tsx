@@ -17,6 +17,7 @@ import {
   Star,
   MessageCircle,
 } from "lucide-react";
+import FaleConoscoModal from "@/components/FaleConoscoModal";
 
 /* ---------- Dados ---------- */
 
