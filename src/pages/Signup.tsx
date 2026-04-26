@@ -140,6 +140,46 @@ export default function Signup() {
               </div>
             </div>
 
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={notRobot}
+                  onChange={e => setNotRobot(e.target.checked)}
+                  className="w-4 h-4 accent-secondary"
+                />
+                <ShieldCheck className="w-4 h-4 text-secondary" />
+                <span className="text-sm text-foreground">Não sou um robô</span>
+              </label>
+
+              {notRobot && (
+                <div className="space-y-1.5 animate-fade-in">
+                  <label className="label-eyebrow">Verificação *</label>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-2 rounded-md bg-card border border-border font-mono text-sm text-foreground">
+                      {challenge.a} + {challenge.b} = ?
+                    </span>
+                    <input
+                      type="number"
+                      value={captchaAnswer}
+                      onChange={e => setCaptchaAnswer(e.target.value)}
+                      className="input-field flex-1"
+                      placeholder="Resposta"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={refreshChallenge}
+                      className="p-2 text-muted-foreground hover:text-foreground"
+                      title="Gerar nova pergunta"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
               {loading ? 'Criando…' : 'Criar Conta'}
             </button>
