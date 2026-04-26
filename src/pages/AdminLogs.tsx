@@ -25,8 +25,8 @@ interface LogRow {
 
 const ACAO_LABEL: Record<string, { label: string; tone: string }> = {
   bloquear: { label: 'Bloqueio', tone: 'bg-destructive/15 text-destructive' },
-  desbloquear: { label: 'Desbloqueio', tone: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' },
-  reset_senha: { label: 'Reset senha', tone: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
+  desbloquear: { label: 'Desbloqueio', tone: 'bg-success/15 text-success' },
+  reset_senha: { label: 'Reset senha', tone: 'bg-warning/15 text-warning' },
   excluir: { label: 'Exclusão', tone: 'bg-destructive/20 text-destructive' },
   export_csv: { label: 'Export CSV', tone: 'bg-secondary/15 text-secondary' },
 };
