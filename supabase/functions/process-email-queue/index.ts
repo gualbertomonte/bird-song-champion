@@ -1,5 +1,8 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
-import { createClient } from 'npm:@supabase/supabase-js@2'
+// deno-lint-ignore no-explicit-any
+import { createClient as createClientTyped } from 'npm:@supabase/supabase-js@2'
+// deno-lint-ignore no-explicit-any
+const createClient = createClientTyped as any
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
