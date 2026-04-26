@@ -48,6 +48,7 @@ const AdminLogs = lazyPage(() => import("@/pages/AdminLogs"));
 const AdminRelatorios = lazyPage(() => import("@/pages/AdminRelatorios"));
 const AdminConfiguracoes = lazyPage(() => import("@/pages/AdminConfiguracoes"));
 const AdminLinks = lazyPage(() => import("@/pages/AdminLinks"));
+const AdminLeads = lazyPage(() => import("@/pages/AdminLeads"));
 const AdminLayout = lazyPage(() => import("@/components/admin/AdminLayout"));
 const Login = lazyPage(() => import("@/pages/Login"));
 const Landing = lazyPage(() => import("@/pages/Landing"));
@@ -154,6 +155,7 @@ function RoleRouter() {
             <Route path="/admin/relatorios" element={<AdminRelatorios />} />
             <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
             <Route path="/admin/links" element={<AdminLinks />} />
+            <Route path="/admin/leads" element={<AdminLeads />} />
           </Route>
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
