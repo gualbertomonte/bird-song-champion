@@ -250,7 +250,7 @@ export default function AdminUsuarios() {
                     {u.bloqueado ? (
                       <Badge variant="destructive" className="text-[10px]">Bloqueado</Badge>
                     ) : u.last_sign_in_at && Date.now() - new Date(u.last_sign_in_at).getTime() < 30 * 86400000 ? (
-                      <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 border-0 text-[10px]">Ativo</Badge>
+                      <Badge className="bg-success/15 text-success hover:bg-success/20 border-0 text-[10px]">Ativo</Badge>
                     ) : (
                       <Badge variant="secondary" className="text-[10px]">Inativo</Badge>
                     )}
