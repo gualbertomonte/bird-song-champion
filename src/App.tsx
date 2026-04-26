@@ -55,6 +55,7 @@ const Signup = lazyPage(() => import("@/pages/Signup"));
 const ForgotPassword = lazyPage(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazyPage(() => import("@/pages/ResetPassword"));
 const RedirectLink = lazyPage(() => import("@/pages/RedirectLink"));
+const ThemePreview = lazyPage(() => import("@/pages/ThemePreview"));
 const NotFound = lazyPage(() => import("./pages/NotFound.tsx"));
 
 // Prefetch landing page chunk eagerly — it's the LCP target for anonymous visitors
@@ -218,6 +219,7 @@ const App = () => (
                 <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
                 <Route path="/p/bateria/:id" element={<BateriaPublica />} />
                 <Route path="/r/:slug" element={<RedirectLink />} />
+                <Route path="/theme-preview" element={<ThemePreview />} />
 
                 {/* Protected routes */}
                 <Route path="/*" element={
