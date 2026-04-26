@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Bird, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Bird, Mail, Lock, User, Eye, EyeOff, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+
+function generateChallenge() {
+  const a = Math.floor(Math.random() * 9) + 1;
+  const b = Math.floor(Math.random() * 9) + 1;
+  return { a, b, answer: a + b };
+}
 
 export default function Signup() {
   const { signUp } = useAuth();
@@ -15,9 +21,32 @@ export default function Signup() {
   const [displayName, setDisplayName] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [challenge, setChallenge] = useState(() => generateChallenge());
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [notRobot, setNotRobot] = useState(false);
+  const [formStartedAt] = useState(() => Date.now());
+
+  const refreshChallenge = () => {
+    setChallenge(generateChallenge());
+    setCaptchaAnswer('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!notRobot) {
+      toast.error('Confirme que você não é um robô');
+      return;
+    }
+    if (parseInt(captchaAnswer, 10) !== challenge.answer) {
+      toast.error('Resposta da verificação incorreta');
+      refreshChallenge();
+      return;
+    }
+    // Honeypot anti-bot: if filled too fast (< 2s), block silently
+    if (Date.now() - formStartedAt < 2000) {
+      toast.error('Aguarde um instante antes de enviar');
+      return;
+    }
     if (password.length < 6) {
       toast.error('A senha deve ter pelo menos 6 caracteres');
       return;
