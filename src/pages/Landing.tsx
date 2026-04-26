@@ -136,7 +136,7 @@ function PhoneMockup() {
   return (
     <div className="relative w-[230px] sm:w-[260px] aspect-[9/19] rounded-[2.4rem] bg-foreground p-2.5 shadow-2xl shadow-foreground/25 ring-1 ring-foreground/80">
       <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-foreground rounded-b-2xl z-10" />
-      <div className="w-full h-full rounded-[2rem] bg-gradient-to-b from-secondary/10 to-white overflow-hidden p-4 flex flex-col gap-3">
+      <div className="w-full h-full rounded-[2rem] bg-gradient-to-b from-secondary/10 to-card overflow-hidden p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] text-muted-foreground">Bom dia</p>
@@ -424,7 +424,7 @@ export default function Landing() {
               </CTAButton>
               <Link
                 to="/login"
-                className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold text-secondary-foreground border border-white/20 hover:bg-card/10 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold text-secondary-foreground border border-secondary-foreground/20 hover:bg-secondary-foreground/10 transition-colors"
               >
                 Já tenho conta
               </Link>
