@@ -29,11 +29,11 @@ function BirdCard({ bird, role }: { bird: Bird; role?: 'self' | 'father' | 'moth
       : isMale
       ? 'border-info/40 bg-gradient-to-br from-info/10 to-info/5'
       : isFemale
-      ? 'border-pink-400/40 bg-gradient-to-br from-pink-500/10 to-pink-500/5'
+      ? 'border-feminino/40 bg-gradient-to-br from-feminino/10 to-feminino/5'
       : 'border-border bg-card';
 
   const SexIcon = isMale ? Mars : isFemale ? Venus : HelpCircle;
-  const sexColor = isMale ? 'text-info' : isFemale ? 'text-pink-400' : 'text-muted-foreground';
+  const sexColor = isMale ? 'text-info' : isFemale ? 'text-feminino' : 'text-muted-foreground';
 
   return (
     <div
@@ -74,7 +74,7 @@ function BirdCard({ bird, role }: { bird: Bird; role?: 'self' | 'father' | 'moth
 
 function UnknownCard({ role }: { role?: 'father' | 'mother' }) {
   const SexIcon = role === 'father' ? Mars : role === 'mother' ? Venus : HelpCircle;
-  const color = role === 'father' ? 'text-info/50' : role === 'mother' ? 'text-pink-400/50' : 'text-muted-foreground';
+  const color = role === 'father' ? 'text-info/50' : role === 'mother' ? 'text-feminino/50' : 'text-muted-foreground';
   return (
     <div className="w-[170px] sm:w-[190px] rounded-xl border-2 border-dashed border-border/40 bg-muted/10 p-3 flex items-center gap-2 opacity-70">
       <div className="w-10 h-10 rounded-lg bg-muted/20 flex items-center justify-center">
@@ -113,7 +113,7 @@ function TreeNode({ bird, birds, depth, maxDepth, role = 'self' }: NodeProps) {
             </div>
             <div className="flex flex-col items-center">
               <TreeNode bird={mae} birds={birds} depth={depth + 1} maxDepth={maxDepth} role="mother" />
-              <div className="w-0.5 h-5 bg-gradient-to-b from-pink-400/40 to-border/30" />
+              <div className="w-0.5 h-5 bg-gradient-to-b from-feminino/40 to-border/30" />
             </div>
           </div>
           {/* horizontal connector joining both parents */}
@@ -257,7 +257,7 @@ export default function ArvoreGenealogica() {
             <Mars className="w-3.5 h-3.5 text-info" /> Macho
           </span>
           <span className="flex items-center gap-1.5">
-            <Venus className="w-3.5 h-3.5 text-pink-400" /> Fêmea
+            <Venus className="w-3.5 h-3.5 text-feminino" /> Fêmea
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded border-2 border-dashed border-border/50" /> Desconhecido
