@@ -219,6 +219,7 @@ const App = () => (
                 <Route path="/entrar/grupo/:token" element={<EntrarGrupo />} />
                 <Route path="/p/bateria/:id" element={<BateriaPublica />} />
                 <Route path="/r/:slug" element={<RedirectLink />} />
+                <Route path="/theme-preview" element={<ThemePreview />} />
 
                 {/* Protected routes */}
                 <Route path="/*" element={
