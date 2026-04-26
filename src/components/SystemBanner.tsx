@@ -12,9 +12,9 @@ interface BannerData {
 }
 
 const TIPO_STYLES: Record<BannerTipo, { wrap: string; icon: React.ComponentType<any> }> = {
-  info: { wrap: 'bg-secondary/15 text-secondary-foreground border-secondary/30', icon: Info },
-  warning: { wrap: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30', icon: AlertTriangle },
-  success: { wrap: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30', icon: CheckCircle2 },
+  info: { wrap: 'bg-info/15 text-info border-info/30', icon: Info },
+  warning: { wrap: 'bg-warning/15 text-warning border-warning/30', icon: AlertTriangle },
+  success: { wrap: 'bg-success/15 text-success border-success/30', icon: CheckCircle2 },
   error: { wrap: 'bg-destructive/15 text-destructive border-destructive/30', icon: AlertCircle },
 };
 
