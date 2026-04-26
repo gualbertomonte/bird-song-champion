@@ -34,9 +34,9 @@ export default function RankingAcumuladoTable({ ranking, top }: { ranking: Ranki
             return (
               <tr key={`${it.bird_id}-${i}`} className={`border-t border-border ${meu ? 'bg-secondary/5' : ''}`}>
                 <td className="px-3 py-2.5 font-medium">
-                  {pos === 1 && <Trophy className="w-4 h-4 text-yellow-500" />}
-                  {pos === 2 && <Medal className="w-4 h-4 text-gray-400" />}
-                  {pos === 3 && <Award className="w-4 h-4 text-orange-500" />}
+                  {pos === 1 && <Trophy className="w-4 h-4 text-medal-gold" />}
+                  {pos === 2 && <Medal className="w-4 h-4 text-medal-silver" />}
+                  {pos === 3 && <Award className="w-4 h-4 text-medal-bronze" />}
                   {pos > 3 && <span className="text-muted-foreground">{pos}</span>}
                 </td>
                 <td className="px-3 py-2.5 font-medium">{it.bird_nome}{meu && <span className="ml-2 text-[10px] text-secondary">(sua)</span>}</td>

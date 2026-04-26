@@ -774,7 +774,7 @@ function AcoesAdministrativasTorneio({
 
       {/* Modal confirmação reset */}
       {resetOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-foreground/60 z-50 flex items-center justify-center p-4">
           <div className="bg-card border rounded-lg shadow-lg w-full max-w-md p-6 space-y-4">
             <div className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" />

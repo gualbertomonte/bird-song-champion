@@ -56,9 +56,9 @@ export default function Emprestimos() {
   };
 
   const statusBadge = (status: string) => {
-    if (status === 'Emprestada') return <Badge className="bg-amber-500/15 text-amber-600 hover:bg-amber-500/20 border-0">Emprestada</Badge>;
-    if (status === 'Devolucao_Solicitada') return <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/20 border-0">Devolução Solicitada</Badge>;
-    return <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 border-0">Devolvida</Badge>;
+    if (status === 'Emprestada') return <Badge className="bg-warning/15 text-warning hover:bg-warning/20 border-0">Emprestada</Badge>;
+    if (status === 'Devolucao_Solicitada') return <Badge className="bg-info/15 text-info hover:bg-info/20 border-0">Devolução Solicitada</Badge>;
+    return <Badge className="bg-success/15 text-success hover:bg-success/20 border-0">Devolvida</Badge>;
   };
 
   const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
@@ -119,7 +119,7 @@ export default function Emprestimos() {
                   </button>
                 )}
                 {loan.status === 'Devolucao_Solicitada' && (
-                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                  <span className="text-xs text-info flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" /> Aguardando confirmação do recebedor
                   </span>
                 )}
@@ -206,7 +206,7 @@ export default function Emprestimos() {
                 ))}
               </select>
               {lendableBirds.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">Nenhuma ave própria disponível para empréstimo</p>
+                <p className="text-xs text-warning mt-1">Nenhuma ave própria disponível para empréstimo</p>
               )}
             </div>
 

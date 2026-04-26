@@ -374,8 +374,8 @@ function PageViewsSection() {
 const tones = {
   primary: 'from-primary/15 to-primary/5 text-primary',
   secondary: 'from-secondary/15 to-secondary/5 text-secondary',
-  success: 'from-emerald-500/15 to-emerald-500/5 text-emerald-600 dark:text-emerald-400',
-  warning: 'from-amber-500/15 to-amber-500/5 text-amber-600 dark:text-amber-400',
+  success: 'from-success/15 to-success/5 text-success',
+  warning: 'from-warning/15 to-warning/5 text-warning',
   muted: 'from-muted-foreground/15 to-muted-foreground/5 text-muted-foreground',
 } as const;
 

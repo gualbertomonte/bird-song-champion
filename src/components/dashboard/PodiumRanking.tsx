@@ -21,7 +21,7 @@ export default function PodiumRanking({ items }: { items: RankItem[] }) {
   const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
 
   const heights = ['h-20', 'h-28', 'h-16'];
-  const medalColors = ['text-zinc-300', 'text-secondary', 'text-orange-400'];
+  const medalColors = ['text-medal-silver', 'text-secondary', 'text-medal-bronze'];
   const positions = [2, 1, 3];
 
   return (
@@ -52,7 +52,7 @@ export default function PodiumRanking({ items }: { items: RankItem[] }) {
               </div>
               <p className="text-xs font-medium mt-1.5 truncate max-w-full text-center">{item.bird?.nome}</p>
               <p className="text-[10px] text-muted-foreground">{item.avg} pts</p>
-              <div className={`${heights[idx]} w-full mt-2 rounded-t-lg flex items-start justify-center pt-1.5 ${pos === 1 ? 'bg-gradient-to-b from-secondary/40 to-secondary/10 border border-secondary/30' : pos === 2 ? 'bg-muted/40 border border-border' : 'bg-orange-400/15 border border-orange-400/25'}`}>
+              <div className={`${heights[idx]} w-full mt-2 rounded-t-lg flex items-start justify-center pt-1.5 ${pos === 1 ? 'bg-gradient-to-b from-secondary/40 to-secondary/10 border border-secondary/30' : pos === 2 ? 'bg-muted/40 border border-border' : 'bg-medal-bronze/15 border border-medal-bronze/25'}`}>
                 <span className={`text-sm font-bold ${medalColors[pos - 1]}`}>{pos}º</span>
               </div>
             </Link>

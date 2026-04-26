@@ -61,6 +61,27 @@ export default {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
         },
+        feminino: {
+          DEFAULT: "hsl(var(--feminino))",
+          foreground: "hsl(var(--feminino-foreground))",
+        },
+        masculino: {
+          DEFAULT: "hsl(var(--masculino))",
+          foreground: "hsl(var(--masculino-foreground))",
+        },
+        pending: {
+          DEFAULT: "hsl(var(--pending))",
+          foreground: "hsl(var(--pending-foreground))",
+        },
+        "in-transit": {
+          DEFAULT: "hsl(var(--in-transit))",
+          foreground: "hsl(var(--in-transit-foreground))",
+        },
+        medal: {
+          gold: "hsl(var(--medal-gold))",
+          silver: "hsl(var(--medal-silver))",
+          bronze: "hsl(var(--medal-bronze))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
