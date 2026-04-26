@@ -21,7 +21,7 @@ export default function PodiumRanking({ items }: { items: RankItem[] }) {
   const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
 
   const heights = ['h-20', 'h-28', 'h-16'];
-  const medalColors = ['text-zinc-300', 'text-secondary', 'text-orange-400'];
+  const medalColors = ['text-medal-silver', 'text-secondary', 'text-medal-bronze'];
   const positions = [2, 1, 3];
 
   return (

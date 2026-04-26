@@ -117,7 +117,7 @@ export default function Torneios() {
     toast.success('Torneio registrado!');
   };
 
-  const medalColor = (i: number) => i === 0 ? 'text-secondary' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-orange-400' : 'text-muted-foreground';
+  const medalColor = (i: number) => i === 0 ? 'text-secondary' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-medal-bronze' : 'text-muted-foreground';
 
   return (
     <div className="space-y-6 pb-20 md:pb-0">
