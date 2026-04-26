@@ -1,5 +1,8 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
-import { createClient } from 'npm:@supabase/supabase-js@2'
+// deno-lint-ignore no-explicit-any
+import { createClient as createClientTyped } from 'npm:@supabase/supabase-js@2'
+// deno-lint-ignore no-explicit-any
+const createClient = createClientTyped as any
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -156,12 +159,12 @@ Deno.serve(async (req) => {
     const messageIds = Array.from(
       new Set(
         messages
-          .map((msg) =>
+          .map((msg: { message?: { message_id?: unknown } }) =>
             msg?.message?.message_id && typeof msg.message.message_id === 'string'
               ? msg.message.message_id
               : null
           )
-          .filter((id): id is string => Boolean(id))
+          .filter((id: string | null): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
