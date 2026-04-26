@@ -52,6 +52,19 @@
     --info-foreground: 0 0% 100%;
     --gold: 158 64% 40%;
 
+    /* Tokens semânticos de domínio */
+    --feminino: 330 75% 60%;              /* rosa para sexo fêmea */
+    --feminino-foreground: 0 0% 100%;
+    --masculino: 200 90% 45%;             /* azul para sexo macho (alias de info) */
+    --masculino-foreground: 0 0% 100%;
+    --medal-gold: 41 90% 55%;
+    --medal-silver: 215 14% 70%;
+    --medal-bronze: 28 80% 55%;
+    --pending: 38 92% 50%;                /* alias de warning */
+    --pending-foreground: 0 0% 100%;
+    --in-transit: 200 90% 45%;            /* alias de info */
+    --in-transit-foreground: 0 0% 100%;
+
     --chart-1: 158 64% 40%;
     --chart-2: 158 50% 60%;
     --chart-3: 200 80% 55%;
