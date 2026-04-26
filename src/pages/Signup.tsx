@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Bird, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Bird, Mail, Lock, User, Eye, EyeOff, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+
+function generateChallenge() {
+  const a = Math.floor(Math.random() * 9) + 1;
+  const b = Math.floor(Math.random() * 9) + 1;
+  return { a, b, answer: a + b };
+}
 
 export default function Signup() {
   const { signUp } = useAuth();
@@ -15,9 +21,32 @@ export default function Signup() {
   const [displayName, setDisplayName] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [challenge, setChallenge] = useState(() => generateChallenge());
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [notRobot, setNotRobot] = useState(false);
+  const [formStartedAt] = useState(() => Date.now());
+
+  const refreshChallenge = () => {
+    setChallenge(generateChallenge());
+    setCaptchaAnswer('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!notRobot) {
+      toast.error('Confirme que você não é um robô');
+      return;
+    }
+    if (parseInt(captchaAnswer, 10) !== challenge.answer) {
+      toast.error('Resposta da verificação incorreta');
+      refreshChallenge();
+      return;
+    }
+    // Honeypot anti-bot: if filled too fast (< 2s), block silently
+    if (Date.now() - formStartedAt < 2000) {
+      toast.error('Aguarde um instante antes de enviar');
+      return;
+    }
     if (password.length < 6) {
       toast.error('A senha deve ter pelo menos 6 caracteres');
       return;
@@ -109,6 +138,46 @@ export default function Signup() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={notRobot}
+                  onChange={e => setNotRobot(e.target.checked)}
+                  className="w-4 h-4 accent-secondary"
+                />
+                <ShieldCheck className="w-4 h-4 text-secondary" />
+                <span className="text-sm text-foreground">Não sou um robô</span>
+              </label>
+
+              {notRobot && (
+                <div className="space-y-1.5 animate-fade-in">
+                  <label className="label-eyebrow">Verificação *</label>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-2 rounded-md bg-card border border-border font-mono text-sm text-foreground">
+                      {challenge.a} + {challenge.b} = ?
+                    </span>
+                    <input
+                      type="number"
+                      value={captchaAnswer}
+                      onChange={e => setCaptchaAnswer(e.target.value)}
+                      className="input-field flex-1"
+                      placeholder="Resposta"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={refreshChallenge}
+                      className="p-2 text-muted-foreground hover:text-foreground"
+                      title="Gerar nova pergunta"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-50">
