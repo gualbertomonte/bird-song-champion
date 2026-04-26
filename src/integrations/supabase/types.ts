@@ -340,6 +340,48 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          ip: string | null
+          mensagem: string
+          nome: string
+          respondido: boolean
+          respondido_em: string | null
+          respondido_por: string | null
+          user_agent: string | null
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          mensagem: string
+          nome: string
+          respondido?: boolean
+          respondido_em?: string | null
+          respondido_por?: string | null
+          user_agent?: string | null
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          mensagem?: string
+          nome?: string
+          respondido?: boolean
+          respondido_em?: string | null
+          respondido_por?: string | null
+          user_agent?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       criador_profile: {
         Row: {
           codigo_criadouro: string | null

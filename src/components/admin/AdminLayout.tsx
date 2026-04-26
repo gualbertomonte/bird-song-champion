@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Shield, LayoutDashboard, Users, ScrollText, FileText, Settings, LogOut, Bird, Link2 } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, ScrollText, FileText, Settings, LogOut, Bird, Link2, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import SystemBanner from '@/components/SystemBanner';
 import AdminNotificationBell from '@/components/admin/AdminNotificationBell';
@@ -7,6 +7,7 @@ import AdminNotificationBell from '@/components/admin/AdminNotificationBell';
 const items = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/usuarios', icon: Users, label: 'Usuários' },
+  { to: '/admin/leads', icon: MessageCircle, label: 'Mensagens' },
   { to: '/admin/links', icon: Link2, label: 'Links' },
   { to: '/admin/logs', icon: ScrollText, label: 'Logs' },
   { to: '/admin/relatorios', icon: FileText, label: 'Relatórios' },
