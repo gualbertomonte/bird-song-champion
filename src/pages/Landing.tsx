@@ -110,7 +110,7 @@ function CTAButton({
   };
   const variants = {
     primary:
-      "bg-secondary text-secondary-foreground shadow-[0_8px_24px_-8px_rgba(5,150,105,0.45)] hover:bg-secondary/90 hover:shadow-[0_14px_32px_-10px_rgba(5,150,105,0.55)]",
+      "bg-secondary text-secondary-foreground shadow-[0_8px_24px_-8px_hsl(var(--secondary)/0.45)] hover:bg-secondary/90 hover:shadow-[0_14px_32px_-10px_hsl(var(--secondary)/0.55)]",
     secondary:
       "bg-card text-foreground border border-border hover:border-border hover:bg-muted/50",
   };
@@ -285,7 +285,7 @@ export default function Landing() {
           {stats.map((s) => (
             <div
               key={s.l}
-              className="rounded-2xl bg-card border border-border p-6 sm:p-8 text-center shadow-[0_2px_8px_-2px_rgba(15,23,42,0.04)]"
+              className="rounded-2xl bg-card border border-border p-6 sm:p-8 text-center shadow-[0_2px_8px_-2px_hsl(var(--foreground)/0.06)]"
             >
               <p className="text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">{s.n}</p>
               <p className="text-sm text-muted-foreground mt-1.5">{s.l}</p>
@@ -309,7 +309,7 @@ export default function Landing() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="group rounded-3xl bg-card border border-border p-7 sm:p-8 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_32px_-8px_rgba(15,23,42,0.08)] hover:-translate-y-1 transition-all duration-300"
+              className="group rounded-3xl bg-card border border-border p-7 sm:p-8 shadow-[0_2px_8px_-2px_hsl(var(--foreground)/0.06)] hover:shadow-[0_12px_32px_-8px_hsl(var(--foreground)/0.1)] hover:-translate-y-1 transition-all duration-300"
             >
               <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center mb-5 group-hover:bg-secondary/15 transition-colors">
                 <f.icon className="w-5 h-5 text-secondary" strokeWidth={2} />
@@ -338,7 +338,7 @@ export default function Landing() {
           {testimonials.map((t) => (
             <figure
               key={t.nome}
-              className="rounded-3xl bg-card border border-border p-7 sm:p-8 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.04)] flex flex-col"
+              className="rounded-3xl bg-card border border-border p-7 sm:p-8 shadow-[0_2px_8px_-2px_hsl(var(--foreground)/0.06)] flex flex-col"
             >
               <div className="flex gap-0.5 mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -391,7 +391,7 @@ export default function Landing() {
           {faqs.map((f) => (
             <details
               key={f.q}
-              className="group rounded-2xl bg-card border border-border px-6 py-5 transition-shadow open:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.08)]"
+              className="group rounded-2xl bg-card border border-border px-6 py-5 transition-shadow open:shadow-[0_8px_24px_-8px_hsl(var(--foreground)/0.1)]"
             >
               <summary className="flex items-center justify-between cursor-pointer list-none">
                 <span className="font-medium text-foreground">{f.q}</span>
@@ -472,7 +472,7 @@ export default function Landing() {
         className="fixed bottom-6 right-6 z-50 group"
       >
         <span className="absolute inset-0 rounded-full bg-secondary/40 animate-ping" />
-        <span className="relative flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-[0_10px_30px_-8px_rgba(16,185,129,0.6)] hover:bg-secondary hover:scale-105 active:scale-95 transition-all">
+        <span className="relative flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-[0_10px_30px_-8px_hsl(var(--secondary)/0.6)] hover:bg-secondary hover:scale-105 active:scale-95 transition-all">
           <MessageCircle className="w-6 h-6" fill="currentColor" strokeWidth={0} />
         </span>
         <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-foreground text-secondary-foreground text-xs font-medium px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
