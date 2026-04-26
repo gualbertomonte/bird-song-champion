@@ -119,7 +119,7 @@ export default function Emprestimos() {
                   </button>
                 )}
                 {loan.status === 'Devolucao_Solicitada' && (
-                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                  <span className="text-xs text-info flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" /> Aguardando confirmação do recebedor
                   </span>
                 )}
@@ -206,7 +206,7 @@ export default function Emprestimos() {
                 ))}
               </select>
               {lendableBirds.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">Nenhuma ave própria disponível para empréstimo</p>
+                <p className="text-xs text-warning mt-1">Nenhuma ave própria disponível para empréstimo</p>
               )}
             </div>
 
